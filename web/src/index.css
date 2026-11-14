@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fondos y bordes */
+  --color-bg: #070B14;
+  --color-nav: #0A0F1B;
+  --color-panel: #0E1422;
+  --color-line: #1C2740;
+  --color-line-strong: #2F3F60;
+
+  /* Texto */
+  --color-ink: #E8ECF4;
+  --color-soft: #A3AEC4;
+  --color-muted: #93A0B8;
+
+  /* Capas de datos */
+  --color-accent: #5CC8F5;
+  --color-self: #B7A4FF;
+
+  /* Semáforo */
+  --color-ok: #3DDC97;
+  --color-warn: #F5B544;
+  --color-crit: #FF6B7A;
+
+  /* Tipografías */
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display: "Space Grotesk", Inter, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Animaciones */
+  --animate-scan: scan 3.6s ease-in-out infinite;
+  --animate-beat: beat 0.83s infinite;
+  --animate-blink: blink 1.2s infinite;
+
+  @keyframes scan {
+    0%, 100% { top: 14%; }
+    50% { top: 82%; }
+  }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.18); }
+    30% { transform: scale(1); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
