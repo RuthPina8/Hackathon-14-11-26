@@ -1,5 +1,24 @@
-node_modules/
-dist/
+# Secretos y entornos
 .env
+**/.env
+api/venv/
 venv/
+node_modules/
+
+# Notas personales de Claude Code
+CLAUDE.local.md
+**/CLAUDE.local.md
+
+# Python
 __pycache__/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Datasets (WESAD, MMASH): no se suben
+data/
+api/ml/data/
+
+# Front
+web/dist/
+dist/

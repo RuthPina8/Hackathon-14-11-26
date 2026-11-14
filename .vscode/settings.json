@@ -1,0 +1,32 @@
+{
+  // Python del back: el venv vive en api/venv (Windows)
+  "python.defaultInterpreterPath": "${workspaceFolder}/api/venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": ["${workspaceFolder}/api"],
+  "python.analysis.typeCheckingMode": "basic",
+
+  // pytest desde la barra de Testing
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.cwd": "${workspaceFolder}/api",
+  "python.testing.pytestArgs": ["tests"],
+
+  // Ruff formatea y ordena imports al guardar
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": { "source.organizeImports": "explicit" }
+  },
+
+  // Front: Prettier al guardar
+  "[typescript][typescriptreact][javascript][json][css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true
+  }
+}
