@@ -5,7 +5,8 @@ import { PageHeader, SimBanner } from '../../components/ui/Page'
 import { useSession } from '../../store/useSession'
 import MovimientoCamara from './MovimientoCamara'
 import GuiaAnimada from '../../components/animaciones/GuiaAnimada'
-import { DemoEjercicio, pasosMovimiento } from '../../components/animaciones/Ejercicios'
+import { pasosMovimiento } from '../../components/animaciones/Ejercicios'
+import Demo3D from '../../components/animaciones/Demo3D'
 import { idNumerico, movimientoApi, NOMBRE_EJERCICIO, type Sesion, type SesionIn } from './movimientoApi'
 import type { Ejercicio } from './pose/calcularAngulos'
 import { C } from '../../lib/paleta'
@@ -63,7 +64,7 @@ export default function MovimientoFlow() {
               <button key={e} type="button" data-tour={e === 'brazos' ? 'movimiento-brazos' : undefined} onClick={() => { setEjercicio(e); setPaso('preparar') }}
                 className="card flex min-h-[220px] cursor-pointer flex-col items-start justify-between gap-4 text-left transition-colors hover:border-accent active:translate-y-[2px]"
                 style={{ borderWidth: 2 }}>
-                <span className="block h-[150px] w-full overflow-hidden rounded-xl border border-holo-line bg-holo-bg"><DemoEjercicio ejercicio={e} mini /></span>
+                <span className="block h-[170px] w-full overflow-hidden rounded-xl border border-holo-line bg-holo-bg"><Demo3D ejercicio={e} mini /></span>
                 <span>
                   <span className="block font-[family-name:var(--font-display)] text-[28px] font-bold">{NOMBRE_EJERCICIO[e]}</span>
                   <span className="mt-1 block text-base text-muted">
@@ -99,7 +100,7 @@ export default function MovimientoFlow() {
       )}
 
       {paso === 'preparar' && (
-        <GuiaAnimada key={ejercicio} titulo={`Antes de empezar · ${NOMBRE_EJERCICIO[ejercicio]}`} pasos={pasosMovimiento(ejercicio)}
+        <GuiaAnimada key={ejercicio} titulo={`Antes de empezar · ${NOMBRE_EJERCICIO[ejercicio]}`} pasos={pasosMovimiento(ejercicio).map((p, n, todos) => (n === todos.length - 1 ? { ...p, escena: <Demo3D ejercicio={ejercicio} /> } : p))}
           alTerminar={
             <div className="flex flex-wrap gap-3">
               <button type="button" className="btn pri flex-1" style={{ minHeight: 72, fontSize: 20 }} onClick={() => setPaso('camara')}>Ya estoy listo, abrir cámara</button>
