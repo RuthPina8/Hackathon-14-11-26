@@ -12,21 +12,29 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.ws import manager
-from app.routers import alerts, demo, environment, indicators, measurements, queue, rppg, simulation, status
+from app.models import persistencia
+from app.routers import (
+    alerts, clinico, crew, demo, environment, indicators, ingest, measurements, queue, rppg, simulation, status,
+)
 from app.triage import demo as demo_engine
 from app.triage import queue as queue_engine
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Tareas de fondo: la cola avanza sola y el modo demo corre cuando se activa
+    # PostgreSQL si DATABASE_URL está definido; si no, todo sigue en memoria
+    persistencia.iniciar()
+    # Tareas de fondo: la cola avanza sola, el modo demo corre cuando se activa y se guarda una foto en la base
     tasks = [
         asyncio.create_task(queue_engine.run_forever()),
         asyncio.create_task(demo_engine.run_forever()),
+        asyncio.create_task(persistencia.correr_fotos()),
     ]
     yield
     for t in tasks:
         t.cancel()
+    if persistencia.activa():
+        persistencia.foto()
 
 
 app = FastAPI(
@@ -50,16 +58,19 @@ app.include_router(environment.router)
 app.include_router(simulation.router)
 app.include_router(demo.router)
 
-# Routers de Back 1 (en memoria mientras no exista la base; falta ingest)
+# Routers de Back 1
 app.include_router(measurements.router)
 app.include_router(status.router)
+app.include_router(crew.router)
 app.include_router(indicators.router)
 app.include_router(rppg.router)
+app.include_router(ingest.router)
+app.include_router(clinico.router)
 
 
 @app.get("/health", tags=["sistema"])
 def health():
-    return {"ok": True, "ws_clientes": manager.count}
+    return {"ok": True, "ws_clientes": manager.count, "base_de_datos": persistencia.activa()}
 
 
 @app.websocket("/ws")

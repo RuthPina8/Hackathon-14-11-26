@@ -17,11 +17,13 @@ export interface SystemStatus {
   sim?: boolean
   real?: Record<string, string> // valores medidos hoy por la cámara, por nombre de métrica
   nota?: string // texto que reemplaza el "por qué" (lo usa la alerta roja del modo demo)
+  metricas?: SystemMetric[] // métricas reales del motor (si no hay, se usan las de ejemplo)
+  demo?: boolean // incluye datos del simulador
 }
 
 export interface StatusMock {
   readiness: number
-  ayer: number
+  ayer: number | null // lectura anterior de la disposición (null = no hay)
   factores: ReadinessFactor[]
   sistemas: SystemStatus[]
   calibracion: number
@@ -29,6 +31,12 @@ export interface StatusMock {
   diasBase: number // total de días de la fase
   racha: number
   diaMision: number
+  // Solo cuando el estado viene del motor de Back 1
+  fase?: 'tierra' | 'adaptacion' | 'personal'
+  nMediciones?: number
+  datoDemo?: boolean
+  animoCamara?: { estado: 'aprendiendo' | 'activo'; acierto_pct: number | null; mae: number | null; n: number; explicacion: string | null; estimado_hoy: number | null } | null
+  inmune?: { estado: string; puntaje: number; motivo: string; dia_desde: number | null } | null
 }
 
 export interface AlertFactor { name: string; w: number; capa: Capa }
@@ -79,6 +87,8 @@ export interface CrewMember {
   perclos: string
   presion: string
   animo: string
+  alertas?: number
+  demo?: boolean
 }
 
 export const mockStatus: StatusMock = {
@@ -93,14 +103,14 @@ export const mockStatus: StatusMock = {
     { id: 'cardio', nombre: 'Cardiovascular', estado: 'warn', valor: '74 lpm', href: '/indicators/hr' },
     { id: 'sueno', nombre: 'Sueño y fatiga', estado: 'warn', valor: '0.19', href: '/alerts' },
     { id: 'mental', nombre: 'Mental y cognitivo', estado: 'ok', valor: '286 ms', href: '/indicators/rt' },
-    { id: 'inmune', nombre: 'Inmune', estado: 'ok', valor: 'estable', href: '/indicators/hr' },
+    { id: 'inmune', nombre: 'Inmune', estado: 'none', valor: 'sin datos', href: '/camera?paso=4', nota: 'Sin síntomas registrados todavía. Regístralos en el chequeo diario' },
     { id: 'oseo', nombre: 'Óseo', estado: 'none', valor: 'simulado', href: '/simulation', sim: true },
   ],
   calibracion: 64,
-  diaBase: 9,
+  diaBase: 1,
   diasBase: 14,
-  racha: 6,
-  diaMision: 9,
+  racha: 1,
+  diaMision: 1,
 }
 
 export const mockAlerts: AlertItem[] = [
@@ -130,10 +140,10 @@ export const mockAlerts: AlertItem[] = [
 export const mockQueue: QueueMessage[] = [
   { id: 1, pri: 3, name: 'Alerta escalada, fatiga visual', kb: 2.1, sent: 0.97, arrive: null },
   { id: 2, pri: 2, name: 'Tendencia de ritmo en reposo', kb: 3.4, sent: 0, arrive: null },
-  { id: 3, pri: 1, name: 'Resumen clínico del día 9', kb: 5.8, sent: 0, arrive: null },
+  { id: 3, pri: 1, name: 'Resumen clínico del día 1', kb: 5.8, sent: 0, arrive: null },
   { id: 4, pri: 1, name: 'Respaldo de mediciones', kb: 48, sent: 0, arrive: null, big: true },
-  { id: 5, pri: 3, name: 'Alerta de sueño, día 8', kb: 1.9, sent: 1.9, arrive: -10 },
-  { id: 6, pri: 1, name: 'Resumen clínico del día 8', kb: 5.2, sent: 5.2, arrive: 8 },
+  { id: 5, pri: 3, name: 'Alerta de sueño de anoche', kb: 1.9, sent: 1.9, arrive: -10 },
+  { id: 6, pri: 1, name: 'Resumen de la línea base en Tierra', kb: 5.2, sent: 5.2, arrive: 8 },
 ]
 
 export const mockCrew: CrewMember[] = [
@@ -160,6 +170,7 @@ export const environmentProfiles: Record<EnvironmentId, {
 
 // ---------- indicadores (pantalla 5) ----------
 export interface IndicatorDef {
+  tipo: string // nombre de la señal en el back (lista cerrada de api/CLAUDE.md)
   label: string; name: string; sys: string; unit: string
   base: number; sd: number; lo: number; hi: number; dec: number; clin: string
   drift: number; noise: number; src: string; capa: Capa; warn: boolean
@@ -167,25 +178,30 @@ export interface IndicatorDef {
 }
 
 export const indicators: Record<string, IndicatorDef> = {
-  hr: { label: 'Ritmo cardiaco', name: 'Ritmo cardiaco en reposo', sys: 'Cardiovascular', unit: 'lpm', base: 68, sd: 4, lo: 56, hi: 84, dec: 0, clin: '60 a 100', drift: 10, noise: 1.6, src: 'Cámara, rPPG', capa: 'real', warn: true,
+  hr: { tipo: 'hr_reposo', label: 'Ritmo cardiaco', name: 'Ritmo cardiaco en reposo', sys: 'Cardiovascular', unit: 'lpm', base: 68, sd: 4, lo: 56, hi: 84, dec: 0, clin: '60 a 100', drift: 10, noise: 1.6, src: 'Cámara, rPPG', capa: 'real', warn: true,
     head: 'Tu ritmo en reposo lleva 6 días subiendo y ya salió de tu rango normal',
     explain: 'Ningún valor es grave por sí solo, pero la tendencia lenta de 6 días es lo que dispara la alerta amarilla' },
-  perclos: { label: 'PERCLOS', name: 'Fatiga visual (PERCLOS)', sys: 'Sueño y fatiga', unit: '', base: 0.09, sd: 0.03, lo: 0, hi: 0.25, dec: 2, clin: '< 0.15', drift: 0.1, noise: 0.012, src: 'Cámara, face mesh', capa: 'real', warn: true,
+  perclos: { tipo: 'perclos', label: 'PERCLOS', name: 'Fatiga visual (PERCLOS)', sys: 'Sueño y fatiga', unit: '', base: 0.09, sd: 0.03, lo: 0, hi: 0.25, dec: 2, clin: '< 0.15', drift: 0.1, noise: 0.012, src: 'Cámara, face mesh', capa: 'real', warn: true,
     head: 'Tus ojos pasan cerrados el doble de tiempo que en tu normal desde hace 3 sesiones',
     explain: 'PERCLOS arriba de 0.15 se asocia con somnolencia, coincide con menos horas de sueño reportadas' },
-  bp: { label: 'Presión arterial', name: 'Presión sistólica', sys: 'Cardiovascular', unit: 'mmHg', base: 118, sd: 6, lo: 100, hi: 140, dec: 0, clin: '90 a 130', drift: 0, noise: 3, src: 'Autorreportado', capa: 'self', warn: false,
+  bp: { tipo: 'presion_sis', label: 'Presión arterial', name: 'Presión sistólica', sys: 'Cardiovascular', unit: 'mmHg', base: 118, sd: 6, lo: 100, hi: 140, dec: 0, clin: '90 a 130', drift: 0, noise: 3, src: 'Autorreportado', capa: 'self', warn: false,
     head: 'Tu presión se mantiene estable dentro de tu rango normal',
     explain: 'Sin cambios relevantes, sigue registrándola una vez al día para mantener la calibración' },
-  rt: { label: 'Tiempo de reacción', name: 'Tiempo de reacción', sys: 'Mental y cognitivo', unit: 'ms', base: 261, sd: 20, lo: 210, hi: 330, dec: 0, clin: '< 350', drift: 0, noise: 10, src: 'Prueba cognitiva', capa: 'real', warn: false,
+  rt: { tipo: 'reaccion_ms', label: 'Tiempo de reacción', name: 'Tiempo de reacción', sys: 'Mental y cognitivo', unit: 'ms', base: 261, sd: 20, lo: 210, hi: 330, dec: 0, clin: '< 350', drift: 0, noise: 10, src: 'Prueba cognitiva', capa: 'real', warn: false,
     head: 'Tu tiempo de reacción está dentro de lo esperado para ti',
     explain: 'Las 3 primeras sesiones de práctica no cuentan, desde la cuarta tu rendimiento es estable' },
-  mood: { label: 'Ánimo', name: 'Ánimo reportado', sys: 'Mental y cognitivo', unit: 'de 5', base: 3.6, sd: 0.6, lo: 1, hi: 5, dec: 1, clin: 'n/a', drift: 0, noise: 0.35, src: 'Autorreportado', capa: 'self', warn: false,
+  mood: { tipo: 'animo', label: 'Ánimo', name: 'Ánimo reportado', sys: 'Mental y cognitivo', unit: 'de 5', base: 3.6, sd: 0.6, lo: 1, hi: 5, dec: 1, clin: 'n/a', drift: 0, noise: 0.35, src: 'Autorreportado', capa: 'self', warn: false,
     head: 'Tu ánimo se mantiene estable, con un día bajo esta semana',
     explain: 'Un día bajo aislado no genera alerta, solo una tendencia de varios días' },
+  sleep: { tipo: 'sueno_horas', label: 'Sueño', name: 'Horas de sueño', sys: 'Sueño y fatiga', unit: 'h', base: 7.1, sd: 0.5, lo: 4, hi: 9.5, dec: 1, clin: '≥ 6 h', drift: -1.6, noise: 0.25, src: 'Diario de sueño o Apple Watch', capa: 'self', warn: true,
+    head: 'Llevas varias noches durmiendo menos de lo que acostumbras',
+    explain: 'La regla de sueño avisa con 3 noches seguidas de menos de 6 h, aunque cada noche por sí sola no sea grave' },
+  stress: { tipo: 'estres', label: 'Estrés', name: 'Estrés reportado', sys: 'Mental y cognitivo', unit: 'de 10', base: 3, sd: 1.2, lo: 0, hi: 10, dec: 0, clin: 'n/a', drift: 0, noise: 0.8, src: 'Autorreportado', capa: 'self', warn: false,
+    head: 'Tu estrés reportado se mantiene en tu rango',
+    explain: 'Un valor de 8 o más pide atención aunque tu normal todavía se esté aprendiendo' },
 }
 
-// Serie simulada determinista: misma forma cada vez que se abre la pantalla.
-// TODO Back 1: reemplazar por GET /indicators/{tipo}?range=30d
+// Serie de ejemplo determinista, solo para cuando no hay back (con back sale de GET /indicators/{tipo}).
 export function mockSeries(key: string, n: number): number[] {
   const d = indicators[key]
   const rnd = (i: number) => {
@@ -266,7 +282,7 @@ export const systemDetails: Record<string, SystemDetail> = {
     riesgo: 'Sistema inmune alterado',
     hacer: 'Reporta cualquier roncha o herida que tarde en sanar',
     capa: 'self',
-    link: { to: '/manual', label: 'Registrar síntomas' },
+    link: { to: '/camera?paso=4', label: 'Registrar síntomas' },
     metricas: [
       { label: 'Síntomas en piel', value: 'ninguno', base: 'ninguno', estado: 'ok', serie: [0, 0, 0, 0, 0, 0, 0] },
       { label: 'Congestión nasal', value: 'leve', base: 'no', estado: 'ok', serie: [0, 0, 0, 1, 1, 1, 1] },
@@ -281,7 +297,7 @@ export const systemDetails: Record<string, SystemDetail> = {
     capa: 'sim',
     link: { to: '/simulation', label: 'Ver proyección' },
     metricas: [
-      { label: 'Densidad proyectada', value: '−0.3%', base: 'día 9', estado: 'none', serie: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3] },
+      { label: 'Densidad proyectada', value: 'ver proyección', base: 'según días de misión', estado: 'none', serie: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3] },
     ],
   },
 }

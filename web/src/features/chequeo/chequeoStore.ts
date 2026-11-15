@@ -1,137 +1,114 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import type { ResultadoExpresion } from './camara/useExpresion'
 
-// Resultados del chequeo diario, compartidos entre las 4 pantallas del flujo.
-// El chequeo de hoy vive en memoria; el historial se guarda en este dispositivo
-// para calcular "tu normal" aunque el back no esté conectado.
+// Resultados del chequeo diario, compartidos entre los 5 pasos y con Inicio (rutina de hoy).
+// Se guardan por astronauta y por día en este dispositivo, así recargar la página no borra lo hecho.
 
 export type ResultadoCamara = {
   bpm: number | null
-  confianza: number
-  // De dónde salió el ritmo: la cámara, o capturado a mano cuando la cámara no pudo
-  fuenteBpm: 'camara' | 'apple_watch' | 'manual'
-  zona: string | null // zona de la cara que dio la señal más limpia
-  fuenteResp: string | null
+  confianza: number // escala del navegador (0.12 mínima, 0.2 buena)
+  confianzaMotor: number // misma confianza en la escala del motor (0.5 = entra a tu línea base)
   perclos: number | null
   parpadeosMin: number | null
-  // Experimentales: null si la señal no alcanzó
-  rmssd: number | null
-  confianzaVfc: number
-  respRpm: number | null
-  confianzaResp: number
-  // Expresividad vs tu normal (0 a 1), sin etiquetar emociones
-  expresividad: number | null
-  sonrisa: number | null
-  ceno: number | null
-  movimientoCabeza: number | null
+  parpadeoDurMs: number | null
+  cierresLargos: number
+  expresion: ResultadoExpresion | null
+  hrv: number | null // experimental, de POST /rppg/estimate
+  resp: number | null // experimental
+  segundosValidos: number
+  fps: number | null
+  luz: string | null // problema de luz más frecuente, si hubo
   fecha: string
 }
 
 export type ResultadoCognitivo = {
-  reaccionMs: number | null // mediana de los intentos válidos
-  intentos: number
-  anticipaciones: number // tocó antes de tiempo
-  memoria: number | null // casillas recordadas
-  atencion: { aciertos: number; omisiones: number; falsas: number } | null
-  bpmCarga: number | null // ritmo medido por la cámara mientras hacía la prueba
-  perclosCarga: number | null
-  practica: boolean // las primeras 3 sesiones no cuentan para la línea base
+  medianaMs: number
+  mediaMs: number
+  lapsos: number // respuestas de más de 500 ms
+  falsos: number // tocó antes de que apareciera el estímulo
+  estimulos: number
+  practica: boolean // las 3 primeras sesiones no cuentan para tu normal
+  fecha: string
 }
+
+export type ResultadoPresion = { sis: number; dia: number; pulso: number | null; fecha: string } | { omitida: true; fecha: string }
 
 export type Sueno = {
-  acostarse: string // "23:00"
-  latenciaMin: number
-  despertares: number
-  wasoMin: number
-  despertar: string // "06:30"
-  calidad: number // 1 a 5
-  medicamento: boolean
+  acostarse: string; intento: string; latenciaMin: number; despertares: number; wasoMin: number
+  despertar: string; levantarse: string; calidad: number; medicamento: boolean
 }
+export type Sintoma = { clave: string; intensidad: number }
+export type ResultadoRegistro = { animo: number; estres: number; sueno: Sueno | null; sintomas: Sintoma[]; nota: string; fecha: string }
 
-export type Sintoma = { id: string; nombre: string; sistema: string; intensidad: 1 | 2 | 3 }
+export type Paso = 'camara' | 'cognitivo' | 'presion' | 'registro'
+export type EstadoEnvio = 'enviado' | 'pendiente' | 'sin_back'
 
-export type ResultadoRegistro = {
-  presionSis: number | null
-  presionDia: number | null
-  animo: number | null
-  palabra: string
-  estres: number | null
-  sueno: Sueno | null
-  sintomas: Sintoma[]
-}
-
-export type Sesion = {
-  fecha: string
-  bpm: number | null
-  perclos: number | null
-  reaccionMs: number | null
-  memoria: number | null
-  presionSis: number | null
-  presionDia: number | null
-  animo: number | null
-  estres: number | null
-  suenoHoras: number | null
-  sintomas: number
-  cognitivoContado: boolean
-  // Opcionales: las sesiones guardadas antes no los tienen
-  rmssd?: number | null
-  respRpm?: number | null
-  expresividad?: number | null
-}
-
-type EstadoChequeo = {
+type Datos = {
   camara: ResultadoCamara | null
   cognitivo: ResultadoCognitivo | null
+  presion: ResultadoPresion | null
   registro: ResultadoRegistro | null
-  historial: Sesion[]
+  envios: Partial<Record<Paso, EstadoEnvio>>
+  alertas: number[] // alertas que levantó el motor con este chequeo
+}
+
+type EstadoChequeo = Datos & {
+  clave: string // usuario + día
+  cargar: (usuario: string) => void
   guardarCamara: (r: ResultadoCamara) => void
   guardarCognitivo: (r: ResultadoCognitivo) => void
+  guardarPresion: (r: ResultadoPresion) => void
   guardarRegistro: (r: ResultadoRegistro) => void
-  cerrarSesion: (s: Sesion) => void
+  marcarEnvio: (paso: Paso, estado: EstadoEnvio, alertaId?: number | null) => void
   reiniciar: () => void
 }
 
-export const useChequeoStore = create<EstadoChequeo>()(
-  persist(
-    (set) => ({
-      camara: null,
-      cognitivo: null,
-      registro: null,
-      historial: [],
-      guardarCamara: (camara) => set({ camara }),
-      guardarCognitivo: (cognitivo) => set({ cognitivo }),
-      guardarRegistro: (registro) => set({ registro }),
-      cerrarSesion: (s) => set((e) => ({ historial: [...e.historial, s].slice(-60) })),
-      reiniciar: () => set({ camara: null, cognitivo: null, registro: null }),
-    }),
-    {
-      name: 'astro_chequeos',
-      // Solo el historial se queda guardado; el chequeo de hoy empieza limpio al recargar
-      partialize: (e) => ({ historial: e.historial }),
-    },
-  ),
-)
+const VACIO: Datos = { camara: null, cognitivo: null, presion: null, registro: null, envios: {}, alertas: [] }
 
-// Horas dormidas y eficiencia a partir del diario de sueño (Consensus Sleep Diary simplificado)
-export function calcularSueno(s: Sueno) {
-  const minutos = (h: string) => {
-    const [hh, mm] = h.split(':').map(Number)
-    return hh * 60 + mm
-  }
-  let enCama = minutos(s.despertar) - minutos(s.acostarse)
-  if (enCama <= 0) enCama += 24 * 60
-  const dormido = Math.max(0, enCama - s.latenciaMin - s.wasoMin)
-  return { horas: dormido / 60, eficiencia: enCama ? (dormido / enCama) * 100 : 0 }
+export const hoyLocal = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// "Tu normal": media y desviación de las últimas 14 sesiones con dato (mínimo 3)
-export function tuNormal(historial: Sesion[], campo: keyof Sesion) {
-  const valores = historial
-    .map((s) => s[campo])
-    .filter((v): v is number => typeof v === 'number')
-    .slice(-14)
-  if (valores.length < 3) return { media: null, sd: null, n: valores.length }
-  const media = valores.reduce((a, b) => a + b, 0) / valores.length
-  const sd = Math.sqrt(valores.reduce((a, b) => a + (b - media) ** 2, 0) / valores.length)
-  return { media, sd, n: valores.length }
+const leer = (clave: string): Datos => {
+  try {
+    const raw = localStorage.getItem(clave)
+    return raw ? { ...VACIO, ...(JSON.parse(raw) as Datos) } : VACIO
+  } catch {
+    return VACIO
+  }
+}
+
+export const useChequeoStore = create<EstadoChequeo>()((set, get) => {
+  const guardar = (parcial: Partial<Datos>) => {
+    set(parcial)
+    const { camara, cognitivo, presion, registro, envios, alertas, clave } = get()
+    try { localStorage.setItem(clave, JSON.stringify({ camara, cognitivo, presion, registro, envios, alertas })) } catch { /* sin storage */ }
+  }
+  return {
+    ...VACIO,
+    clave: '',
+    cargar: (usuario) => {
+      const clave = `astro_chequeo_${usuario}_${hoyLocal()}`
+      if (clave === get().clave) return
+      set({ ...leer(clave), clave })
+    },
+    guardarCamara: (camara) => guardar({ camara }),
+    guardarCognitivo: (cognitivo) => guardar({ cognitivo }),
+    guardarPresion: (presion) => guardar({ presion }),
+    guardarRegistro: (registro) => guardar({ registro }),
+    marcarEnvio: (paso, estado, alertaId) => guardar({
+      envios: { ...get().envios, [paso]: estado },
+      alertas: alertaId != null && !get().alertas.includes(alertaId) ? [...get().alertas, alertaId] : get().alertas,
+    }),
+    reiniciar: () => guardar({ ...VACIO }),
+  }
+})
+
+// Sesiones de la prueba cognitiva hechas por este astronauta (las 3 primeras son de práctica)
+export function sesionesCognitivas(usuario: string): number {
+  try { return Number(localStorage.getItem(`astro_pvt_${usuario}`) ?? '0') || 0 } catch { return 0 }
+}
+export function sumarSesionCognitiva(usuario: string) {
+  try { localStorage.setItem(`astro_pvt_${usuario}`, String(sesionesCognitivas(usuario) + 1)) } catch { /* sin storage */ }
 }

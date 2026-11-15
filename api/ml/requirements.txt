@@ -1,0 +1,2 @@
+# Solo para los scripts de ml/ (la API no los necesita)
+opencv-python-headless>=4.9

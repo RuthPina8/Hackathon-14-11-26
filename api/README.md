@@ -15,7 +15,15 @@ pytest                              # antes de cada merge a dev
 ```
 
 - Docs interactivas: http://localhost:8000/docs
-- La API **arranca sin Postgres**: la parte de Back 2 (alertas, cola, entorno, demo) vive en memoria por ahora.
+- La API **arranca sin Postgres**: sin `DATABASE_URL` todo vive en memoria y se pierde al reiniciar.
+- **Con PostgreSQL** (`DATABASE_URL` en `.env`): al arrancar crea las tablas, siembra la tripulación y los entornos, y
+  restaura mediciones, líneas base, alertas, fichas y pares de validación. `GET /health` dice `"base_de_datos": true`.
+
+```powershell
+psql -U postgres -c "CREATE DATABASE astrohealth;"   # una vez
+python -m app.seed --dias 30 --fichas-demo           # llena la base para la demo (dato de demo marcado)
+python -m app.seed --reiniciar --dias 30             # vuelve a cargar lo simulado; lo real del equipo se queda
+```
 
 ## Lo que ya funciona (Back 2)
 

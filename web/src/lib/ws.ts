@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { wsUrl } from './api'
 
 // Cliente de WebSocket hacia /ws (dueño del backend: Back 2).
 // Mientras el back no esté corriendo, el hook intenta conectar, falla en silencio
@@ -15,7 +16,7 @@ export function useWebSocket() {
     let cancelled = false
 
     function connect() {
-      const url = import.meta.env.VITE_WS_URL
+      const url = wsUrl()
       if (!url) return
 
       setConnection('connecting')

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, ScanFace, LineChart, Bell, User, Orbit, RadioTower, Users, LogOut } from 'lucide-react'
+import { Home, ScanFace, LineChart, Bell, User, Orbit, RadioTower, Users, LogOut, TrendingUp, FileHeart, ShieldCheck } from 'lucide-react'
 import { useSession } from '../../store/useSession'
 import { useMyAlerts } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
@@ -10,8 +10,11 @@ interface Item { to: string; label: string; icon: typeof Home; badge?: boolean; 
 const main: Item[] = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
   { to: '/camera', label: 'Chequeo diario', icon: ScanFace },
-  { to: '/indicators/hr', label: 'Indicadores', icon: LineChart },
+  { to: '/indicators', label: 'Indicadores', icon: LineChart },
   { to: '/alerts', label: 'Alertas', icon: Bell, badge: true },
+  { to: '/progress', label: 'Mi evolución', icon: TrendingUp },
+  { to: '/record', label: 'Ficha médica', icon: FileHeart },
+  { to: '/reliability', label: 'Confiabilidad cámara', icon: ShieldCheck },
   { to: '/profile', label: 'Perfil y calibración', icon: User },
 ]
 const sim: Item[] = [
@@ -90,7 +93,7 @@ export default function Sidebar() {
           </span>
         </button>
         <p className="k">Capas de datos</p>
-        <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] bg-[#5CC8F5]" />Real, medido por cámara</span>
+        <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] bg-[#5CC8F5]" />Real, medido en vivo</span>
         <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] bg-[#B7A4FF]" />Autorreportado</span>
         <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] border-[1.5px] border-dashed border-[#93A0B8]" />Simulado</span>
         <div className="pt-2"><ConnectionStatus /></div>

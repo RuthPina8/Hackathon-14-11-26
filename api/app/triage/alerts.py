@@ -102,6 +102,10 @@ async def handle_anomalies(
     if existente:
         subio = rules.max_nivel(existente.nivel, decision.nivel) != existente.nivel
         cambios = {
+            # La señal principal sigue a la anomalía de esta lectura: así el título de la alerta
+            # (que sale de `senal`) coincide con `que_cambio` y `cuanto`, que también se actualizan.
+            # Las señales anteriores siguen en store.senales, así que resolver() la encuentra igual.
+            "senal": decision.senal,
             "nivel": rules.max_nivel(existente.nivel, decision.nivel),
             "factores": decision.factores,
             "cuanto": decision.cuanto,

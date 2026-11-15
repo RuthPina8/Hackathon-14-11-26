@@ -19,8 +19,9 @@ DIA_ESCALAR_A3 = 29
 
 async def correr_dia(dia_mision: int) -> list[str]:
     if dia_mision <= 1:
-        # /demo/reset de Back 2 limpia alertas y cola; aquí se limpia lo de Back 1
-        almacen.reset()
+        # /demo/reset de Back 2 limpia alertas y cola; aquí se borra lo que generó el simulador.
+        # Las mediciones reales del equipo (línea base en Tierra) se conservan.
+        almacen.reiniciar_demo()
         measurements.reset()
     filas = dia(dia_mision)
     for f in filas:

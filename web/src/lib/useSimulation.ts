@@ -9,14 +9,14 @@ export function useSimulation(env: string, day: number, enabled: boolean) {
   const [full, setFull] = useState<ServerSimulation | null>(null)
 
   useEffect(() => {
-    if (!enabled) { setFull(null); return }
+    if (!enabled) return
     let vivo = true
     void api.get<ServerSimulation>(`/simulation?env=${env}&day=180`).then((r) => { if (vivo) setFull(r) })
     return () => { vivo = false }
   }, [env, enabled])
 
   useEffect(() => {
-    if (!enabled) { setNow(null); return }
+    if (!enabled) return
     let vivo = true
     const t = setTimeout(() => {
       void api.get<ServerSimulation>(`/simulation?env=${env}&day=${day}`).then((r) => { if (vivo) setNow(r) })
@@ -24,5 +24,9 @@ export function useSimulation(env: string, day: number, enabled: boolean) {
     return () => { vivo = false; clearTimeout(t) }
   }, [env, day, enabled])
 
-  return { now: now?.entorno === env ? now : null, full: full?.entorno === env ? full : null }
+  // Sin back, o con una respuesta de otro entorno, la pantalla usa su cálculo propio
+  return {
+    now: enabled && now?.entorno === env ? now : null,
+    full: enabled && full?.entorno === env ? full : null,
+  }
 }

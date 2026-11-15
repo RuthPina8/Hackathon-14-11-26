@@ -1,301 +1,89 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import StepBar from './components/StepBar'
-import { CONFIANZA_BUENA } from './camara/useRppg'
-import { calcularSueno, tuNormal, useChequeoStore, type Sesion } from './chequeoStore'
-import { api, type MedicionApi } from '../../lib/api'
+import { useChequeoStore, type EstadoEnvio } from './chequeoStore'
 import { useAppStore } from '../../store/useAppStore'
+import { useMyAlerts } from '../../store/selectors'
+import ReadinessGauge from '../../components/ui/ReadinessRing'
 
-type Props = { onAtras: () => void; onIndicadores: () => void; onInicio: () => void }
-
-type Fila = {
-  nombre: string
-  hoy: string
-  normal: string
-  capa: 'real' | 'self'
-  estado: 'ok' | 'warn' | 'none'
+// Paso 5: lo que se midió hoy, si llegó al motor y qué detectó.
+const envioTxt: Record<EstadoEnvio, [string, string]> = {
+  enviado: ['Analizado', 'text-[#8FF0C4]'],
+  pendiente: ['En cola, sin conexión', 'text-warn'],
+  sin_back: ['Solo en este equipo', 'text-muted'],
 }
 
-const COLOR = { ok: '#3DDC97', warn: '#F5B544', none: '#93A0B8' }
-
-// Racha: días seguidos con chequeo, contando hoy
-function racha(historial: Sesion[]) {
-  const dias = new Set(historial.map((s) => s.fecha.slice(0, 10)))
-  let n = 0
-  const d = new Date()
-  while (dias.has(d.toISOString().slice(0, 10))) {
-    n++
-    d.setDate(d.getDate() - 1)
-  }
-  return n
-}
-
-export default function Resumen({ onAtras, onIndicadores, onInicio }: Props) {
-  const { camara, cognitivo, registro, historial, cerrarSesion } = useChequeoStore()
+export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => void; onSalir: () => void }) {
+  const { camara, cognitivo, presion, registro, envios, alertas } = useChequeoStore()
   const status = useAppStore((s) => s.status)
-  const conexion = useAppStore((s) => s.connection)
-  const syncFromApi = useAppStore((s) => s.syncFromApi)
-  const conectado = conexion === 'connected'
+  const statusReal = useAppStore((s) => s.statusReal)
+  const pendientes = useAppStore((s) => s.pendientes.length)
+  const activas = useMyAlerts().filter((a) => a.estado === 'activa')
+  const nuevas = activas.filter((a) => alertas.includes(Number(a.id)))
 
-  // "Tu normal" se calcula con las sesiones anteriores a hoy
-  const [previas] = useState(historial)
-  const [envio, setEnvio] = useState<'enviando' | 'guardado' | 'sin_back'>('enviando')
-  const [nota, setNota] = useState('')
-  const [notaEnviada, setNotaEnviada] = useState(false)
-  const yaGuardado = useRef(false)
-
-  const sueno = registro?.sueno ? calcularSueno(registro.sueno) : null
-
-  // Mediciones de hoy con su capa, fuente y confianza (regla de honestidad de datos)
-  const mediciones = useMemo<MedicionApi[]>(() => {
-    const m: MedicionApi[] = []
-    if (camara?.bpm != null) {
-      // Apple Watch cuenta como medición real; tomado a mano en la muñeca es autorreporte
-      const f = camara.fuenteBpm
-      m.push({
-        tipo: 'hr_reposo', valor: camara.bpm, unidad: 'lpm',
-        capa: f === 'manual' ? 'auto' : 'real', fuente: f,
-        confianza: f === 'camara' ? camara.confianza : f === 'apple_watch' ? 0.9 : 0.7,
-        detalle: f === 'camara' ? { zona: camara.zona } : undefined,
-      })
-    }
-    if (camara?.perclos != null) m.push({ tipo: 'perclos', valor: camara.perclos, unidad: 'fraccion', capa: 'real', fuente: 'camara', confianza: 0.8 })
-    if (camara?.parpadeosMin != null) m.push({ tipo: 'parpadeo_min', valor: camara.parpadeosMin, unidad: '/min', capa: 'real', fuente: 'camara', confianza: 0.8 })
-    // Experimentales: van con su confianza real y marcados, el back no levanta alertas con ellas
-    if (camara?.rmssd != null) m.push({ tipo: 'hrv_rmssd', valor: camara.rmssd, unidad: 'ms', capa: 'real', fuente: 'camara', confianza: camara.confianzaVfc, detalle: { experimental: true } })
-    if (camara?.respRpm != null) m.push({ tipo: 'resp_rpm', valor: camara.respRpm, unidad: 'resp/min', capa: 'real', fuente: 'camara', confianza: camara.confianzaResp, detalle: { experimental: true, metodo: camara.fuenteResp } })
-    if (camara?.expresividad != null) {
-      m.push({ tipo: 'expresividad', valor: camara.expresividad, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
-      if (camara.sonrisa != null) m.push({ tipo: 'sonrisa_media', valor: camara.sonrisa, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
-      if (camara.ceno != null) m.push({ tipo: 'ceno_medio', valor: camara.ceno, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
-      if (camara.movimientoCabeza != null) m.push({ tipo: 'movimiento_cabeza', valor: camara.movimientoCabeza, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
-    }
-    if (cognitivo?.reaccionMs != null)
-      m.push({
-        tipo: 'reaccion_ms', valor: cognitivo.reaccionMs, unidad: 'ms', capa: 'real', fuente: 'prueba',
-        confianza: cognitivo.practica ? 0.3 : 0.9,
-        detalle: { practica: cognitivo.practica, intentos: cognitivo.intentos, anticipaciones: cognitivo.anticipaciones, memoria: cognitivo.memoria },
-      })
-    if (cognitivo?.atencion) m.push({ tipo: 'lapsos', valor: cognitivo.atencion.omisiones, unidad: 'n', capa: 'real', fuente: 'prueba', confianza: cognitivo.practica ? 0.3 : 0.9, detalle: cognitivo.atencion })
-    if (registro?.presionSis != null) m.push({ tipo: 'presion_sis', valor: registro.presionSis, unidad: 'mmHg', capa: 'auto', fuente: 'manual', confianza: 1 })
-    if (registro?.presionDia != null) m.push({ tipo: 'presion_dia', valor: registro.presionDia, unidad: 'mmHg', capa: 'auto', fuente: 'manual', confianza: 1 })
-    if (registro?.animo != null) m.push({ tipo: 'animo', valor: registro.animo, unidad: '1-5', capa: 'auto', fuente: 'manual', confianza: 1, detalle: { palabra: registro.palabra } })
-    if (registro?.estres != null) m.push({ tipo: 'estres', valor: registro.estres, unidad: '0-10', capa: 'auto', fuente: 'manual', confianza: 1 })
-    if (registro?.sueno && sueno) {
-      const s = registro.sueno
-      m.push({ tipo: 'sueno_horas', valor: Number(sueno.horas.toFixed(2)), unidad: 'h', capa: 'auto', fuente: 'manual', confianza: 1, detalle: { ...s } })
-      m.push({ tipo: 'sueno_eficiencia_pct', valor: Math.round(sueno.eficiencia), unidad: '%', capa: 'auto', fuente: 'manual', confianza: 1 })
-      m.push({ tipo: 'sueno_latencia_min', valor: s.latenciaMin, unidad: 'min', capa: 'auto', fuente: 'manual', confianza: 1 })
-      m.push({ tipo: 'sueno_waso_min', valor: s.wasoMin, unidad: 'min', capa: 'auto', fuente: 'manual', confianza: 1 })
-      m.push({ tipo: 'sueno_despertares', valor: s.despertares, unidad: 'n', capa: 'auto', fuente: 'manual', confianza: 1 })
-      m.push({ tipo: 'sueno_calidad', valor: s.calidad, unidad: '1-5', capa: 'auto', fuente: 'manual', confianza: 1 })
-      m.push({ tipo: 'sueno_medicamento', valor: s.medicamento ? 1 : 0, unidad: '0/1', capa: 'auto', fuente: 'manual', confianza: 1 })
-    }
-    if (registro) m.push({ tipo: 'sintomas', valor: registro.sintomas.length, unidad: 'n', capa: 'auto', fuente: 'manual', confianza: 1, detalle: { lista: registro.sintomas } })
-    return m
-  }, [camara, cognitivo, registro, sueno])
-
-  // Se guarda una sola vez: en el historial de este dispositivo y en el back si está conectado
-  useEffect(() => {
-    if (yaGuardado.current) return
-    yaGuardado.current = true
-    cerrarSesion({
-      fecha: new Date().toISOString(),
-      bpm: camara?.bpm ?? null,
-      perclos: camara?.perclos ?? null,
-      reaccionMs: cognitivo?.reaccionMs ?? null,
-      memoria: cognitivo?.memoria ?? null,
-      presionSis: registro?.presionSis ?? null,
-      presionDia: registro?.presionDia ?? null,
-      animo: registro?.animo ?? null,
-      estres: registro?.estres ?? null,
-      suenoHoras: sueno ? Number(sueno.horas.toFixed(2)) : null,
-      sintomas: registro?.sintomas.length ?? 0,
-      cognitivoContado: Boolean(cognitivo && !cognitivo.practica),
-      rmssd: camara?.rmssd ?? null,
-      respRpm: camara?.respRpm ?? null,
-      expresividad: camara?.expresividad ?? null,
-    })
-    if (!mediciones.length) {
-      setEnvio('sin_back')
-      return
-    }
-    void api.guardarMediciones(mediciones).then((r) => {
-      setEnvio(r ? 'guardado' : 'sin_back')
-      if (r) void syncFromApi()
-    })
-  }, [mediciones, camara, cognitivo, registro, sueno, cerrarSesion, syncFromApi])
-
-  // Compara contra tu normal (z de 2 o más) o contra el rango clínico si todavía no hay normal
-  const fila = (nombre: string, valor: number | null | undefined, campo: keyof Sesion, fmt: (v: number) => string, capa: Fila['capa'], clinico?: [number, number], unidadNormal = ''): Fila => {
-    const n = tuNormal(previas, campo)
-    if (valor == null) return { nombre, hoy: 'sin dato', normal: n.media != null ? fmt(n.media) : 'aprendiendo', capa, estado: 'none' }
-    let estado: Fila['estado'] = 'ok'
-    if (n.media != null && n.sd) estado = Math.abs((valor - n.media) / n.sd) >= 2 ? 'warn' : 'ok'
-    else if (clinico) estado = valor < clinico[0] || valor > clinico[1] ? 'warn' : 'ok'
-    const normal = n.media != null ? `${fmt(n.media)}${n.sd ? ` ± ${fmt(n.sd)}` : ''}${unidadNormal}` : `aprendiendo (${n.n} de 3)`
-    return { nombre, hoy: fmt(valor), normal, capa, estado }
-  }
-
-  const filas: Fila[] = [
-    fila('Ritmo cardiaco en reposo', camara?.bpm, 'bpm', (v) => `${Math.round(v)} lpm`, camara?.fuenteBpm === 'manual' ? 'self' : 'real', [60, 100]),
-    fila('Fatiga visual (PERCLOS)', camara?.perclos, 'perclos', (v) => v.toFixed(2), 'real', [0, 0.15]),
-    fila('VFC, RMSSD (experimental)', camara?.rmssd, 'rmssd', (v) => `${Math.round(v)} ms`, 'real'),
-    fila('Respiración (experimental)', camara?.respRpm, 'respRpm', (v) => `${Math.round(v)} resp/min`, 'real', [12, 20]),
-    fila('Expresividad', camara?.expresividad, 'expresividad', (v) => `${Math.round(v * 100)} de 100`, 'real'),
-    fila('Tiempo de reacción', cognitivo?.reaccionMs, 'reaccionMs', (v) => `${Math.round(v)} ms`, 'real'),
-    fila('Memoria corta', cognitivo?.memoria, 'memoria', (v) => `${Math.round(v)} casillas`, 'real'),
-    fila('Presión sistólica', registro?.presionSis, 'presionSis', (v) => `${Math.round(v)} mmHg`, 'self', [90, 140]),
-    fila('Horas de sueño', sueno?.horas, 'suenoHoras', (v) => `${v.toFixed(1)} h`, 'self', [6, 12]),
-    fila('Ánimo', registro?.animo, 'animo', (v) => `${v.toFixed(v % 1 ? 1 : 0)} de 5`, 'self', [3, 5]),
-    fila('Estrés', registro?.estres, 'estres', (v) => `${v.toFixed(v % 1 ? 1 : 0)} de 10`, 'self', [0, 6]),
+  const filas: { paso: number; nombre: string; hecho: boolean; valor: string; envio?: EstadoEnvio; capa: 'real' | 'self' }[] = [
+    { paso: 0, nombre: 'Cámara', hecho: !!camara, capa: 'real', envio: envios.camara,
+      valor: camara ? `${camara.bpm ?? '--'} lpm · PERCLOS ${camara.perclos?.toFixed(2) ?? '--'} · ${camara.segundosValidos} s útiles` : 'Pendiente' },
+    { paso: 1, nombre: 'Prueba de atención', hecho: !!cognitivo, capa: 'real', envio: envios.cognitivo,
+      valor: cognitivo ? `${Math.round(cognitivo.medianaMs)} ms · ${cognitivo.lapsos} lapsos${cognitivo.practica ? ' · práctica' : ''}` : 'Pendiente' },
+    { paso: 2, nombre: 'Presión', hecho: !!presion, capa: 'self', envio: envios.presion,
+      valor: presion ? ('omitida' in presion ? 'Sin brazalete hoy' : `${presion.sis}/${presion.dia} mmHg`) : 'Pendiente' },
+    { paso: 3, nombre: 'Ánimo, sueño y síntomas', hecho: !!registro, capa: 'self', envio: envios.registro,
+      valor: registro ? `Ánimo ${registro.animo}/5 · estrés ${registro.estres}/10 · ${registro.sintomas.length} síntomas` : 'Pendiente' },
   ]
-  const nSintomas = registro?.sintomas.length ?? 0
-  filas.push({ nombre: 'Síntomas', hoy: nSintomas ? `${nSintomas}: ${registro?.sintomas.map((s) => s.nombre.toLowerCase()).join(', ')}` : 'ninguno', normal: '—', capa: 'self', estado: nSintomas >= 2 ? 'warn' : 'ok' })
-
-  // Recomendaciones según lo medido hoy
-  const tareas: { titulo: string; motivo: string; nivel: 'warn' | 'info' }[] = []
-  if (camara?.perclos != null && camara.perclos > 0.15) tareas.push({ titulo: 'Descansa 20 min de pantallas', motivo: `PERCLOS de ${camara.perclos.toFixed(2)}, arriba del umbral de fatiga`, nivel: 'warn' })
-  if (sueno && sueno.horas < 6) tareas.push({ titulo: 'Prioriza dormir esta noche', motivo: `Dormiste ${sueno.horas.toFixed(1)} h, menos de 6 h es deuda de sueño`, nivel: 'warn' })
-  if (registro?.presionSis != null && (registro.presionSis >= 140 || (registro.presionDia ?? 0) >= 90)) tareas.push({ titulo: 'Repite la presión en 5 minutos', motivo: 'Salió arriba del rango clínico de referencia', nivel: 'warn' })
-  if (registro?.estres != null && registro.estres >= 7) tareas.push({ titulo: 'Haz 5 minutos de respiración lenta', motivo: `Reportaste estrés de ${registro.estres} de 10`, nivel: 'warn' })
-  if (registro?.sintomas.some((s) => s.id === 'fiebre')) tareas.push({ titulo: 'Tómate la temperatura', motivo: 'Reportaste fiebre o escalofríos', nivel: 'warn' })
-  if (camara && camara.bpm == null) tareas.push({ titulo: 'Repite el chequeo con cámara con mejor luz', motivo: 'Hoy no hubo señal clara de ritmo cardiaco', nivel: 'info' })
-  if (!tareas.some((t) => t.nivel === 'warn')) tareas.unshift({ titulo: 'Todo dentro de tu normal', motivo: 'Sigue con tu rutina de hoy', nivel: 'info' })
-
-  const enviarNota = async () => {
-    const r = await api.encolar({
-      tipo: 'reporte',
-      prioridad: 3,
-      tamano: Math.max(1.5, mediciones.length * 0.25),
-      payload: { titulo: 'Resumen clínico del chequeo de hoy', nota: nota.trim(), mediciones: mediciones.map(({ tipo, valor, capa }) => ({ tipo, valor, capa })) },
-    })
-    if (r) setNotaEnviada(true)
-  }
-
-  const dias = racha([...previas, { fecha: new Date().toISOString() } as Sesion])
-  const bajaConfianzaRitmo = camara?.bpm != null && camara.confianza < CONFIANZA_BUENA
+  const hechos = filas.filter((f) => f.hecho).length
 
   return (
     <div className="flex flex-col gap-[22px]">
       <header className="flex flex-col gap-[18px]">
         <div>
-          <p className="k">Chequeo diario · paso 5 de 5</p>
-          <h1 className="h1">Resumen de hoy</h1>
+          <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 5 de 5</p>
+          <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Resumen de hoy</h1>
         </div>
         <StepBar actual={4} />
       </header>
 
       <div className="flex flex-wrap gap-5">
-        <section className="card flex min-w-0 flex-[2_1_380px] items-center gap-[22px] p-[26px]" aria-labelledby="done">
-          <span className="grid h-[72px] w-[72px] flex-none animate-pop place-items-center rounded-[22px] border border-[#1E5A43] bg-[#0E2A20]">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3DDC97" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
-          </span>
-          <div className="flex flex-col gap-1.5">
-            <h2 id="done" className="m-0 font-display text-[22px] font-semibold">Chequeo completo</h2>
-            <p className="m-0 text-sm leading-normal text-soft">
-              Racha de <strong className="num text-ink">{dias} {dias === 1 ? 'día' : 'días'}</strong>.{' '}
-              {envio === 'enviando' && 'Guardando…'}
-              {envio === 'guardado' && `Se guardaron ${mediciones.length} mediciones a bordo y en el sistema`}
-              {envio === 'sin_back' && 'Guardado en este dispositivo, se enviará cuando haya conexión con el back'}
-            </p>
-          </div>
-        </section>
-        <section className="card flex min-w-0 flex-[1_1_260px] flex-col gap-2.5" aria-labelledby="ready">
-          <h2 id="ready" className="k">Disposición para la misión</h2>
-          {conectado ? (
-            <>
-              <p className="big text-[40px]" style={{ color: status.readiness >= 85 ? '#3DDC97' : status.readiness >= 65 ? '#F5B544' : '#FF6B7A' }}>{status.readiness}</p>
-              <div className="h-2 rounded bg-line"><div className="h-full rounded transition-all duration-700" style={{ width: `${status.readiness}%`, background: status.readiness >= 85 ? '#3DDC97' : status.readiness >= 65 ? '#F5B544' : '#FF6B7A' }} /></div>
-            </>
-          ) : (
-            <p className="m-0 text-sm text-soft">Se calcula cuando se conecte el back</p>
-          )}
-        </section>
-        <section className="card flex min-w-0 flex-[1_1_260px] flex-col gap-2.5" aria-labelledby="calib">
-          <h2 id="calib" className="k">Calibración del modelo</h2>
-          {conectado ? (
-            <>
-              <p className="big text-[40px] text-accent">{status.calibracion}%</p>
-              <div className="h-2 rounded bg-line"><div className="h-full rounded bg-accent transition-all duration-700" style={{ width: `${status.calibracion}%` }} /></div>
-            </>
-          ) : (
-            <p className="m-0 text-sm text-soft">{previas.length + 1} chequeos registrados en este dispositivo</p>
-          )}
-        </section>
-      </div>
-
-      <section className="card overflow-hidden p-0" aria-labelledby="med">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 px-[18px] pb-3 pt-5">
-          <h2 id="med" className="h2">Lo que se midió hoy</h2>
-          <span className="text-[13px] text-soft">Comparado contra tu propio normal</span>
-        </div>
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px]">
-            <div className="trow min-h-[38px]" style={{ gridTemplateColumns: '14px 2fr 1.4fr 1.2fr 0.8fr' }}>
-              <span />
-              <span className="k">Indicador</span>
-              <span className="k">Hoy</span>
-              <span className="k">Tu normal</span>
-              <span className="k">Capa</span>
-            </div>
-            {filas.map((f) => (
-              <div key={f.nombre} className="trow" style={{ gridTemplateColumns: '14px 2fr 1.4fr 1.2fr 0.8fr' }}>
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR[f.estado] }} />
-                <span>{f.nombre}</span>
-                <span className="num font-bold" style={{ color: f.estado === 'warn' ? '#F5B544' : f.estado === 'none' ? '#93A0B8' : '#E8ECF4' }}>
-                  {f.hoy}
-                  {f.nombre.startsWith('Ritmo') && bajaConfianzaRitmo && <span className="ml-2 text-[11px] font-semibold text-warn">baja confianza</span>}
-                </span>
-                <span className="num text-soft">{f.normal}</span>
-                <span><span className={`tag ${f.capa === 'real' ? 'real' : 'self'}`}>{f.capa === 'real' ? 'Real' : 'Auto'}</span></span>
+        <section className="flex min-w-0 flex-[3_1_480px] flex-col gap-1 rounded-2xl border border-line bg-panel p-[22px]">
+          <h2 className="m-0 mb-2 font-display text-base font-semibold">{hechos} de 4 pasos hechos</h2>
+          {filas.map((f) => (
+            <div key={f.nombre} className="flex min-h-14 items-center gap-3 border-b border-line py-2 last:border-b-0">
+              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] text-xs font-bold ${f.hecho ? 'bg-ok text-[#04121C]' : 'border-2 border-line-strong'}`}>{f.hecho ? '✓' : ''}</span>
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-sm font-semibold">{f.nombre} <span className={`tag ${f.capa}`}>{f.capa === 'real' ? 'Real' : 'Auto'}</span></p>
+                <p className="m-0 mt-0.5 font-mono text-[13px] text-soft">{f.valor}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <div className="flex flex-wrap gap-5">
-        <section className="card flex min-w-0 flex-[1_1_420px] flex-col gap-3" aria-labelledby="hacer">
-          <h2 id="hacer" className="h2">Qué hacer hoy</h2>
-          {tareas.map((t) => (
-            <div
-              key={t.titulo}
-              className={`flex items-center gap-3.5 rounded-[14px] px-4 py-3.5 ${t.nivel === 'warn' ? 'border border-[#5C4A1C] bg-[#241D0D]' : 'border border-line bg-nav'}`}
-            >
-              <span className={`h-2.5 w-2.5 flex-none rounded-full ${t.nivel === 'warn' ? 'bg-warn' : 'bg-accent'}`} />
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <strong className="text-[15px]">{t.titulo}</strong>
-                <span className={`text-[13px] ${t.nivel === 'warn' ? 'text-[#DCCB9F]' : 'text-soft'}`}>{t.motivo}</span>
-              </span>
+              {f.envio && <span className={`text-xs font-semibold ${envioTxt[f.envio][1]}`}>{envioTxt[f.envio][0]}</span>}
+              <button type="button" onClick={() => onIrA(f.paso)} className="min-h-9 rounded-lg px-3 text-xs font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-nav">{f.hecho ? 'Rehacer' : 'Hacer'}</button>
             </div>
           ))}
+          {pendientes > 0 && <p className="m-0 mt-2 text-xs text-warn">{pendientes} envío(s) esperan conexión con la base; se mandan solos al reconectar.</p>}
         </section>
-        <section className="card flex min-w-0 flex-[1_1_300px] flex-col gap-3" aria-labelledby="nota">
-          <h2 id="nota" className="h2">Nota para el flight surgeon</h2>
-          <label className="flex flex-col gap-2 text-[13px] font-medium text-soft">
-            Opcional, viaja con el resumen hacia Tierra
-            <textarea
-              rows={3}
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              placeholder="Ej. dormí mal por ruido en el módulo"
-              className="box-border w-full resize-y rounded-xl border border-line-strong bg-nav px-3.5 py-3 text-[15px] text-ink"
-            />
-          </label>
-          {conectado ? (
-            <button type="button" className="btn sec self-start" onClick={enviarNota} disabled={notaEnviada}>
-              {notaEnviada ? 'En la cola hacia Tierra' : 'Enviar resumen a Tierra'}
-            </button>
-          ) : (
-            <p className="m-0 text-xs text-muted">Se podrá enviar cuando haya conexión con el back</p>
-          )}
-        </section>
-      </div>
 
-      <div className="flex flex-wrap justify-end gap-2.5">
-        <button type="button" className="btn sec" onClick={onAtras}>Atrás</button>
-        <button type="button" className="btn sec" onClick={onIndicadores}>Ver indicadores</button>
-        <button type="button" className="btn pri" onClick={onInicio}>Volver al inicio</button>
+        <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-4">
+          <section className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-panel p-[22px]">
+            <ReadinessGauge value={statusReal && !status.nMediciones ? null : status.readiness} ayer={status.ayer} />
+            <p className="m-0 text-center text-[13px] text-soft">
+              {statusReal ? `Calculado por el motor con ${status.nMediciones ?? 0} mediciones · calibración ${status.calibracion}%` : 'Sin conexión con el motor: valor de ejemplo'}
+            </p>
+          </section>
+          <section className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-[22px]">
+            <h2 className="m-0 font-display text-base font-semibold">Qué detectó el motor</h2>
+            {nuevas.length > 0 ? (
+              nuevas.map((a) => (
+                <Link key={a.id} to={`/alerts?id=${a.id}`} className={`rounded-xl border p-3 text-sm no-underline ${a.nivel === 'crit' ? 'border-crit text-[#FFB8BF]' : 'border-warn text-[#F5D79A]'}`}>
+                  <strong>{a.titulo}</strong> · {a.resumen}
+                </Link>
+              ))
+            ) : (
+              <p className="m-0 text-sm text-soft">{statusReal ? 'Nada fuera de tu normal con el chequeo de hoy.' : 'El análisis aparece cuando el motor está conectado.'}</p>
+            )}
+            {activas.length > nuevas.length && <Link to="/alerts" className="text-[13px] font-semibold">Ver {activas.length} alertas activas</Link>}
+          </section>
+          <div className="flex flex-wrap justify-end gap-2.5">
+            <button type="button" onClick={() => onIrA(3)} className="min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Atrás</button>
+            <button type="button" onClick={onSalir} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Terminar e ir a Inicio</button>
+          </div>
+        </div>
       </div>
     </div>
   )

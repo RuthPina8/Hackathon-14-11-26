@@ -6,12 +6,16 @@ import {
 } from './mockData'
 import { api } from '../lib/api'
 import {
-  adaptAlert, adaptQueue, adaptStatus, astroNumero, SEMAFORO_BACK, SISTEMA_BACK,
-  type ServerStatus, type ServerAlert, type ServerAlertList, type ServerDemo, type ServerEnvironment, type ServerQueueMessage, type ServerQueueState,
+  adaptAlert, adaptQueue, astroNumero,
+  type ServerAlert, type ServerAlertList, type ServerDemo, type ServerEnvironment, type ServerQueueMessage, type ServerQueueState,
 } from '../lib/adapters'
 import { useSession } from './useSession'
+import {
+  adaptCrew, adaptStatus, TIPOS_METRICAS,
+  type MedicionEnvio, type GuardadoOut, type ServerCrewMember, type ServerIndicator, type ServerStatus,
+} from '../lib/back1'
 
-// Estado global de Front 2. Arranca con los mocks del rediseño v2 y se actualiza
+// Estado global. Arranca con los mocks del rediseño v2 y se actualiza
 // con los eventos del WebSocket (lib/ws.ts): measurement_added, status_changed,
 // calibration_changed, alert_raised, alert_updated, queue_updated, environment_changed, demo_tick.
 // Con el back de Back 2 conectado (server = true), alertas y cola salen de él;
@@ -54,12 +58,13 @@ interface AppState {
   crew: CrewMember[]
   environment: EnvironmentId
   connection: ConnectionState
-  watch: 'idle' | 'busy' | 'on'
   demo: boolean
   demoSpeed: DemoSpeed
   redCount: number
   server: boolean // true cuando alertas y cola vienen del back
-  statusReal: boolean // true cuando el estado, la línea base y los indicadores vienen del motor de Back 1 (hoy son ejemplos)
+  statusReal: boolean // true cuando el estado, la línea base y los indicadores vienen del motor de Back 1
+  indicadores: Record<string, ServerIndicator> // series del motor para el explorador del cuerpo
+  pendientes: MedicionEnvio[][] // lotes del chequeo que no llegaron al back (se reintentan al reconectar)
   link: { retraso_s: number; ancho_banda_kbps: number } | null // enlace con Tierra del entorno activo
   serverDemo: ServerDemo | null // reloj de misión del back (día, si corre)
 
@@ -69,16 +74,16 @@ interface AppState {
   escalateAlert: (id: string) => void
   advanceQueue: (minutes: number) => void
   prioritizePacket: (id: number) => void
-  connectWatch: () => void
-  disconnectWatch: () => void
   setDemo: (on: boolean) => void
   setDemoSpeed: (s: DemoSpeed) => void
-  simulateRedAlert: () => void
+  simulateRedAlert: () => Promise<string>
   resetDemo: () => void
   applyCameraResult: (r: { bpm: number | null; confianza: number; perclos: number | null }) => void
   applyServerEvent: (event: string, data: unknown) => void
   loadFromServer: () => Promise<void>
-  syncFromApi: () => Promise<void> // vuelve a leer todo del back (lo usa el resumen del chequeo después de guardar)
+  refreshBack1: () => Promise<void>
+  sendMeasurements: (lote: MedicionEnvio[]) => Promise<GuardadoOut | null>
+  flushPending: () => Promise<void>
   demoStart: () => void
   demoStop: () => void
   demoAdvance: (dias?: number) => void
@@ -94,12 +99,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   crew: mockCrew,
   environment: 'nave',
   connection: 'mock',
-  watch: 'idle',
   demo: initialDemo(),
   demoSpeed: 10,
   redCount: 0,
   server: false,
   statusReal: false,
+  indicadores: {},
+  pendientes: leerPendientes(),
   link: null,
   serverDemo: null,
 
@@ -112,14 +118,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Primera carga desde Back 2: alertas, cola, entorno y reloj de la demo.
   // Si el back no contesta no se toca nada y la app sigue con los ejemplos.
   loadFromServer: async () => {
-    const yo = astroNumero(useSession.getState().user?.id) ?? 1
-    const [alertas, cola, entorno, demo, estado] = await Promise.all([
+    const [alertas, cola, entorno, demo] = await Promise.all([
       api.get<ServerAlertList>('/alerts'),
       api.get<ServerQueueState>('/queue'),
       api.get<ServerEnvironment>('/environment'),
       api.get<ServerDemo>('/demo'),
-      api.get<ServerStatus>(`/status?astronauta_id=${yo}`),
     ])
+    // Estado del motor de Back 1 (independiente de que Back 2 conteste)
+    void get().refreshBack1()
+    void get().flushPending()
     if (!alertas && !cola) return
     set((s) => ({
       server: true,
@@ -128,15 +135,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       link: cola ? { retraso_s: cola.retraso_s, ancho_banda_kbps: cola.ancho_banda_kbps } : s.link,
       environment: entorno && isEnvironmentId(entorno.activo) ? entorno.activo : s.environment,
       serverDemo: demo ?? s.serverDemo,
-      // Con /status de Back 1 el estado general es real; si no responde se queda el de ejemplo
-      statusReal: estado ? true : s.statusReal,
-      status: estado
-        ? { ...adaptStatus(s.status, estado), ayer: s.statusReal ? s.status.readiness : estado.readiness }
-        : demo && demo.dia > 0 ? { ...s.status, diaMision: demo.dia } : s.status,
+      status: demo && demo.dia > 0 ? { ...s.status, diaMision: demo.dia } : s.status,
     }))
   },
-
-  syncFromApi: () => get().loadFromServer(),
 
   // Marcar como atendida: POST /alerts/{id}/ack (el back descongela la línea base).
   // Las alertas de ejemplo no tienen id numérico y solo cambian aquí.
@@ -198,11 +199,56 @@ export const useAppStore = create<AppState>((set, get) => ({
   prioritizePacket: (id) =>
     set((s) => ({ queue: s.queue.map((x) => (x.id === id ? { ...x, boost: true, big: false } : x)) })),
 
-  connectWatch: () => {
-    set({ watch: 'busy' })
-    setTimeout(() => set({ watch: 'on' }), 1400)
+  // Estado, indicadores y tripulación del motor de Back 1. Sin back regresa sin tocar nada.
+  refreshBack1: async () => {
+    const yo = astroNumero(useSession.getState().user?.id) ?? 1
+    const [st, crew, ...inds] = await Promise.all([
+      api.get<ServerStatus>(`/status?astronauta_id=${yo}`),
+      api.get<ServerCrewMember[]>('/crew'),
+      ...TIPOS_METRICAS.map((t) => api.get<ServerIndicator>(`/indicators/${t}?astronauta_id=${yo}&range=mision`)),
+    ])
+    if (!st) return
+    const indicadores: Record<string, ServerIndicator> = {}
+    inds.forEach((r, i) => { if (r) indicadores[TIPOS_METRICAS[i]] = r })
+    set((s) => ({
+      // Con el motor conectado todo sale de él, aunque todavía no haya mediciones (las pantallas
+      // muestran entonces "haz tu primer chequeo" en lugar de números de ejemplo)
+      status: adaptStatus(st, s.statusReal ? s.status : mockStatus, indicadores),
+      statusReal: true,
+      indicadores,
+      crew: crew ? adaptCrew(crew, s.crew) : s.crew,
+    }))
   },
-  disconnectWatch: () => set({ watch: 'idle' }),
+
+  // Manda un lote del chequeo a POST /measurements. Si el back no está, se guarda y se reintenta:
+  // en una nave el enlace se cae y ninguna medición debe perderse.
+  sendMeasurements: async (lote) => {
+    if (lote.length === 0) return null
+    const r = await api.post<GuardadoOut>('/measurements', lote, 15000)
+    if (r) {
+      void get().refreshBack1()
+      return r
+    }
+    set((s) => {
+      const pendientes = [...s.pendientes, lote]
+      guardarPendientes(pendientes)
+      return { pendientes }
+    })
+    return null
+  },
+
+  flushPending: async () => {
+    const lotes = get().pendientes
+    if (lotes.length === 0) return
+    const quedan: MedicionEnvio[][] = []
+    for (const lote of lotes) {
+      const r = await api.post<GuardadoOut>('/measurements', lote, 15000)
+      if (!r) quedan.push(lote)
+    }
+    guardarPendientes(quedan)
+    set({ pendientes: quedan })
+    if (quedan.length < lotes.length) void get().refreshBack1()
+  },
 
   setDemo: (demo) => {
     try { localStorage.setItem('astro_demo', demo ? '1' : '0') } catch { /* sin storage */ }
@@ -212,21 +258,27 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Demo: dispara una alerta roja completa, aparece en Inicio y Alertas,
   // baja el estado general y su paquete crítico se salta la cola hacia Tierra.
-  simulateRedAlert: () => {
-    // Con el back conectado el paquete crítico entra a su cola real (POST /queue)
+  simulateRedAlert: async () => {
+    // Con el back conectado la presión de demo entra por el motor real: rango clínico -> triage ->
+    // alerta roja -> cola a Tierra, todo por WebSocket. Va con fuente "simulador" (dato de demo).
     if (get().server) {
-      void api.post<ServerQueueMessage>('/queue', {
-        tipo: 'alerta', prioridad: 1, tamano: 1.2,
-        payload: { nivel: 'roja', senal: 'presion_sis', texto: 'ALERTA ROJA, presión muy alta' },
-      }).then((m) => { if (m) get().applyServerEvent('queue_updated', m) })
+      const yo = astroNumero(useSession.getState().user?.id) ?? 1
+      const dia = get().status.diaMision
+      const base = { astronauta_id: yo, unidad: 'mmHg', capa: 'auto', fuente: 'simulador', confianza: 1, dia_mision: dia, detalle: { demo: 'alerta_roja' } }
+      const r = await api.post<GuardadoOut>('/measurements', [
+        { ...base, tipo: 'presion_sis', valor: 168 }, { ...base, tipo: 'presion_dia', valor: 104 },
+      ])
+      if (r && r.alerta_id != null) return String(r.alerta_id)
     }
+    let id = ''
     set((s) => {
       const n = s.redCount + 1
       const alert = redAlert(n)
+      id = alert.id
       return {
         redCount: n,
         alerts: [alert, ...s.alerts],
-        queue: s.server ? s.queue : [{ id: nextQueueId(s.queue), pri: 4, name: 'ALERTA ROJA, presión muy alta', kb: 1.2, sent: 0, arrive: null }, ...s.queue],
+        queue: [{ id: nextQueueId(s.queue), pri: 4, name: 'ALERTA ROJA, presión muy alta', kb: 1.2, sent: 0, arrive: null }, ...s.queue],
         status: {
           ...s.status,
           readiness: Math.min(s.status.readiness, 58),
@@ -235,6 +287,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       }
     })
+    return id
   },
 
   // Resultado REAL del chequeo con cámara (Front 1, features/chequeo) -> valor medido por sistema.
@@ -243,6 +296,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   // TODO Back 1: mandar POST /measurements y dejar que el back calcule /status con la línea base real.
   applyCameraResult: (r) =>
     set((s) => {
+      // Con el motor conectado, el estado lo calcula el back con la línea base real
+      if (s.statusReal || s.server) return {}
       const aprende = `Aún estamos aprendiendo tu normal (día ${s.status.diaBase} de ${s.status.diasBase}), por eso todavía no se compara`
       return {
         status: {
@@ -265,11 +320,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   resetDemo: () => {
     if (get().server) {
       // El back regresa al día 0 y limpia alertas y cola; después se vuelve a cargar su estado
-      set({ status: mockStatus, queueT: 0, redCount: 0, watch: 'idle' })
+      set({ queueT: 0, redCount: 0 })
       void api.post('/demo/reset').then(() => get().loadFromServer())
       return
     }
-    set({ status: mockStatus, alerts: mockAlerts, queue: mockQueue, queueT: 0, redCount: 0, watch: 'idle' })
+    set({ status: mockStatus, alerts: mockAlerts, queue: mockQueue, queueT: 0, redCount: 0 })
   },
 
   // Punto único de entrada de los eventos del WebSocket (sección 4 del documento).
@@ -308,31 +363,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       case 'calibration_changed': {
         // Back 2 manda { antes, despues, delta }; el contrato viejo mandaba { calibracion }
-        const d = data as { despues?: number; calibracion?: number }
+        const d = data as { astronauta_id?: number; despues?: number; calibracion?: number }
+        if (d.astronauta_id !== undefined && d.astronauta_id !== (astroNumero(useSession.getState().user?.id) ?? 1)) break
         const calibracion = Math.round(d.despues ?? d.calibracion ?? get().status.calibracion)
         set((s) => ({ status: { ...s.status, calibracion } }))
         break
       }
-      case 'status_changed': {
-        const d = data as { astronauta_id?: number; readiness?: number; sistemas?: Record<string, string> }
-        // Solo el estado de quien tiene la sesión abierta
-        if (d.astronauta_id !== undefined && d.astronauta_id !== astroNumero(useSession.getState().user?.id)) break
-        set((s) => ({
-          status: {
-            ...s.status,
-            ...(typeof d.readiness === 'number' ? { readiness: d.readiness, ayer: s.status.readiness } : {}),
-            sistemas: d.sistemas
-              ? s.status.sistemas.map((x) => {
-                  const clave = Object.keys(d.sistemas!).find((k) => SISTEMA_BACK[k] === x.id)
-                  const estado = clave ? SEMAFORO_BACK[d.sistemas![clave]] : undefined
-                  return estado ? { ...x, estado } : x
-                })
-              : s.status.sistemas,
-          },
-        }))
-        break
-      }
+      case 'status_changed':
       case 'measurement_added':
+        // El motor cambió algo: se vuelve a pedir el estado completo, agrupando ráfagas
+        // (la demo manda decenas de mediciones por día simulado)
+        refrescarPronto(get)
+        break
       case 'pong':
         break
       default:
@@ -340,6 +382,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 }))
+
+// Agrupa los eventos del motor: un solo refresco 400 ms después de la última ráfaga
+let timerRefresco: ReturnType<typeof setTimeout> | null = null
+function refrescarPronto(get: () => AppState) {
+  if (timerRefresco) clearTimeout(timerRefresco)
+  timerRefresco = setTimeout(() => { timerRefresco = null; void get().refreshBack1() }, 400)
+}
+
+const PENDIENTES_KEY = 'astro_pendientes_v1'
+function leerPendientes(): MedicionEnvio[][] {
+  try { return JSON.parse(localStorage.getItem(PENDIENTES_KEY) ?? '[]') as MedicionEnvio[][] } catch { return [] }
+}
+function guardarPendientes(p: MedicionEnvio[][]) {
+  try { localStorage.setItem(PENDIENTES_KEY, JSON.stringify(p)) } catch { /* sin storage */ }
+}
+
+// Al cambiar de usuario (inicio de sesión con la cara) se pide su estado
+useSession.subscribe((s, prev) => {
+  if (s.user?.id !== prev.user?.id && s.user) void useAppStore.getState().refreshBack1()
+})
 
 // Llama al reloj de la demo del back y guarda su estado (día y si corre)
 async function callDemo(
