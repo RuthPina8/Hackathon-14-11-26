@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
 import { crearEstacion, ENTORNO } from './estacion'
-import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esqueleto'
+import { ALTURA, apuntar, buscarHueso, cargarModelo, girarMundo, v, vestir } from './esqueleto'
+import { crearHaz, crearLampara, crearLaptop, crearLibro, crearMesa, crearPunteria } from './utileria'
 
 // Cómo acomodar la cámara antes de un ejercicio, en 3D y dentro de la estación (misma familia que Demo3D).
 // Una sola escena para los 3 pasos de preparación:
@@ -16,7 +16,6 @@ import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esquele
 // lo que se encuadra en cada momento. Sin WebGL se muestra la animación 2D del paso (`fallback`).
 
 const FPS = 30
-const redonda = (w: number, h: number, d: number) => new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.3)
 const Z_LAPTOP = 1.25 // dónde está la mesa, frente al astronauta
 const MESA = 0.72
 const CAM_BAJA = MESA + 0.225 // altura de la webcam con la laptop directo en la mesa
@@ -105,7 +104,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
 
       const h = buscarHueso(modelo)
       const hu = {
-        cadera: h('Hips'), tope: h('HeadTop_End'),
+        cadera: h('Hips'), col: h('Spine'), cuello: h('Neck'), tope: h('HeadTop_End'),
         brazoI: h('LeftArm'), anteI: h('LeftForeArm'), manoI: h('LeftHand'),
         brazoD: h('RightArm'), anteD: h('RightForeArm'), manoD: h('RightHand'),
         musloI: h('LeftUpLeg'), piernaI: h('LeftLeg'), pieI: h('LeftFoot'), puntaI: h('LeftToeBase'),
@@ -115,74 +114,130 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       modelo.traverse((o) => { if ((o as THREE.Bone).isBone) reposo.set(o, o.quaternion.clone()) })
       const lado = Math.sign(hu.brazoI.getWorldPosition(v()).x - hu.cadera.getWorldPosition(v()).x) || 1
       const frente = Math.sign(hu.puntaI.getWorldPosition(v()).z - hu.pieI.getWorldPosition(v()).z) || 1
-      const dirPieI = hu.puntaI.getWorldPosition(v()).sub(hu.pieI.getWorldPosition(v()))
-      const dirPieD = hu.puntaD.getWorldPosition(v()).sub(hu.pieD.getWorldPosition(v()))
       const zL = Z_LAPTOP * frente
 
-      // De pie, con los brazos a los costados; `zancada` mueve las piernas al caminar hacia atrás
-      const posar = (za: number, zancada: number) => {
+      // --- Marcha hacia atrás, basada en cómo camina una persona ---
+      // Referencias de biomecánica de la marcha (adulto sano):
+      //  - ciclo: ~60 % apoyo y ~40 % balanceo por pierna, con doble apoyo entre un paso y otro;
+      //  - hacia atrás el patrón es casi el de la marcha normal visto al revés: el pie se apoya primero con
+      //    la PUNTA (tobillo en flexión plantar) y luego baja el talón; al despegar, el talón es lo último;
+      //  - los pasos son más cortos y lentos que al frente (aquí 0.36 m por paso);
+      //  - la pelvis baja ~3 cm en el doble apoyo (piernas abiertas) y sube en el apoyo medio, se desplaza
+      //    ~2 cm hacia la pierna de apoyo y gira ~5° acompañando a la pierna que va hacia atrás;
+      //  - el tronco gira en sentido contrario a la pelvis y los brazos se balancean cruzados con las
+      //    piernas (brazo izquierdo con pierna derecha), con el codo ligeramente flexionado;
+      //  - los pies NO resbalan: el pie de apoyo queda fijo en el piso y la pierna se resuelve con
+      //    cinemática inversa (cadera → rodilla → tobillo), con la rodilla siempre hacia el frente.
+      const ZANCADA = 0.72 // un ciclo completo = dos pasos
+      const APOYO = 0.6
+      const ALZA = 0.055 // cuánto se levanta el pie en el balanceo
+      const largoMuslo = hu.musloI.getWorldPosition(v()).distanceTo(hu.piernaI.getWorldPosition(v()))
+      const largoPierna = hu.piernaI.getWorldPosition(v()).distanceTo(hu.pieI.getWorldPosition(v()))
+      const largoPie = hu.pieI.getWorldPosition(v()).distanceTo(hu.puntaI.getWorldPosition(v()))
+      const cadera0 = hu.cadera.getWorldPosition(v())
+      const caderaLocal0 = hu.cadera.position.clone()
+      const piernas = ([[hu.musloI, hu.piernaI, hu.pieI, 0], [hu.musloD, hu.piernaD, hu.pieD, 0.5]] as const).map(([muslo, rodilla, pie, desfase]) => ({
+        muslo, rodilla, pie, desfase, tobillo0: pie.getWorldPosition(v()), qPie0: pie.getWorldQuaternion(new THREE.Quaternion()),
+      }))
+      const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0)
+      const rad = THREE.MathUtils.degToRad
+
+      // Pierna con cinemática inversa de dos huesos en el plano de avance; el pie se orienta aparte
+      const resolverPierna = (pn: (typeof piernas)[number], tobillo: THREE.Vector3, cabeceo: number) => {
+        const cad = pn.muslo.getWorldPosition(v())
+        const dz = (tobillo.z - cad.z) * frente, dy = tobillo.y - cad.y
+        const dist = Math.min(Math.hypot(dz, dy), largoMuslo + largoPierna - 1e-4)
+        const phi = Math.atan2(dy, dz)
+        const a = Math.acos(THREE.MathUtils.clamp((largoMuslo ** 2 + dist ** 2 - largoPierna ** 2) / (2 * largoMuslo * dist), -1, 1))
+        const c1 = phi + a, c2 = phi - a
+        const ang = Math.cos(c1) > Math.cos(c2) ? c1 : c2 // la rodilla dobla hacia el frente
+        const rodilla = new THREE.Vector3(cad.x + (tobillo.x - cad.x) * 0.5, cad.y + Math.sin(ang) * largoMuslo, cad.z + Math.cos(ang) * largoMuslo * frente)
+        apuntar(pn.muslo, pn.rodilla, rodilla.clone().sub(cad))
+        apuntar(pn.rodilla, pn.pie, tobillo.clone().sub(pn.rodilla.getWorldPosition(v())))
+        // pie: orientación de pie parado más el cabeceo (positivo = punta arriba)
+        const qMundo = new THREE.Quaternion().setFromAxisAngle(X, -cabeceo * frente).multiply(pn.qPie0)
+        pn.pie.quaternion.copy(pn.pie.parent!.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(qMundo))
+        pn.pie.updateMatrixWorld(true)
+      }
+
+      // `za`: dónde está el astronauta; `fase`: avance del ciclo de marcha; `amp`: 0 = de pie, 1 = caminando
+      const posar = (za: number, fase: number, amp: number) => {
         reposo.forEach((qq, b) => b.quaternion.copy(qq))
+        hu.cadera.position.copy(caderaLocal0)
         modelo.position.z = za
-        modelo.position.y = -bb.min.y * s + Math.abs(zancada) * 0.012
         modelo.updateMatrixWorld(true)
-        for (const [brazo, ante, mano, x] of [[hu.brazoI, hu.anteI, hu.manoI, lado], [hu.brazoD, hu.anteD, hu.manoD, -lado]] as const) {
-          const d = new THREE.Vector3(x * 0.13, -1, 0.04 * frente)
-          apuntar(brazo, ante, d); apuntar(ante, mano, d)
+
+        if (amp > 0.001) {
+          const dos = Math.PI * 2
+          // pelvis: baja en el doble apoyo, se carga hacia la pierna de apoyo, gira con la pierna que retrocede
+          const baja = amp * (0.01 + 0.022 * (0.5 + 0.5 * Math.cos(2 * dos * fase - 0.2 * Math.PI)))
+          const carga = lado * 0.02 * amp * Math.sin(dos * (fase - 0.05))
+          const destino = cadera0.clone().add(new THREE.Vector3(carga, -baja, za))
+          hu.cadera.position.copy(hu.cadera.parent!.worldToLocal(destino))
+          modelo.updateMatrixWorld(true)
+          const giro = lado * frente * amp * rad(5) * Math.cos(dos * (fase - 0.8))
+          girarMundo(hu.cadera, Y, giro)
+          girarMundo(hu.col, Y, -giro * 1.5) // el tronco contrarresta el giro de la pelvis
+          girarMundo(hu.col, X, frente * amp * rad(3)) // ligera inclinación al frente para equilibrar
+          girarMundo(hu.cuello, Y, giro * 0.5) // la cabeza se queda viendo a la cámara
+
+          for (const pn of piernas) {
+            const p = fase + pn.desfase
+            const fr = p - Math.floor(p)
+            let rel: number, alza = 0, cabeceo = 0
+            if (fr < APOYO) {
+              // apoyo: el pie está fijo en el piso y el cuerpo pasa por encima
+              rel = (fr - 0.3) * ZANCADA
+              if (fr < 0.1) cabeceo = -rad(14) * (1 - fr / 0.1) // contacto con la punta; el talón baja después
+              else if (fr > 0.5) cabeceo = rad(10) * ((fr - 0.5) / 0.1) // la punta despega primero, el talón al final
+            } else {
+              // balanceo: el pie viaja hacia atrás, se levanta y llega con la punta hacia abajo
+              const u = (fr - APOYO) / (1 - APOYO)
+              rel = THREE.MathUtils.lerp(0.3, -0.3, suave(u)) * ZANCADA
+              alza = ALZA * Math.sin(Math.PI * u)
+              cabeceo = THREE.MathUtils.lerp(rad(10), -rad(14), suave(u))
+            }
+            // con la punta abajo el tobillo queda más alto (gira sobre la punta)
+            const talon = cabeceo < 0 ? Math.sin(-cabeceo) * largoPie : 0
+            const tobillo = pn.tobillo0.clone().add(new THREE.Vector3(0, amp * (alza + talon), za + amp * rel * frente))
+            resolverPierna(pn, tobillo, amp * cabeceo)
+          }
         }
-        for (const [muslo, pierna, pie, punta, k, dPie] of [[hu.musloI, hu.piernaI, hu.pieI, hu.puntaI, 1, dirPieI], [hu.musloD, hu.piernaD, hu.pieD, hu.puntaD, -1, dirPieD]] as const) {
-          const d = new THREE.Vector3(0, -1, k * zancada * 0.3 * frente)
-          apuntar(muslo, pierna, d); apuntar(pierna, pie, d); apuntar(pie, punta, dPie)
+
+        // brazos: balanceo cruzado con las piernas y codo un poco flexionado
+        const vaiven = amp * Math.cos(Math.PI * 2 * (fase - 0.05))
+        for (const [brazo, ante, mano, x, signo] of [[hu.brazoI, hu.anteI, hu.manoI, lado, 1], [hu.brazoD, hu.anteD, hu.manoD, -lado, -1]] as const) {
+          const a = rad(16) * vaiven * signo
+          const codo = a + rad(8) + rad(8) * amp
+          apuntar(brazo, ante, new THREE.Vector3(x * 0.13, -Math.cos(a), Math.sin(a) * frente))
+          const dAnte = new THREE.Vector3(x * 0.1, -Math.cos(codo), Math.sin(codo) * frente)
+          apuntar(ante, mano, dAnte)
         }
       }
 
-      // --- Mesa, libros y laptop ---
-      const mueble = new THREE.MeshStandardMaterial({ color: '#2A3A52', roughness: 0.6, metalness: 0.35 })
-      const metal = new THREE.MeshStandardMaterial({ color: '#8EA3BF', roughness: 0.3, metalness: 0.8 })
-      mats.push(mueble, metal)
-      const tabla = malla(redonda(0.9, 0.035, 0.6), mueble)
-      tabla.position.set(0, MESA - 0.0175, zL + 0.2 * frente)
-      const geoPata = new THREE.CylinderGeometry(0.018, 0.018, MESA - 0.035, 16)
-      geos.push(geoPata)
-      for (const dx of [-0.41, 0.41]) for (const dz of [-0.26, 0.26]) {
-        const pata = new THREE.Mesh(geoPata, metal)
-        pata.position.set(dx, (MESA - 0.035) / 2, zL + 0.2 * frente + dz)
-        pata.castShadow = true
-        escena.add(pata)
-      }
+      // --- Mesa, libros y laptop (utilería detallada) ---
+      const rec = { geos, mats, texturas }
+      const mesa = crearMesa(rec, 0.9, 0.6, MESA)
+      mesa.position.set(0, 0, zL + 0.2 * frente)
+      escena.add(mesa)
+      const SOBRE = MESA + 0.004 // superficie de la placa de trabajo
       const GROSOR = 0.09
-      const libros = [TRAJE_LIBROS[0], TRAJE_LIBROS[1], TRAJE_LIBROS[2], TRAJE_LIBROS[3]].map((color, n) => {
-        const l = malla(redonda(0.3 - n * 0.012, GROSOR - 0.008, 0.22 - n * 0.008), new THREE.MeshStandardMaterial({ color, roughness: 0.8 }))
-        l.position.set((n % 2 ? 0.012 : -0.01), MESA + GROSOR * (n + 0.5), zL + 0.12 * frente)
-        l.rotation.y = (n % 2 ? 1 : -1) * 0.06
+      const libros = TONOS_LIBROS.map((color, n) => {
+        const l = crearLibro(rec, color, 0.3 - n * 0.012, GROSOR - 0.004, 0.22 - n * 0.008)
+        l.position.set(n % 2 ? 0.012 : -0.01, SOBRE + GROSOR * (n + 0.5), zL + 0.12 * frente)
+        l.rotation.y = (n % 2 ? 1 : -1) * 0.07
+        escena.add(l)
         return l
       })
-      const laptop = new THREE.Group()
-      const cuerpoLap = new THREE.MeshStandardMaterial({ color: '#C9D1DC', roughness: 0.35, metalness: 0.75 })
-      const pantallaMat = new THREE.MeshBasicMaterial({ color: '#0B2A3A' })
-      mats.push(cuerpoLap, pantallaMat)
-      const base = new THREE.Mesh(redonda(0.34, 0.016, 0.23), cuerpoLap)
-      base.position.y = 0.008
-      const tapa = new THREE.Group()
-      const tapaM = new THREE.Mesh(redonda(0.34, 0.22, 0.01), cuerpoLap)
-      tapaM.position.y = 0.11
-      const vidrio = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.19), pantallaMat)
-      vidrio.position.set(0, 0.11, -0.006 * frente)
-      vidrio.rotation.y = frente > 0 ? Math.PI : 0
-      const lente = new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 10), new THREE.MeshBasicMaterial({ color: C.accent }))
-      lente.position.set(0, 0.212, -0.007 * frente)
-      for (const m of [base, tapaM, vidrio, lente]) { geos.push(m.geometry); m.castShadow = m !== vidrio && m !== lente }
-      mats.push(lente.material as THREE.Material)
-      tapa.add(tapaM, vidrio, lente)
-      tapa.position.set(0, 0.016, 0.115 * frente)
-      laptop.add(base, tapa)
+      const lap = crearLaptop(rec, frente, C.accent)
+      const laptop = lap.grupo, tapa = lap.tapa
       escena.add(laptop)
 
-      // --- Guías (capa 1): cono de visión, línea de puntería, marca del piso y regla de distancia ---
-      const guiaMat = new THREE.MeshBasicMaterial({ color: C.warn, transparent: true, opacity: 0.11, side: THREE.DoubleSide, depthWrite: false })
-      const cono = malla(new THREE.ConeGeometry(1, 1, 4, 1, true), guiaMat, true)
-      const lineaMat = new THREE.MeshBasicMaterial({ color: C.warn })
-      const linea = malla(new THREE.CylinderGeometry(0.006, 0.006, 1, 8), lineaMat, true)
-      const punto = malla(new THREE.SphereGeometry(0.03, 16, 12), lineaMat, true)
+      // --- Guías (capa 1): campo de visión de la webcam como haz con polvo, puntería y marcas del piso ---
+      const haz = crearHaz(rec, { lados: 4, color: C.warn, opacidad: 0.4, motas: 200, capa: 1 })
+      escena.add(haz.grupo)
+      const punteria = crearPunteria(rec, C.warn, 1)
+      escena.add(punteria.grupo)
       const zFinal = (Z_LAPTOP - (ejercicio === 'sentadilla' ? 2 : 1)) * frente
       const marcaMat = new THREE.MeshBasicMaterial({ color: C.ok, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
       const marca = malla(new THREE.RingGeometry(0.3, 0.325, 64), marcaMat, true)
@@ -190,22 +245,18 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       marca.position.set(0, 0.004, zFinal)
       const regla = malla(new THREE.BoxGeometry(0.02, 0.004, 1), marcaMat, true)
 
-      // --- Lámpara del paso de luz: panel sobre un poste con una luz puntual ---
-      const lampara = new THREE.Group()
-      const panelMat = new THREE.MeshBasicMaterial({ color: '#FFF4DC' })
-      const panel = new THREE.Mesh(redonda(0.5, 0.36, 0.03), panelMat)
-      panel.position.y = 1.75
-      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.6, 10), metal)
-      poste.position.y = 0.8
-      const pie = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.03, 24), metal)
-      pie.position.y = 0.015
-      for (const m of [panel, poste, pie]) geos.push(m.geometry)
-      mats.push(panelMat)
-      lampara.add(panel, poste, pie)
-      const foco = new THREE.PointLight('#FFF1D6', 0, 8, 1.6)
-      foco.position.set(0, 1.75, 0.1)
-      lampara.add(foco)
+      // --- Lámpara de estudio del paso de luz: foco real con sombras y haz de luz con polvo ---
+      const lamp = crearLampara(rec)
+      const lampara = lamp.grupo
       escena.add(lampara)
+      const foco = new THREE.SpotLight('#FFF1D6', 0, 9, 0.55, 0.6, 1.3)
+      foco.castShadow = true
+      foco.shadow.mapSize.set(1024, 1024)
+      foco.shadow.bias = -0.0005
+      foco.shadow.radius = 6
+      escena.add(foco, foco.target)
+      const hazLuz = crearHaz(rec, { lados: 40, color: '#FFE7BE', opacidad: 0.22, motas: 260, capa: 1 })
+      escena.add(hazLuz.grupo)
 
       // --- Planos de la cámara principal ---
       const medio = (zL + zFinal) / 2
@@ -239,30 +290,35 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
         const f = reducido || !pl ? 1 : Math.min(1, (t * 1000) / dur)
 
         // --- estado de cada paso ---
-        let sube = 1, za = (Z_LAPTOP - 1) * frente, zancada = 0, luz = 1
+        let sube = 1, za = (Z_LAPTOP - 1) * frente, fase = 0, amp = 0, luz = 1
         if (p === 0) sube = suave(tramo(f, 0.25, 0.7))
         if (p === 1) {
           const k = suave(tramo(f, 0.2, 0.75))
-          za = THREE.MathUtils.lerp((Z_LAPTOP - 0.45) * frente, zFinal, k)
-          zancada = k > 0 && k < 1 ? Math.sin(k * Math.PI * (ejercicio === 'sentadilla' ? 8 : 4)) : 0
+          const zInicio = (Z_LAPTOP - 0.45) * frente
+          za = THREE.MathUtils.lerp(zInicio, zFinal, k)
+          // la fase de la marcha sale de la distancia recorrida: los pies no patinan
+          const total = Math.abs(zFinal - zInicio), recorrido = Math.abs(za - zInicio)
+          fase = recorrido / ZANCADA
+          amp = suave(THREE.MathUtils.clamp(Math.min(recorrido, total - recorrido) / 0.16, 0, 1))
         }
         if (p >= 1 && p !== 1) za = zFinal
         if (p === 2) luz = suave(tramo(f, 0.3, 0.75))
-        posar(za, zancada)
+        posar(za, fase, amp)
 
         // laptop sobre los libros que hagan falta
         const yCam = THREE.MathUtils.lerp(CAM_BAJA, CAM_PECHO, sube)
         const yBase = yCam - 0.225
         laptop.position.set(0, yBase, zL + 0.12 * frente)
-        tapa.rotation.x = -0.12 * frente
+        tapa.rotation.x = 0.14 * frente
+        laptop.updateMatrixWorld(true)
         libros.forEach((l, n) => {
-          const visible = THREE.MathUtils.clamp((yBase - MESA - GROSOR * n) / GROSOR, 0, 1)
+          const visible = THREE.MathUtils.clamp((yBase - SOBRE - GROSOR * n) / GROSOR, 0, 1)
           l.visible = visible > 0.02
           l.scale.setScalar(0.4 + 0.6 * visible)
         })
 
         // webcam: en el paso 0 mira recto; después se inclina para centrar el cuerpo
-        const posWeb = new THREE.Vector3(0, yCam, zL + 0.1 * frente)
+        const posWeb = lap.lente.getWorldPosition(new THREE.Vector3())
         webcam.position.copy(posWeb)
         const objetivoY = p === 0 ? yCam : ejercicio === 'sentadilla' ? 0.95 : 1.25
         miraWeb.lerp(new THREE.Vector3(0, objetivoY, za), reducido ? 1 : 1 - Math.exp(-dt * 5))
@@ -282,23 +338,30 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
           const ang = THREE.MathUtils.lerp(Math.PI * 0.93, Math.PI * 0.14, luz)
           lampara.position.set(Math.sin(ang) * 1.5 * -lado, 0, za + Math.cos(ang) * 1.6 * frente)
           lampara.lookAt(0, 0, za)
-          foco.intensity = 26
+          lampara.updateMatrixWorld(true)
+          const origen = lamp.cabeza.getWorldPosition(new THREE.Vector3())
+          const blanco = new THREE.Vector3(0, 1.15, za)
+          origen.addScaledVector(blanco.clone().sub(origen).normalize(), 0.04)
+          foco.position.copy(origen)
+          foco.target.position.copy(blanco)
+          foco.intensity = 16
+          const radio = Math.tan(0.5) * origen.distanceTo(blanco) * 1.35
+          hazLuz.colocar(origen, origen.clone().lerp(blanco, 1.35), radio, radio)
+          hazLuz.animar(reloj.elapsedTime)
         } else foco.intensity = 0
+        hazLuz.grupo.visible = p === 2
 
         // --- qué tan bien quedó ---
         let bien: boolean, texto: string, etq: string, ancla: THREE.Vector3
-        cono.visible = p <= 1
-        linea.visible = punto.visible = p === 0
+        haz.grupo.visible = p <= 1
+        punteria.grupo.visible = p === 0
         marca.visible = regla.visible = p === 1
         if (p === 0) {
           bien = sube > 0.97
           texto = bien ? 'Cámara a la altura del pecho' : 'Muy baja: apunta al abdomen'
           etq = bien ? 'altura del pecho' : 'muy baja'
-          const fin = new THREE.Vector3(0, yCam, za + 0.13 * frente)
-          linea.position.copy(posWeb).lerp(fin, 0.5)
-          linea.scale.y = posWeb.distanceTo(fin)
-          linea.rotation.x = Math.PI / 2
-          punto.position.copy(fin)
+          const fin = new THREE.Vector3(0, posWeb.y, za + 0.15 * frente)
+          punteria.colocar(posWeb, fin, reloj.elapsedTime)
           ancla = fin.clone().setX(lado * 0.2)
         } else if (p === 1) {
           const partes = ejercicio === 'sentadilla' ? [hu.tope, hu.manoI, hu.manoD, hu.puntaI, hu.puntaD] : [hu.tope, hu.manoI, hu.manoD, hu.cadera]
@@ -316,18 +379,15 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
           ancla = lampara.position.clone().setY(2.0)
         }
         const color = bien ? C.ok : C.warn
-        guiaMat.color.set(color); lineaMat.color.set(color)
+        punteria.mat.color.set(color)
         marcaMat.color.set(color)
 
-        // cono de visión de la webcam hasta el astronauta
-        if (cono.visible) {
+        // campo de visión de la webcam: haz con polvo en suspensión hasta el astronauta
+        if (haz.grupo.visible) {
           const largo = Math.max(0.2, posWeb.distanceTo(miraWeb))
           const mitad = Math.tan(THREE.MathUtils.degToRad(FOV_WEBCAM / 2)) * largo
-          const dir = miraWeb.clone().sub(posWeb).normalize()
-          cono.position.copy(posWeb).addScaledVector(dir, largo / 2)
-          cono.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir)
-          cono.rotateY(Math.PI / 4)
-          cono.scale.set(mitad * Math.SQRT2 * (4 / 3), largo, mitad * Math.SQRT2)
+          haz.colocar(posWeb, miraWeb, mitad * (4 / 3), mitad)
+          haz.animar(reloj.elapsedTime, color)
         }
 
         // --- cámara principal ---
@@ -408,4 +468,4 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
 }
 
 // Lomos de los libros: tonos apagados para que no compitan con el traje ni con los colores de estado
-const TRAJE_LIBROS = ['#3B5B7A', '#6B7A90', '#2F4A66', '#8494A8']
+const TONOS_LIBROS = ['#3B5B7A', '#6B7A90', '#2F4A66', '#8494A8']
