@@ -23,7 +23,7 @@ export default function Tripulacion() {
       <PageHeader
         kicker={vista === 'cmd' ? 'Vista del comandante a bordo' : 'Vista de los flight surgeons en Tierra'}
         title="Panel de tripulación"
-        right={<Segmented label="Vista" value={vista} onChange={setVista} options={[{ value: 'cmd', label: 'Vista comandante' }, { value: 'earth', label: 'Vista Tierra' }]} />}
+        right={<Segmented label="Vista" value={vista} onChange={(v) => setVista(v as 'cmd' | 'earth')} options={[{ value: 'cmd', label: 'Vista comandante' }, { value: 'earth', label: 'Vista Tierra' }]} />}
       />
 
       {vista === 'cmd' ? (

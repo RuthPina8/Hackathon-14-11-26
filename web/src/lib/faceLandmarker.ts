@@ -4,10 +4,11 @@ import { FaceLandmarker, FilesetResolver, type NormalizedLandmark } from '@media
 // Lo usa el inicio de sesión y lo puede reutilizar Front 1 en el chequeo con cámara:
 //   const fl = await getFaceLandmarker()
 //   const r = fl.detectForVideo(video, performance.now())
-// Se carga una sola vez; el modelo y el wasm vienen del CDN de MediaPipe.
+// Se carga una sola vez; el modelo y el wasm están en web/public, así funciona sin internet
+// (en la nave no hay CDN). El wasm de public/mediapipe-wasm es de la misma versión que el paquete.
 
-const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm'
-const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+const WASM = '/mediapipe-wasm'
+const MODEL = '/models/face_landmarker.task'
 
 let instance: Promise<FaceLandmarker> | null = null
 

@@ -7,7 +7,7 @@ import Perfil from './pages/Perfil'
 import Simulacion from './pages/Simulacion'
 import Tierra from './pages/Tierra'
 import Tripulacion from './pages/Tripulacion'
-import Front1Placeholder from './pages/Front1Placeholder'
+import { PaginaCamara, PaginaCognitiva, PaginaRegistro, PaginaResumen } from './features/chequeo/rutas'
 import { useWebSocket } from './lib/ws'
 import { useMissionClock } from './lib/useMissionClock'
 import DemoBar from './components/layout/DemoBar'
@@ -37,11 +37,11 @@ export default function App() {
         <Route path="/earth" element={<Tierra />} />
         <Route path="/crew" element={<Tripulacion />} />
 
-        {/* Front 1: reemplazar el placeholder por su pantalla */}
-        <Route path="/camera" element={<Front1Placeholder titulo="Chequeo con cámara" paso="paso 1 de 5" />} />
-        <Route path="/cognitive" element={<Front1Placeholder titulo="Prueba cognitiva" paso="paso 2 de 5" />} />
-        <Route path="/manual" element={<Front1Placeholder titulo="Presión, ánimo y síntomas" paso="pasos 3 y 4 de 5" />} />
-        <Route path="/summary" element={<Front1Placeholder titulo="Resumen de hoy" paso="paso 5 de 5" />} />
+        {/* Front 1: chequeo diario (web/src/features/chequeo) */}
+        <Route path="/camera" element={<PaginaCamara />} />
+        <Route path="/cognitive" element={<PaginaCognitiva />} />
+        <Route path="/manual" element={<PaginaRegistro />} />
+        <Route path="/summary" element={<PaginaResumen />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

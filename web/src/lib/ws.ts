@@ -8,6 +8,7 @@ import { useAppStore } from '../store/useAppStore'
 export function useWebSocket() {
   const applyServerEvent = useAppStore((s) => s.applyServerEvent)
   const setConnection = useAppStore((s) => s.setConnection)
+  const syncFromApi = useAppStore((s) => s.syncFromApi)
   const socketRef = useRef<WebSocket | null>(null)
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -25,6 +26,8 @@ export function useWebSocket() {
       socket.onopen = () => {
         if (cancelled) return
         setConnection('connected')
+        // Al conectar se trae el estado real del back (alertas, cola, entorno, estado general)
+        void syncFromApi()
       }
 
       socket.onmessage = (ev) => {
@@ -56,5 +59,5 @@ export function useWebSocket() {
       if (retryRef.current) clearTimeout(retryRef.current)
       socketRef.current?.close()
     }
-  }, [applyServerEvent, setConnection])
+  }, [applyServerEvent, setConnection, syncFromApi])
 }

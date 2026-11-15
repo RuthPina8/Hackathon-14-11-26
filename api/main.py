@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.ws import manager
-from app.routers import alerts, demo, environment, queue, simulation
+from app.routers import alerts, demo, environment, indicators, measurements, queue, simulation, status
 from app.triage import demo as demo_engine
 from app.triage import queue as queue_engine
 
@@ -50,9 +50,10 @@ app.include_router(environment.router)
 app.include_router(simulation.router)
 app.include_router(demo.router)
 
-# Routers de Back 1: se agregan aquí cuando existan, por ejemplo:
-# from app.routers import rppg, measurements, indicators, status, ingest
-# app.include_router(rppg.router) ...
+# Routers de Back 1 (versión mínima en memoria para integrar el front; faltan rppg e ingest)
+app.include_router(measurements.router)
+app.include_router(status.router)
+app.include_router(indicators.router)
 
 
 @app.get("/health", tags=["sistema"])
