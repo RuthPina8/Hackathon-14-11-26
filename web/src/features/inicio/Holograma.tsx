@@ -362,19 +362,19 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
     }
     const partGeo = g(new THREE.BufferGeometry())
     partGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-    const partMat = new THREE.PointsMaterial({ color: CIAN, size: 0.025, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })
+    const partMat = new THREE.PointsMaterial({ color: CIAN, size: 0.018, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false })
     materiales.push(partMat)
     const particulas = new THREE.Points(partGeo, partMat)
     escena.add(particulas)
 
     // ---------- pulso: partículas que suben por el torso a la velocidad del ritmo medido ----------
-    const nPulso = 42
+    const nPulso = 24
     const posPulso = new Float32Array(nPulso * 3)
     const fasePulso = Array.from({ length: nPulso }, (_, i) => i / nPulso)
     const ladoPulso = Array.from({ length: nPulso }, (_, i) => (i % 3) - 1)
     const pulsoGeo = g(new THREE.BufferGeometry())
     pulsoGeo.setAttribute('position', new THREE.BufferAttribute(posPulso, 3))
-    const pulsoMat = new THREE.PointsMaterial({ color: CIAN, size: 0.06, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
+    const pulsoMat = new THREE.PointsMaterial({ color: CIAN, size: 0.028, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false })
     materiales.push(pulsoMat)
     const pulso = new THREE.Points(pulsoGeo, pulsoMat)
     pulso.frustumCulled = false
@@ -383,7 +383,8 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
 
     // ---------- resplandor (bloom); con "reducir movimiento" no hay postprocesado ----------
     const composer = reducido ? null : new EffectComposer(renderer)
-    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.85, 0.45, 0.12)
+    // Resplandor suave: umbral alto para que brillen solo los órganos y los bordes más luminosos, no todo el cuerpo
+    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.35, 0.2, 0.6)
     if (composer) {
       composer.addPass(new RenderPass(escena, camara))
       composer.addPass(bloom)
@@ -546,7 +547,7 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
         const vel = ((d.bpm ?? 60) / 60) * 0.55
         pulsoMat.color.set(COLOR[d.organos.corazon === 'none' ? 'ok' : d.organos.corazon])
         const faseLat = (t * ((d.bpm ?? 60) / 60)) % 1
-        pulsoMat.opacity = 0.45 + 0.55 * Math.exp(-faseLat * 7)
+        pulsoMat.opacity = 0.15 + 0.35 * Math.exp(-faseLat * 7)
         for (let i = 0; i < nPulso; i++) {
           fasePulso[i] = (fasePulso[i] + dt * vel) % 1
           const f = fasePulso[i]
