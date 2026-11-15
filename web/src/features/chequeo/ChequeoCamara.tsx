@@ -17,8 +17,8 @@ import { useAppStore } from '../../store/useAppStore'
 import { C } from '../../lib/paleta'
 import { BotonConfirmar } from '../../components/ui/Deshacer'
 
-const TOTAL = 60 // segundos VÁLIDOS de medición (con cara, pose y sin movimientos bruscos)
-const MAXIMO_MS = 150_000 // si en 2.5 min no se juntan, se termina con lo que haya
+const TOTAL = 20 // segundos VÁLIDOS de medición (con cara, pose y sin movimientos bruscos). Acordado por el equipo: todas las pruebas duran 20 s
+const MAXIMO_MS = 60_000 // si en 1 min no se juntan, se termina con lo que haya
 const MINIMO_VALIDOS = 20 // con menos no hay un tramo de 20 s para el ritmo
 const FPS_MINIMO = 15
 // Velocidad de la cara en fracciones de la imagen por segundo. Moverse es normal en microgravedad:
@@ -295,7 +295,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const pistaMala = midiendo && problema !== null && MENSAJES[problema].bloquea
 
   const tarjeta: Record<Exclude<Fase, 'midiendo'>, [string, string, string]> = {
-    inicio: ['60-second reading', 'Measures your heart rate with just the camera, no sensors. The clock only runs while your face is clearly visible', 'Start reading'],
+    inicio: [`${TOTAL}-second reading`, 'Measures your heart rate with just the camera, no sensors. The clock only runs while your face is clearly visible', 'Start reading'],
     pausa: ['Reading paused', `You have ${Math.floor(seg)} of ${TOTAL} usable seconds, get back into the oval`, 'Continue'],
     analizando: ['Analyzing', 'Finding the cleanest stretch of the signal and computing variability', ''],
     completo: [
@@ -338,7 +338,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Daily check-up · step 1 of 5</p>
             <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Camera check-up</h1>
           </div>
-          <p className="m-0 text-sm text-soft">About <strong className="text-ink">4 minutes</strong> in total</p>
+          <p className="m-0 text-sm text-soft">About <strong className="text-ink">2 minutes</strong> in total</p>
         </div>
         <StepBar actual={0} />
       </header>
@@ -505,7 +505,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 Lower HRV (RMSSD) usually comes with more stress. {exprHoy !== null && exprNormal !== null && (normalExpr?.linea_base.n ?? 0) >= 3
                   ? `Your expressiveness today is ${exprHoy > exprNormal * 1.15 ? 'higher' : exprHoy < exprNormal * 0.85 ? 'lower' : 'similar to'} ${exprHoy > exprNormal * 1.15 || exprHoy < exprNormal * 0.85 ? 'than' : ''} your normal (${exprNormal.toFixed(2)}).`
                   : 'Expressiveness is compared against your normal once there are at least 3 check-ups.'}
-                {final.hrv === null && ' HRV not available: the signal was not clean enough.'}
+                {final.hrv === null && ` HRV and breathing need a longer reading (about 55 s and 30 s): not available in the ${TOTAL}-second check-up.`}
               </p>
             </section>
           )}

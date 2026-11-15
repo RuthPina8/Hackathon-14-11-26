@@ -8,14 +8,14 @@ import { useSession } from '../../store/useSession'
 
 // Meteor watch: una PVT (Psychomotor Vigilance Task) con juego de ir / no ir (go / no-go).
 // La prueba de vigilancia es la que usa NASA en la ISS (versión de 3 minutos de Basner y Dinges).
-// Aquí son 30 segundos, con ritmo rápido. Se responde SIEMPRE con la misma acción, sin apuntar (tocar en cualquier lado o
+// Aquí son 20 segundos (acordado por el equipo: todas las pruebas duran 20 s), con ritmo rápido. Se responde SIEMPRE con la misma acción, sin apuntar (tocar en cualquier lado o
 // la barra espaciadora), así el tiempo de reacción sigue siendo comparable con el de la PVT clásica.
 // - Meteorito verde (carga): hay que responder lo más rápido posible. Eso da el tiempo de reacción.
 // - Meteorito rojo (escombro): NO se toca. Tocarlo es un error de impulsividad (cuenta como falso).
 // - Tiempo de reacción: mediana de las respuestas (menos sensible a un toque distraído que el promedio).
 // - Lapso: respuesta de más de 500 ms. Un meteorito verde sin respuesta cuenta como 1800 ms.
 // - Falso: tocar antes de que aparezca un meteorito, tocar en menos de 100 ms o tocar un escombro.
-const DURACION_MS = 30_000
+const DURACION_MS = 20_000
 const ESPERA_MIN = 800
 const ESPERA_MAX = 2400
 const LAPSO_MS = 500
@@ -295,7 +295,7 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
             {fase === 'inicio' && (
               <span className="absolute inset-0 grid place-items-center">
                 <span className="flex max-w-[420px] flex-col items-center gap-3 px-6">
-                  <span className="font-display text-xl font-semibold">Meteor watch · 30 seconds</span>
+                  <span className="font-display text-xl font-semibold">Meteor watch · 20 seconds</span>
                   <span className="flex items-center justify-center gap-5" aria-hidden><Roca go id={9001} tam={52} /><Roca go={false} id={9002} tam={52} /></span>
                   <span className="text-sm leading-relaxed text-soft">
                     <strong className="text-ok-soft">Green cargo pod:</strong> tap here or press the space bar as fast as you can.{' '}

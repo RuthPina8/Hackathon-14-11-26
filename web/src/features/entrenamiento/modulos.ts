@@ -27,12 +27,12 @@ export interface Modulo {
 
 export const MODULOS: Modulo[] = [
   {
-    id: 'camara', titulo: 'Camera check-up', ruta: '/camera?paso=0', minutos: 2,
+    id: 'camara', titulo: 'Camera check-up', ruta: '/camera?paso=0', minutos: 1,
     enciende: ['corazon', 'pulmones'], insignias: [],
     porQue: 'Without gravity, fluids shift toward the head and the heart works differently. Your resting heart rate is the first sign that something is changing.',
     dato: 'The camera measures your pulse from tiny changes in skin color (rPPG), with no sensors attached.',
     pistas: [
-      { selector: '[data-tour="chequeo-iniciar"]', texto: 'Sit with light facing you and tap "Start reading". Keep your face inside the oval for 60 seconds.' },
+      { selector: '[data-tour="chequeo-iniciar"]', texto: 'Sit with light facing you and tap "Start reading". Keep your face inside the oval for 20 seconds.' },
       { selector: '[aria-labelledby="hr"]', texto: 'Your live heart rate shows up here. If the signal is weak, the app tells you what to fix (light, movement, framing).' },
     ],
     resultado: 'This is your heart rate today. With every check-up the system learns YOUR normal; an alert fires when you drift from yourself, not from an average.',
