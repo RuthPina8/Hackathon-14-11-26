@@ -1,0 +1,16 @@
+{
+  "id": "nave",
+  "nombre": "Nave en tránsito a Marte",
+  "descripcion": "Espacio profundo, microgravedad, sin evacuación posible y retraso de minutos",
+  "gravedad_g": 0.0,
+  "radiacion_msv_dia": 1.8,
+  "retraso_s": 750,
+  "retraso_demo_s": 8.0,
+  "ancho_banda_kbps": 32,
+  "perdida_osea_pct_mes": 1.2,
+  "evacuacion": "Imposible: meses de viaje",
+  "fuentes": [
+    "Radiación en crucero ~1.8 mSv/día (MSL RAD, Zeitlin et al. 2013)",
+    "Retraso de ida 3 a 22 min según la distancia; se usa 12.5 min como promedio"
+  ]
+}
