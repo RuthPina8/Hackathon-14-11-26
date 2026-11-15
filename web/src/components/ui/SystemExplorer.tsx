@@ -12,7 +12,9 @@ const C: Record<Semaforo, string> = { ok: '#3DDC97', warn: '#F5B544', crit: '#FF
 const BG: Record<Semaforo, string> = { ok: '#0E2A20', warn: '#241D0D', crit: '#2A1218', none: '#15233B' }
 const TXT: Record<Semaforo, string> = { ok: 'Dentro de tu normal', warn: 'Atención a bordo', crit: 'Escalar a Tierra', none: 'Proyección simulada' }
 // Un sistema medido hoy pero sin línea base todavía no está "simulado", está aprendiendo tu normal
-const etiqueta = (s?: { estado: Semaforo; real?: Record<string, string> }) => (!s ? TXT.none : s.real && s.estado === 'none' ? 'Aprendiendo tu normal' : TXT[s.estado])
+// Un sistema sin mediciones todavía no es "simulado": solo el óseo es proyección
+const etiqueta = (s?: { estado: Semaforo; real?: Record<string, string>; sim?: boolean }) =>
+  !s ? TXT.none : s.estado !== 'none' ? TXT[s.estado] : s.sim ? TXT.none : s.real ? 'Aprendiendo tu normal' : 'Sin datos todavía'
 const capaTag = { real: ['real', 'Real'], self: ['self', 'Autorreportado'], sim: ['simt', 'Simulado'] } as const
 
 // contorno del cuerpo (simétrico, generado a partir de la mitad derecha)
@@ -255,7 +257,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             <p className="m-0 text-sm leading-relaxed" style={{ color: st === 'crit' ? '#FFC2C8' : '#E8ECF4' }}>{sel.nota ?? det.porque}</p>
 
             <div className="flex flex-col gap-2">
-              {det.metricas.map((m) => {
+              {(sel.metricas ?? det.metricas).map((m) => {
                 const mst = st === 'crit' && m.label === 'Presión' ? 'crit' : m.estado
                 const real = sel.real?.[m.label]
                 const val = st === 'crit' && m.label === 'Presión' ? sel.valor : real ?? m.value
@@ -269,7 +271,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                         {real && <span className="tag real">Medido hoy</span>}
                       </p>
                     </div>
-                    <Spark serie={m.serie} color={C[mst]} />
+                    {m.serie.length > 1 ? <Spark serie={m.serie} color={C[mst]} /> : <span className="w-[120px] text-right text-[11px] text-[#93A0B8]">{m.serie.length ? '1 dato' : 'sin datos'}</span>}
                   </div>
                 )
               })}

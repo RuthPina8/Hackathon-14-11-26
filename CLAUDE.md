@@ -76,6 +76,23 @@ astrohealth/
 | GET | `/simulation?env=nave&day=120` | Proyección ósea, radiación, retraso, riesgo | Back 2 |
 | POST | `/demo/advance` | Avanza el tiempo simulado de la demo | Back 2 |
 
+### Ampliaciones del 15 nov (cierre del proyecto)
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/crew` | Semáforo, readiness y últimos valores de A1 a A4 (panel del comandante y de Tierra) |
+| POST | `/ingest/apple-health?astronauta_id=` | JSON de Health Auto Export → ritmo en reposo, VFC (SDNN) y sueño; no duplica |
+| GET, PUT | `/ficha/{astronauta_id}` | Ficha médica pre-misión (antecedentes y valores basales en Tierra). Es referencia: no entra al motor |
+| GET | `/evolucion/{astronauta_id}` | Últimos 7 días contra la ficha (o contra la primera semana): mejora, estable o se aleja |
+| GET, DELETE | `/validacion?origen=` | Confiabilidad de la cámara: MAE, Bland-Altman, % a ±5 lpm, umbral de confianza verificado |
+| POST | `/validacion/referencia` | Pulso de un aparato de referencia; se empareja con la lectura de cámara de los 15 min cercanos |
+| POST | `/validacion/lote` | Pares de una base pública (UBFC-rPPG, PURE) calculados con `api/ml/validar_dataset.py` |
+
+- `/indicators/{tipo}` ahora trae `anomalias`, `estado`, `desde` y `alerta_id` (de la alerta abierta), `dato_demo` y `range=mision`.
+- `/status` trae `racha` y `dato_demo`.
+- Con `DATABASE_URL` en `api/.env` todo se guarda en PostgreSQL y se restaura al reiniciar; `python -m app.seed --dias 30 --fichas-demo` llena la base para la demo. Sin `DATABASE_URL`, todo sigue en memoria.
+- El front encuentra el back solo: sin `VITE_API_URL` usa el puerto 8000 de la misma máquina.
+
 ### Eventos de `/ws`
 
 Formato: `{"event": "...", "data": {...}}`. Eventos: `measurement_added`, `status_changed`, `calibration_changed`, `alert_raised`, `queue_updated`.

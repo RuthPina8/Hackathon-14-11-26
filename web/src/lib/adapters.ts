@@ -146,7 +146,7 @@ export function adaptAlert(a: ServerAlert): AlertItem {
 // ---------- cola hacia Tierra ----------
 export function adaptQueue(m: ServerQueueMessage): QueueMessage {
   const payload = m.payload ?? {}
-  let name: string = m.tipo
+  let name: string
   if (typeof payload.texto === 'string') name = payload.texto
   else if (m.tipo === 'alerta') name = `Alerta ${payload.nivel === 'roja' ? 'roja' : 'amarilla'}, ${nombreSenal(String(payload.senal ?? 'señal')).toLowerCase()}`
   else if (m.tipo === 'reporte') name = 'Reporte'

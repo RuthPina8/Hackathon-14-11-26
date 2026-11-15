@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import Inicio from './pages/Inicio'
 import Detalle from './pages/Detalle'
@@ -8,7 +8,9 @@ import Perfil from './pages/Perfil'
 import Simulacion from './pages/Simulacion'
 import Tierra from './pages/Tierra'
 import Tripulacion from './pages/Tripulacion'
-import Front1Placeholder from './pages/Front1Placeholder'
+import Evolucion from './pages/Evolucion'
+import Ficha from './pages/Ficha'
+import Confiabilidad from './pages/Confiabilidad'
 import { useWebSocket } from './lib/ws'
 import { useMissionClock } from './lib/useMissionClock'
 import DemoBar from './components/layout/DemoBar'
@@ -18,10 +20,12 @@ import { useAppStore } from './store/useAppStore'
 import ChequeoFlow from './features/chequeo/ChequeoFlow'
 import { useChequeoStore } from './features/chequeo/chequeoStore'
 
-// Front 1: flujo del chequeo diario (features/chequeo). Al salir vuelve a Inicio.
+// Flujo del chequeo diario (features/chequeo). El paso va en la URL: /camera?paso=0..4
 function ChequeoRoute() {
   const navigate = useNavigate()
-  return <ChequeoFlow onSalir={() => navigate('/')} />
+  const [params, setParams] = useSearchParams()
+  const paso = Math.min(4, Math.max(0, Number(params.get('paso')) || 0))
+  return <ChequeoFlow paso={paso} onPaso={(p) => setParams(p ? { paso: String(p) } : {})} onSalir={() => navigate('/')} />
 }
 
 // Cuando Front 1 guarda un resultado real de la cámara, se refleja en el dashboard de Front 2.
@@ -38,6 +42,9 @@ export default function App() {
   useMissionClock()
   useCameraToDashboard()
   const user = useSession((s) => s.user)
+  // Lo hecho hoy en el chequeo es de cada astronauta (Inicio muestra su rutina)
+  const cargarChequeo = useChequeoStore((s) => s.cargar)
+  useEffect(() => { if (user) cargarChequeo(user.id) }, [user, cargarChequeo])
 
   // Sin sesión: solo la pantalla de inicio con la cara
   if (!user) return <><Login /><DemoBar /></>
@@ -55,12 +62,15 @@ export default function App() {
         <Route path="/simulation" element={<Simulacion />} />
         <Route path="/earth" element={<Tierra />} />
         <Route path="/crew" element={<Tripulacion />} />
+        <Route path="/progress" element={<Evolucion />} />
+        <Route path="/record" element={<Ficha />} />
+        <Route path="/reliability" element={<Confiabilidad />} />
 
-        {/* Front 1: /camera ya conectado (features/chequeo); los demás pasos siguen en construcción */}
+        {/* Chequeo diario (Front 1): los 5 pasos viven en /camera?paso=N; las rutas viejas redirigen */}
         <Route path="/camera" element={<ChequeoRoute />} />
-        <Route path="/cognitive" element={<Front1Placeholder titulo="Prueba cognitiva" paso="paso 2 de 5" />} />
-        <Route path="/manual" element={<Front1Placeholder titulo="Presión, ánimo y síntomas" paso="pasos 3 y 4 de 5" />} />
-        <Route path="/summary" element={<Front1Placeholder titulo="Resumen de hoy" paso="paso 5 de 5" />} />
+        <Route path="/cognitive" element={<Navigate to="/camera?paso=1" replace />} />
+        <Route path="/manual" element={<Navigate to="/camera?paso=2" replace />} />
+        <Route path="/summary" element={<Navigate to="/camera?paso=4" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -1,29 +1,24 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import ChequeoCamara from './ChequeoCamara'
-import StepBar from './components/StepBar'
+import PruebaCognitiva from './PruebaCognitiva'
+import RegistroPresion from './RegistroPresion'
+import RegistroAnimo from './RegistroAnimo'
+import Resumen from './Resumen'
+import { useChequeoStore } from './chequeoStore'
+import { useSession } from '../../store/useSession'
 
-// Flujo completo del chequeo diario: Front 2 lo monta en la ruta /chequeo
-export default function ChequeoFlow({ onSalir }: { onSalir?: () => void }) {
-  const [paso, setPaso] = useState(0)
+// Flujo completo del chequeo diario. El paso vive en la URL (/camera?paso=N), así el botón
+// "atrás" del navegador, los enlaces de Inicio y recargar la página llevan al paso correcto.
+export default function ChequeoFlow({ paso, onPaso, onSalir }: { paso: number; onPaso: (p: number) => void; onSalir: () => void }) {
+  const usuario = useSession((s) => s.user?.id ?? 'A1')
+  const cargar = useChequeoStore((s) => s.cargar)
+  useEffect(() => { cargar(usuario) }, [usuario, cargar])
 
-  if (paso === 0) {
-    return <ChequeoCamara onSiguiente={() => setPaso(1)} onCancelar={() => onSalir?.()} />
-  }
+  useEffect(() => { window.scrollTo?.(0, 0); document.querySelector('main')?.scrollTo?.(0, 0) }, [paso])
 
-  // Pasos 2 a 5: se van agregando aquí conforme se construyen
-  return (
-    <div className="flex flex-col gap-6">
-      <StepBar actual={paso} />
-      <section className="rounded-2xl border border-line bg-panel p-8">
-        <p className="m-0 text-soft">Este paso se agrega en el siguiente bloque.</p>
-        <button
-          type="button"
-          onClick={() => setPaso(paso - 1)}
-          className="mt-4 min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-nav"
-        >
-          Atrás
-        </button>
-      </section>
-    </div>
-  )
+  if (paso === 1) return <PruebaCognitiva onSiguiente={() => onPaso(2)} onAtras={() => onPaso(0)} />
+  if (paso === 2) return <RegistroPresion onSiguiente={() => onPaso(3)} onAtras={() => onPaso(1)} />
+  if (paso === 3) return <RegistroAnimo onSiguiente={() => onPaso(4)} onAtras={() => onPaso(2)} />
+  if (paso === 4) return <Resumen onIrA={onPaso} onSalir={onSalir} />
+  return <ChequeoCamara onSiguiente={() => onPaso(1)} onCancelar={onSalir} />
 }

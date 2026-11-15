@@ -15,6 +15,16 @@ export const CONFIANZA_MINIMA = 0.12 // entre esta y la buena se muestra en gris
 
 export type MuestraColor = { t: number; r: number; g: number; b: number; n?: number }
 export type Estimacion = { bpm: number; confianza: number }
+export type ResultadoCuadro = 'ok' | 'tapado' | 'sin_piel'
+
+// La confianza del navegador (SNR x consistencia, calibrada contra Apple Watch: 0.2 ya es buena)
+// está en otra escala que la del motor (0.5 = entra a la línea base). Se traduce por tramos:
+// 0.12 (mínima) -> 0.30, 0.20 (buena) -> 0.60, 0.40 o más -> 0.95.
+export function confianzaMotor(c: number): number {
+  if (c <= CONFIANZA_MINIMA) return Math.max(0, (c / CONFIANZA_MINIMA) * 0.3)
+  if (c <= CONFIANZA_BUENA) return 0.3 + ((c - CONFIANZA_MINIMA) / (CONFIANZA_BUENA - CONFIANZA_MINIMA)) * 0.3
+  return Math.min(0.95, 0.6 + ((c - CONFIANZA_BUENA) / 0.2) * 0.35)
+}
 
 const promedio = (a: number[]) => a.reduce((s, v) => s + v, 0) / (a.length || 1)
 const desviacion = (a: number[]) => {
@@ -162,26 +172,42 @@ export function useRppg() {
   const historial = useRef<number[]>([])
   const lienzo = useRef<CanvasRenderingContext2D | null>(null)
   const brilloActual = useRef<number | null>(null)
+  const conteosPiel = useRef<number[]>([])
+  const tapadoSeguidos = useRef(0)
   const [bpm, setBpm] = useState<number | null>(null)
   const [confianza, setConfianza] = useState(0)
   const [onda, setOnda] = useState<number[]>([])
   const [brillo, setBrillo] = useState<number | null>(null)
 
-  // Se llama en cada cuadro con el tiempo real del cuadro (ms): saca el color de la piel
-  const registrar = useCallback((video: HTMLVideoElement, rois: Roi[], t: number) => {
+  // Se llama en cada cuadro con el tiempo real del cuadro (ms): saca el color de la piel.
+  // Regresa 'tapado' si algo cubre la piel (ese cuadro no se usa) y 'sin_piel' si no hubo pixeles útiles.
+  const registrar = useCallback((video: HTMLVideoElement, rois: Roi[], t: number): ResultadoCuadro => {
     const W = video.videoWidth
     const H = video.videoHeight
-    if (!W || !H) return
-    if (!lienzo.current || lienzo.current.canvas.width !== W) {
+    if (!W || !H) return 'sin_piel'
+    // Solo se copia el rectángulo que contiene las zonas de piel, a resolución completa
+    // (más pixeles de piel = menos ruido, y copiar solo esa parte es varias veces más rápido)
+    let bx0 = W, by0 = H, bx1 = 0, by1 = 0
+    for (const roi of rois) {
+      bx0 = Math.min(bx0, Math.max(0, Math.floor(roi.x * W)))
+      by0 = Math.min(by0, Math.max(0, Math.floor(roi.y * H)))
+      bx1 = Math.max(bx1, Math.min(W, Math.ceil((roi.x + roi.w) * W)))
+      by1 = Math.max(by1, Math.min(H, Math.ceil((roi.y + roi.h) * H)))
+    }
+    const bw = bx1 - bx0
+    const bh = by1 - by0
+    if (bw < 4 || bh < 4) return 'sin_piel'
+    if (!lienzo.current) {
       const c = document.createElement('canvas')
-      c.width = W
-      c.height = H
       lienzo.current = c.getContext('2d', { willReadFrequently: true })
     }
     const ctx = lienzo.current
-    if (!ctx) return
-    // Resolución completa: más pixeles de piel = menos ruido
-    ctx.drawImage(video, 0, 0, W, H)
+    if (!ctx) return 'sin_piel'
+    if (ctx.canvas.width < bw || ctx.canvas.height < bh) {
+      ctx.canvas.width = Math.max(ctx.canvas.width, bw)
+      ctx.canvas.height = Math.max(ctx.canvas.height, bh)
+    }
+    ctx.drawImage(video, bx0, by0, bw, bh, 0, 0, bw, bh)
 
     // Filtro de piel adaptativo: en cada zona se calcula el brillo típico (mediana) y solo se
     // usan los pixeles parecidos. Deja fuera cejas, pelo, sombras y brillos sin parpadear,
@@ -196,7 +222,7 @@ export function useRppg() {
       const x1 = Math.min(W, Math.ceil((roi.x + roi.w) * W))
       const y1 = Math.min(H, Math.ceil((roi.y + roi.h) * H))
       if (x1 - x0 < 2 || y1 - y0 < 2) continue
-      const d = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data
+      const d = ctx.getImageData(x0 - bx0, y0 - by0, x1 - x0, y1 - y0).data
       const histograma = new Uint32Array(256)
       const total = d.length / 4
       for (let i = 0; i < d.length; i += 4) histograma[(d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8]++
@@ -213,14 +239,40 @@ export function useRppg() {
         n++
       }
     }
-    if (n < 50) return
+    if (n < 50) return 'sin_piel'
+
+    // Oclusión: si de pronto hay muchos menos pixeles de piel que de costumbre (mano, cabello),
+    // el color promedio cambia por lo que tapa, no por el pulso. Ese cuadro se descarta.
+    const conteos = conteosPiel.current
+    if (conteos.length >= 30) {
+      const orden = [...conteos].sort((a, c) => a - c)
+      const mediana = orden[Math.floor(orden.length / 2)]
+      if (n < mediana * 0.55) {
+        // Si dura más de ~3 s no es algo que tapa: el astronauta se alejó. Se acepta como nuevo normal
+        if (++tapadoSeguidos.current < 90) return 'tapado'
+        conteos.length = 0
+      }
+    }
+    tapadoSeguidos.current = 0
+    conteos.push(n)
+    if (conteos.length > 90) conteos.shift()
 
     const ultima = muestras.current[muestras.current.length - 1]
-    if (ultima && t <= ultima.t) return
+    if (ultima && t <= ultima.t) return 'ok'
     muestras.current.push({ t, r: sr / n, g: sg / n, b: sb / n, n })
     brilloActual.current = (sr + sg + sb) / (3 * n)
     const limite = t - BUFFER_MS
     while (muestras.current.length && muestras.current[0].t < limite) muestras.current.shift()
+    return 'ok'
+  }, [])
+
+  // Cuadros por segundo reales de los últimos 2 s (si la cámara va lenta, el pulso pierde detalle)
+  const fps = useCallback(() => {
+    const m = muestras.current
+    if (m.length < 10) return null
+    const fin = m[m.length - 1].t
+    const recientes = m.filter((x) => x.t >= fin - 2000)
+    return recientes.length / 2
   }, [])
 
   // Cada segundo recalcula el ritmo en vivo con los últimos 20 segundos
@@ -264,13 +316,14 @@ export function useRppg() {
   const reiniciar = useCallback(() => {
     muestras.current = []
     historial.current = []
+    conteosPiel.current = []
     setBpm(null)
     setConfianza(0)
     setOnda([])
   }, [])
 
-  // Copia de la señal cruda, para mandarla al back cuando esté su endpoint
+  // Copia de la señal cruda: se manda a POST /rppg/estimate para la VFC y la respiración
   const ventana = useCallback(() => [...muestras.current], [])
 
-  return { bpm, confianza, onda, brillo, registrar, reiniciar, estimarFinal, ventana }
+  return { bpm, confianza, onda, brillo, registrar, reiniciar, estimarFinal, ventana, fps }
 }

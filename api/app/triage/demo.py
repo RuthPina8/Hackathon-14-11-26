@@ -69,6 +69,12 @@ class DemoEngine:
             alerts.reset()
             queue_engine.reset()
             baseline.reset()
+            # Back 1: borra lo simulado y conserva las mediciones reales del equipo
+            from app.models.memoria import almacen
+            from app.routers import measurements
+
+            almacen.reiniciar_demo()
+            measurements.reset()
         await broadcast("demo_tick", {"dia": 0, "fuente_datos": self.fuente, "reset": True})
         return self.estado()
 

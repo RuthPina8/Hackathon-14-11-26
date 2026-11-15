@@ -1,5 +1,5 @@
 import type { SystemStatus } from '../../store/mockData'
-import { semColor } from './SemaphoreDot'
+import { semColor } from './semColor'
 
 // Figura del cuerpo del rediseño v2. Cada sistema tiene un punto con halo
 // del color de su semáforo; el óseo va punteado porque es simulado.

@@ -29,20 +29,23 @@ api/
   main.py                  # arranque, CORS, /ws, broadcast                     (Back 2)
   app/
     core/                  # config, db, ws; umbrales.py lo editan ambos        (Back 2)
-    models/                # SQLAlchemy                                          (Back 1)
+    models/                # memoria.py (almacén del motor), tablas.py (SQLAlchemy),
+                           # persistencia.py (PostgreSQL), clinico.py (fichas y validación) (Back 1)
     schemas/               # Pydantic del contrato; cambiarlo = avisar          (ambos)
     routers/
-      rppg.py measurements.py indicators.py status.py ingest.py                 (Back 1)
+      rppg.py measurements.py indicators.py status.py ingest.py crew.py clinico.py (Back 1)
       alerts.py queue.py environment.py simulation.py demo.py                   (Back 2)
     intelligence/          # funciones puras: rppg, baseline, detectors, sleep,
                            # immune, mood_model, readiness, calibration          (Back 1)
       modelos/             # .joblib/.onnx pequeños; el motor funciona sin ellos
     ingest/                # Health Auto Export → mediciones                     (Back 1)
     simulator/             # historial sintético desde el día 1                  (Back 1)
+    seed.py                # python -m app.seed: llena PostgreSQL para la demo    (Back 1)
     triage/                # reglas de alertas, cola, modo demo y guion de respaldo (Back 2)
     entornos/              # perfiles JSON (iss, luna, nave, marte) y proyección de /simulation (Back 2)
   docs/motor.md            # especificación del motor
-  ml/                      # notebooks; la API NO importa de aquí
+  ml/                      # scripts y notebooks; la API NO importa de aquí
+                           # validar_dataset.py: nuestro rPPG contra UBFC-rPPG y PURE
   tests/
 ```
 
@@ -63,6 +66,11 @@ api/
 - `alerts`: id, astronauta_id, nivel, senal, que_cambio, cuanto, desde, factores (JSONB), estado
 - `queue_messages`: id, prioridad, tipo, tamano, payload (JSONB), estado, enviado, entregado
 - `environments`: id, perfil (JSONB)
+- `medical_records`: astronauta_id, datos (JSONB, la ficha completa), actualizada
+- `validation_pairs`: id, camara, referencia, confianza, origen (`propio`, `UBFC-rPPG`, `PURE`), astronauta_id, fuente_referencia, fecha
+
+`measurements.en_linea_base` guarda si la medición entró a la línea base al llegar (no entra si la línea base estaba
+congelada), para que al restaurar desde la base la línea base quede idéntica.
 
 Valores de `fuente`: `camara`, `prueba`, `manual`, `apple_watch`, `simulador`, `modelo`.
 

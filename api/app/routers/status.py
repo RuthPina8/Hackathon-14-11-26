@@ -59,8 +59,22 @@ def construir_estado(astronauta_id: int = 1) -> StatusOut:
     animo_camara = {"estado": ra.estado, "acierto_pct": ra.acierto_pct, "mae": ra.mae, "n": ra.n,
                     "explicacion": ra.explicacion, "estimado_hoy": ra.estimado_hoy}
 
+    # Racha: días seguidos con chequeo (sin contar lo simulado por capa sim ni estimaciones del modelo)
+    from app.routers.measurements import clave_dia
+
+    todas = almacen.listar(astronauta_id)
+    dias = {clave_dia(m) for m in todas if m.capa != "sim" and m.fuente != "modelo"}
+    racha = 0
+    if dias:
+        d = max(dias)
+        while d in dias:
+            racha += 1
+            d -= 1
+
     dia = demo_engine.dia
     return StatusOut(
+        racha=racha,
+        dato_demo=any(m.fuente == "simulador" for m in todas),
         astronauta_id=astronauta_id,
         readiness=estado.readiness,
         factores=estado.factores,

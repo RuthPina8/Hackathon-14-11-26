@@ -63,7 +63,7 @@ export default function Login() {
     who: null as string | null, misses: 0,
     chal: [] as ChallengeId[], chalIdx: 0, chalSince: 0, chalNeutral: false, chalHold: 0, faces: faces, busy: false, lastSample: 0,
   })
-  st.current.faces = faces
+  useEffect(() => { st.current.faces = faces }, [faces])
 
   const go = useCallback((p: Phase) => { st.current.phase = p; setPhase(p) }, [])
 

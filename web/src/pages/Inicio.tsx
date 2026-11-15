@@ -12,27 +12,38 @@ import { PageHeader, SimBanner } from '../components/ui/Page'
 import { useSession } from '../store/useSession'
 import { useChequeoStore } from '../features/chequeo/chequeoStore'
 
-const rutinaBase = [
-  { label: 'Chequeo con cámara', capa: 'real', done: false, to: '/camera' },
-  { label: 'Prueba cognitiva', capa: 'real', done: false, to: '/cognitive' },
-  { label: 'Presión arterial', capa: 'self', done: false, to: '/manual' },
-  { label: 'Ánimo y síntomas', capa: 'self', done: false, to: '/manual' },
-] as const
+// Texto bajo la disposición: sale del número y de los factores reales, nunca fijo
+function lectura(readiness: number, factores: number, sinDatos: boolean) {
+  if (sinDatos) return 'Aún no hay mediciones tuyas. Haz tu primer chequeo para que el motor calcule tu estado'
+  if (readiness >= 85) return factores ? 'Puedes operar con normalidad, hay una señal menor que conviene vigilar' : 'Puedes operar con normalidad, todo está dentro de tu normal'
+  if (readiness >= 65) return `Puedes operar, ${factores === 1 ? 'hay una señal' : `hay ${factores} señales`} que conviene atender hoy`
+  if (readiness >= 45) return 'Evita tareas críticas o de precisión hasta atender las señales de abajo'
+  return 'Estado bajo: sigue las alertas y avisa al comandante'
+}
 
 export default function Inicio() {
   const status = useAppStore((s) => s.status)
   const user = useSession((s) => s.user)
-  const camara = useChequeoStore((s) => s.camara)
-  const rutina = rutinaBase.map((r) => (r.to === '/camera' ? { ...r, done: !!camara } : r))
+  const { camara, cognitivo, presion, registro } = useChequeoStore()
+  const rutina = [
+    { label: 'Chequeo con cámara', capa: 'real', done: !!camara, to: '/camera' },
+    { label: 'Prueba de atención', capa: 'real', done: !!cognitivo, to: '/camera?paso=1' },
+    { label: 'Presión arterial', capa: 'self', done: !!presion, to: '/camera?paso=2' },
+    { label: 'Ánimo, sueño y síntomas', capa: 'self', done: !!registro, to: '/camera?paso=3' },
+  ]
   const alerts = useMyAlerts()
   const env = useAppStore((s) => s.environment)
   const statusReal = useAppStore((s) => s.statusReal)
   const active = alerts.filter((a) => a.estado === 'activa')
   const hechos = rutina.filter((r) => r.done).length
+  const server = useAppStore((s) => s.server)
+  const sinDatos = statusReal && (status.nMediciones ?? 0) === 0
+  const siguiente = rutina.find((r) => !r.done)
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
+      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Sin conexión con el motor: tu estado, tu línea base y las gráficas son de ejemplo. Arranca la API para ver tus datos reales</SimBanner>}
+      {statusReal && status.datoDemo && <SimBanner tag="DATO DE DEMO">Tu estado incluye datos del simulador de la misión (modo demo)</SimBanner>}
       <PageHeader
         kicker={`Día ${status.diaMision} de misión · ${environmentProfiles[env].nombre}`}
         title={`Hola, ${user?.nombre ?? ''}`}
@@ -41,20 +52,21 @@ export default function Inicio() {
             <span className="inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl bg-[#0E1422] border border-[#1C2740] text-[13px] text-[#A3AEC4]">
               Racha <strong className="num text-[15px] text-[#E8ECF4]">{status.racha}</strong> días
             </span>
-            <Link className="btn pri" to="/camera">Iniciar chequeo diario <ArrowRight size={18} strokeWidth={2.2} /></Link>
+            <Link className="btn pri" to={siguiente?.to ?? '/camera?paso=4'}>{hechos === 0 ? 'Iniciar chequeo diario' : siguiente ? 'Continuar chequeo' : 'Ver resumen de hoy'} <ArrowRight size={18} strokeWidth={2.2} /></Link>
           </div>
         }
       />
 
       <div className="flex flex-wrap gap-5">
         <section className="card flex flex-wrap items-center gap-7" style={{ flex: '3 1 480px', minWidth: 0, padding: 26 }} aria-labelledby="mr">
-          <div style={{ flex: '0 1 240px' }}><ReadinessGauge value={status.readiness} ayer={status.ayer} /></div>
+          <div style={{ flex: '0 1 240px', opacity: sinDatos ? 0.35 : 1 }}><ReadinessGauge value={sinDatos ? null : status.readiness} ayer={status.ayer} /></div>
           <div className="flex flex-col gap-3.5 min-w-0" style={{ flex: '1 1 240px' }}>
             <div>
               <h2 id="mr" className="h2" style={{ fontSize: 20 }}>Disposición para la misión</h2>
-              <p className="mt-1.5 mb-0 text-sm text-[#A3AEC4] leading-relaxed">Puedes operar con normalidad, hay dos señales que conviene atender hoy</p>
+              <p className="mt-1.5 mb-0 text-sm text-[#A3AEC4] leading-relaxed">{lectura(status.readiness, status.factores.length, sinDatos)}</p>
             </div>
-            <p className="k">Por qué bajó</p>
+            <p className="k">{status.factores.length ? 'Por qué bajó' : sinDatos ? 'Qué falta' : 'Sin factores en contra'}</p>
+            {status.factores.length === 0 && <p className="m-0 text-sm text-[#A3AEC4]">{sinDatos ? 'Completa la rutina de hoy' : 'Ninguna señal fuera de tu normal'}</p>}
             <ul className="m-0 p-0 list-none flex flex-col gap-2.5 text-sm">
               {status.factores.map((f, i) => (
                 <motion.li key={f.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.15 }} className="flex items-center gap-3">
@@ -102,14 +114,14 @@ export default function Inicio() {
           {active.length === 0
             ? <p className="m-0 text-sm text-[#A3AEC4]">Sin alertas activas, todo dentro de tu normal</p>
             : active.map((a) => <AlertLink key={a.id} alert={a} />)}
-          <p className="mt-auto mb-0 text-xs text-[#93A0B8]">Datos de ejemplo para el prototipo</p>
+          {!server && <p className="mt-auto mb-0 text-xs text-[#93A0B8]">Alertas de ejemplo: el back no está conectado</p>}
         </section>
 
         <section className="card flex flex-col gap-3" style={{ flex: '1 1 260px', minWidth: 0 }} aria-labelledby="cal">
           <h2 id="cal" className="h2">Calibración del modelo</h2>
-          <div className="flex items-baseline gap-2.5"><p className="big" style={{ color: '#5CC8F5' }}>{status.calibracion}%</p><span className="text-[13px] text-[#A3AEC4]">aprendiendo tu normal</span></div>
+          <div className="flex items-baseline gap-2.5"><p className="big" style={{ color: '#5CC8F5' }}>{status.calibracion}%</p><span className="text-[13px] text-[#A3AEC4]">{status.calibracion >= 80 ? 'tu normal ya está calibrado' : 'aprendiendo tu normal'}</span></div>
           <CalibrationStrip day={status.diaBase} total={status.diasBase} />
-          <p className="m-0 text-[13px] text-[#A3AEC4] leading-relaxed">Día {status.diaBase} de {status.diasBase} de tu línea base personal, cada chequeo hace que las alertas dependan más de tu propio normal</p>
+          <p className="m-0 text-[13px] text-[#A3AEC4] leading-relaxed">{status.fase === 'tierra' ? 'Línea base en Tierra, antes del lanzamiento' : status.fase === 'personal' ? 'Fase personal: las alertas comparan contra tu propio normal' : `Día ${status.diaBase} de ${status.diasBase} de adaptación`}. Cada chequeo hace que las alertas dependan más de tu propio normal</p>
           <Link to="/profile" className="mt-auto text-[13px] font-semibold">Ver detalle de calibración</Link>
         </section>
       </div>

@@ -70,6 +70,8 @@ class StatusOut(BaseModel):
     fase: Literal["tierra", "adaptacion", "personal"]
     dia_mision: int
     n_mediciones: int
+    racha: int = Field(default=0, description="días seguidos con al menos una medición propia, hasta el último")
+    dato_demo: bool = Field(default=False, description="el estado incluye datos del simulador")
     inmune: InmuneOut | None = None
     animo_camara: AnimoCamaraOut | None = None
 
@@ -80,6 +82,17 @@ class PuntoOut(BaseModel):
     capa: Capa
     fuente: str
     confianza: float
+    dia_mision: int | None = None
+    z: float | None = Field(default=None, description="contra la línea base que había antes de este punto")
+    anomalo: bool = False
+
+
+class AnomaliaOut(BaseModel):
+    fecha: datetime
+    valor: float
+    z: float | None = None
+    motivo: str | None = None
+    dia_mision: int | None = None
 
 
 class LineaBaseOut(BaseModel):
@@ -92,7 +105,40 @@ class LineaBaseOut(BaseModel):
 
 class IndicatorOut(BaseModel):
     tipo: str
+    nombre: str = ""
     unidad: str
     serie: list[PuntoOut]
     linea_base: LineaBaseOut
     rango_clinico: tuple[float, float] | None = None
+    rango_atencion: tuple[float, float] | None = None
+    anomalias: list[AnomaliaOut] = Field(default_factory=list)
+    estado: Semaforo = "sin_datos"
+    alerta_id: int | None = None
+    desde: datetime | None = Field(default=None, description="desde cuándo, de la alerta abierta (CUSUM)")
+    experimental: bool = False
+    dato_demo: bool = Field(default=False, description="hay datos del simulador en la serie")
+
+
+class CrewMemberOut(BaseModel):
+    astronauta_id: int
+    nombre: str
+    rol: str
+    estado: Semaforo
+    readiness: int | None = None
+    ultimo: datetime | None = None
+    ultimo_dia: int | None = Field(default=None, description="día de misión del último dato")
+    ritmo: str | None = None
+    perclos: str | None = None
+    presion: str | None = None
+    animo: str | None = None
+    alertas_activas: int = 0
+    dato_demo: bool = False
+
+
+class IngestOut(BaseModel):
+    recibidas: int
+    guardadas: int
+    duplicadas: int
+    ignoradas: int
+    por_tipo: dict[str, int]
+    alerta_id: int | None = None

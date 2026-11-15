@@ -248,3 +248,46 @@ Dos condiciones para que el guion dispare lo que promete:
   - `02_wesad_estres.ipynb`: clasificador estrés / no estrés con pulso de muñeca (64 Hz), validación leave-one-subject-out; exportar con joblib.
   - `03_validar_rppg.ipynb`: cámara contra Apple Watch (MAE y Bland-Altman).
 - Licencias: WESAD solo para uso científico no comercial y citando a los autores; MMASH bajo ODbL. Los datasets no se suben al repo.
+
+
+## 10. Confiabilidad de la cámara (`intelligence/validacion.py`, `/validacion`)
+
+No existe un umbral universal: los umbrales de SNR o de índice de calidad calibrados con una base de datos no se
+transfieren a otra cámara o luz, y la SNR sola no basta para saber si una lectura sirve. Por eso:
+
+1. Cada lectura de cámara se empareja con un aparato de referencia tomado a la vez (oxímetro, brazalete del kit
+   médico, Apple Watch, ECG o pulso contado). El pulso del brazalete del paso 3 del chequeo se manda solo.
+2. Métricas estándar de validación de rPPG: MAE, RMSE, Pearson, Bland-Altman (sesgo y límites de acuerdo ±1.96 SD)
+   y tasa de éxito (% con error <= 5 lpm).
+3. **Umbral verificado** = la confianza más baja (en cortes de 0.1) donde, con al menos 5 pares, el 90% o más de
+   las lecturas queda a ±5 lpm. Con menos de 10 pares en total no se declara umbral: la app dice "sin validar"
+   y muestra la referencia publicada de POS (~1 a 4 lpm de MAE en UBFC-rPPG y PURE).
+4. Bases públicas: `python -m ml.validar_dataset --base ubfc|pure --ruta ... --api http://localhost:8000` corre
+   NUESTRO `rppg.py` sobre UBFC-rPPG o PURE (se piden a sus autores; no se suben) y carga los pares con origen.
+   Usa una caja de cara de OpenCV, más simple que la malla de MediaPipe del navegador: su error es un límite superior.
+
+La confianza del navegador (SNR x consistencia, 0.2 = buena) se traduce a la escala del motor por tramos:
+0.12 -> 0.30, 0.20 -> 0.60, 0.40 -> 0.95 (`confianzaMotor` en `useRppg.ts`). Así solo las lecturas buenas
+(>= 0.5) entran a la línea base.
+
+### Calidad de cada cuadro en la cámara (`web/src/features/chequeo/camara/calidad.ts`)
+
+El reloj de 60 s solo avanza con cuadros útiles. Bloquean (el cuadro no cuenta): sin cara, cara fuera del cuadro,
+muy lejos o muy cerca, de lado, frente o mejillas tapadas (caída brusca de pixeles de piel), movimiento brusco,
+imagen negra. Avisan sin bloquear: poca luz, luz excesiva o quemada, contraluz, luz de un solo lado, luz inestable
+(> 4% de variación en 2 s), mirar hacia abajo (se excluye de PERCLOS), otra persona en cuadro (se mide la cara
+más grande) y cámara lenta (< 15 cuadros/s). Mientras mide, la exposición y el balance de blancos se fijan si la
+cámara lo permite. Cambiar de pestaña pausa la medición. Si en 2.5 min no se juntan 60 s útiles, se termina con lo
+que haya y la confianza lo refleja.
+
+PERCLOS usa un umbral de "ojo cerrado" adaptado a cada persona: abierto = percentil 20 de su propio puntaje
+(tope 0.45) y cerrado = recorrer el 60% de lo que falta para 1 (mínimo 0.5). Además mide la duración de cada
+parpadeo y cuenta los cierres de más de 500 ms.
+
+## 11. Ficha médica y evolución (`/ficha`, `/evolucion`)
+
+La ficha es la evaluación médica previa al vuelo: antecedentes y valores basales en Tierra. Es una referencia, no
+una medición: no entra a la línea base ni a los detectores (regla de honestidad). La evolución compara el promedio
+de los últimos 7 días con datos contra la ficha o, si no hay ficha, contra los primeros 7 días (desde 10 días con
+datos). Tolerancia: medio desvío de tu propia variación diaria y al menos 3% del valor. Fuera de ella, según la
+dirección "mala" de la señal: mejora o se aleja. Nunca es un diagnóstico.
