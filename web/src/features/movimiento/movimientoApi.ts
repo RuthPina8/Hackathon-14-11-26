@@ -37,7 +37,7 @@ export const movimientoApi = {
     api.post<Sesion[]>('/movement/demo', { tipo, astronauta_id: astronautaId, ejercicio }),
 }
 
-export const NOMBRE_EJERCICIO: Record<Ejercicio, string> = { brazos: 'Elevación de brazos', sentadilla: 'Sentadilla controlada' }
+export const NOMBRE_EJERCICIO: Record<Ejercicio, string> = { brazos: 'Elevación frontal de brazos', sentadilla: 'Sentadilla controlada' }
 
 // "A1" -> 1
 export const idNumerico = (id: string | undefined) => Number((id ?? '1').replace(/\D/g, '')) || 1

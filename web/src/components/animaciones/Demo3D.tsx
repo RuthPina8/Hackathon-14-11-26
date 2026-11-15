@@ -75,9 +75,10 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
 
     const escena = new THREE.Scene()
     const camara = new THREE.PerspectiveCamera(30, 1, 0.1, 50)
-    const objetivo = new THREE.Vector3(0, ejercicio === 'sentadilla' ? 0.8 : 1.05, 0)
-    // Brazos: de frente, un poco de lado. Sentadilla: tres cuartos de perfil para ver la profundidad
-    if (ejercicio === 'brazos') camara.position.set(1.1, 1.3, 5.2)
+    const objetivo = new THREE.Vector3(0, ejercicio === 'sentadilla' ? 0.8 : 1.0, 0)
+    // Los dos ejercicios se ven de tres cuartos de perfil: así se nota que los brazos van al frente
+    // y la profundidad de la sentadilla (de frente, el brazo apuntaría a la cámara y no se vería)
+    if (ejercicio === 'brazos') camara.position.set(3.9, 1.4, 3.0)
     else camara.position.set(4.1, 1.25, 2.6)
     camara.lookAt(objetivo)
 
@@ -225,12 +226,15 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
       const pose = (d: number) => {
         reiniciar()
         if (ejercicio === 'brazos') {
-          const th = THREE.MathUtils.degToRad(15 + d * 155) // de 15° a 170°
-          const dirI = new THREE.Vector3(lado * Math.sin(th), -Math.cos(th), 0.04 * frente)
-          const dirD = new THREE.Vector3(-lado * Math.sin(th), -Math.cos(th), 0.04 * frente)
+          // Elevación frontal: de los costados (10°) hasta extendidos al frente a la altura de los hombros (90°),
+          // los dos a la vez, codos rectos, brazos paralelos al ancho de los hombros
+          const g = 10 + d * 80
+          const th = THREE.MathUtils.degToRad(g)
+          const dirI = new THREE.Vector3(lado * 0.1, -Math.cos(th), Math.sin(th) * frente)
+          const dirD = new THREE.Vector3(-lado * 0.1, -Math.cos(th), Math.sin(th) * frente)
           apuntar(huesos.brazoI, huesos.anteI, dirI); apuntar(huesos.anteI, huesos.manoI, dirI)
           apuntar(huesos.brazoD, huesos.anteD, dirD); apuntar(huesos.anteD, huesos.manoD, dirD)
-          return { ang: 15 + d * 155, ok: d > 0.93, texto: d > 0.93 ? 'Arriba' : 'Hombros' }
+          return { ang: g, ok: g > 82, texto: g > 82 ? 'Altura de hombros' : 'Hombros' }
         }
         // Sentadilla: la cadera baja y va hacia atrás
         const objetivoCadera = caderaMundo0.clone().add(new THREE.Vector3(0, -d * largoMuslo * 0.62, -d * largoMuslo * 0.42 * frente))
@@ -291,13 +295,13 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
 
   return (
     <div className="relative h-full w-full" style={{ background: 'radial-gradient(ellipse at 50% 40%, #12304A 0%, #0A1626 55%, #060B16 100%)' }}>
-      <div ref={caja} className="absolute inset-0" role="img" aria-label={ejercicio === 'brazos' ? 'Astronauta en 3D haciendo elevación de brazos' : 'Astronauta en 3D haciendo sentadilla controlada'} />
+      <div ref={caja} className="absolute inset-0" role="img" aria-label={ejercicio === 'brazos' ? 'Astronauta en 3D haciendo elevación frontal de brazos' : 'Astronauta en 3D haciendo sentadilla controlada'} />
       {!mini && (
         <>
           <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5">
             <span ref={angRef} className="num rounded-lg bg-[rgba(6,11,22,.8)] px-3 py-1.5 text-[17px] font-bold text-accent-soft">--</span>
             <span ref={okRef} className="rounded-lg bg-ok-bg px-3 py-1.5 text-[15px] font-bold text-ok-soft transition-opacity" style={{ opacity: 0 }}>
-              {ejercicio === 'brazos' ? '✓ Codos rectos, manos arriba' : '✓ Espalda recta, talones abajo'}
+              {ejercicio === 'brazos' ? '✓ Codos rectos, brazos al frente' : '✓ Espalda recta, talones abajo'}
             </span>
           </div>
           <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-center rounded-xl bg-[rgba(6,11,22,.8)] px-4 py-2">

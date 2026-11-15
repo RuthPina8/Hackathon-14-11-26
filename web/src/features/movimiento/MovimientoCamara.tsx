@@ -14,7 +14,7 @@ type Fase = 'preparando' | 'midiendo'
 const MS_ENTRE_CUADROS = 1000 / 15 - 4
 
 const GUIA: Record<Ejercicio, string> = {
-  brazos: 'Siéntate o párate de frente. Que se vean tus hombros, brazos y cadera. Sube ambos brazos por los lados hasta arriba y bájalos',
+  brazos: 'Siéntate o párate de frente. Que se vean tus hombros, brazos y cadera. Extiende los dos brazos al frente hasta la altura de los hombros, con los codos rectos, y bájalos',
   sentadilla: 'Aléjate unos 2 metros para que se vea todo tu cuerpo, de la cabeza a los tobillos. Puedes ir de frente o ligeramente de lado. Baja despacio doblando las rodillas y sube',
 }
 
@@ -105,7 +105,7 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
           if (ok && lm) {
             cuadros.current.validos++
             const asp = v.videoWidth / (v.videoHeight || 1)
-            const ang = ejercicio === 'sentadilla' ? anguloRodilla(lm, asp, r.worldLandmarks?.[0]) : anguloHombro(lm, asp)
+            const ang = ejercicio === 'sentadilla' ? anguloRodilla(lm, asp, r.worldLandmarks?.[0]) : anguloHombro(lm, asp, r.worldLandmarks?.[0])
             setAngulo(Math.round(ang.prom))
             const nuevo = actualizar(contadorRef.current, ejercicio, ang, t)
             if (nuevo.repeticiones !== contadorRef.current.repeticiones || nuevo.fase !== contadorRef.current.fase) setContador(nuevo)

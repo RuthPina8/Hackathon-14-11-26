@@ -51,10 +51,14 @@ export function anguloRodilla(lm: NormalizedLandmark[], aspecto: number, mundo?:
   return { izq, der, prom: (izq + der) / 2 }
 }
 
-// Elevación de brazos: ángulo del hombro (cadera → hombro → muñeca); ~15° abajo, ~170° arriba
-export function anguloHombro(lm: NormalizedLandmark[], aspecto: number) {
-  const izq = angulo(lm[P.caderaIzq], lm[P.hombroIzq], lm[P.munecaIzq], aspecto)
-  const der = angulo(lm[P.caderaDer], lm[P.hombroDer], lm[P.munecaDer], aspecto)
+// Elevación FRONTAL de brazos: ángulo del hombro (cadera → hombro → muñeca); ~10° con los brazos abajo,
+// ~90° con los brazos extendidos al frente a la altura de los hombros.
+// De frente a la cámara el brazo apunta HACIA la cámara: en 2D la muñeca queda casi encima del hombro y el
+// ángulo no se puede medir. Con los puntos en 3D (`mundo`) sí; sin 3D se usa el 2D como respaldo.
+export function anguloHombro(lm: NormalizedLandmark[], aspecto: number, mundo?: Landmark[]) {
+  const ok = mundo && [P.caderaIzq, P.hombroIzq, P.munecaIzq, P.caderaDer, P.hombroDer, P.munecaDer].every((i) => mundo[i])
+  const izq = ok ? angulo3D(mundo[P.caderaIzq], mundo[P.hombroIzq], mundo[P.munecaIzq]) : angulo(lm[P.caderaIzq], lm[P.hombroIzq], lm[P.munecaIzq], aspecto)
+  const der = ok ? angulo3D(mundo[P.caderaDer], mundo[P.hombroDer], mundo[P.munecaDer]) : angulo(lm[P.caderaDer], lm[P.hombroDer], lm[P.munecaDer], aspecto)
   return { izq, der, prom: (izq + der) / 2 }
 }
 

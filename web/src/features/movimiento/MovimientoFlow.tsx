@@ -68,7 +68,7 @@ export default function MovimientoFlow() {
                 <span>
                   <span className="block font-[family-name:var(--font-display)] text-[28px] font-bold">{NOMBRE_EJERCICIO[e]}</span>
                   <span className="mt-1 block text-base text-muted">
-                    {e === 'brazos' ? 'Funciona sentado frente a la laptop. Cuenta repeticiones, amplitud y compara ambos lados' : 'Necesitas unos 2 m de espacio. Cuenta repeticiones, rango de movimiento y regularidad'}
+                    {e === 'brazos' ? 'Brazos extendidos al frente hasta los hombros. Funciona sentado frente a la laptop y compara ambos lados' : 'Necesitas unos 2 m de espacio. Cuenta repeticiones, rango de movimiento y regularidad'}
                   </span>
                 </span>
               </button>

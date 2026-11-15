@@ -17,30 +17,32 @@ const Contador = ({ n }: { n: number }) => (
   </g>
 )
 
-// ---------- Elevación de brazos (de frente) ----------
+// ---------- Elevación frontal de brazos (de perfil) ----------
 export function DemoBrazos({ mini = false }: { mini?: boolean }) {
   const f = useFase(3600, 0.5)
   const reps = useVueltas(f)
-  const a = 15 + vaiven(f) * 155 // de 15° (abajo) a 170° (arriba), los dos brazos a la vez, codos rectos
-  const L = 62
-  const hI = { x: 138, y: 72 }, hD = { x: 182, y: 72 }
-  const mano = (h: { x: number; y: number }, s: number) => ({ x: h.x + s * Math.sin(rad(a)) * L, y: h.y + Math.cos(rad(a)) * L })
-  const mI = mano(hI, -1), mD = mano(hD, 1)
-  const arriba = a > 160
+  const g = 10 + vaiven(f) * 80 // de 10° (a los costados) a 90° (al frente, a la altura de los hombros)
+  const L = 66
+  const hombro = { x: 150, y: 70 }
+  const mano = { x: hombro.x + Math.sin(rad(g)) * L, y: hombro.y + Math.cos(rad(g)) * L }
+  const arriba = g > 82
   return (
     <svg viewBox={V} className="h-full w-full" aria-hidden>
-      {/* arco del rango de movimiento */}
-      <path d={`M${hI.x - L * Math.sin(rad(15))} ${hI.y + L * Math.cos(rad(15))} A${L} ${L} 0 0 1 ${hI.x - L * Math.sin(rad(170))} ${hI.y + L * Math.cos(rad(170))}`} stroke={C.line2} strokeWidth={2} strokeDasharray="5 5" fill="none" />
-      <path d={`M${hD.x + L * Math.sin(rad(15))} ${hD.y + L * Math.cos(rad(15))} A${L} ${L} 0 0 0 ${hD.x + L * Math.sin(rad(170))} ${hD.y + L * Math.cos(rad(170))}`} stroke={C.line2} strokeWidth={2} strokeDasharray="5 5" fill="none" />
-      <circle cx={160} cy={44} r={16} {...cuerpo} />
-      <path d={`M${hI.x} ${hI.y} H${hD.x} M160 62 V132 M144 132 H176 M146 132 L142 190 M174 132 L178 190`} {...cuerpo} />
-      <path d={`M${hI.x} ${hI.y} L${mI.x} ${mI.y} M${hD.x} ${hD.y} L${mD.x} ${mD.y}`} {...cuerpo} stroke={C.accent} />
+      {/* arco del recorrido y línea de la altura de los hombros */}
+      <path d={`M${hombro.x + Math.sin(rad(10)) * L} ${hombro.y + Math.cos(rad(10)) * L} A${L} ${L} 0 0 0 ${hombro.x + L} ${hombro.y}`} stroke={C.line2} strokeWidth={2} strokeDasharray="5 5" fill="none" />
+      <line x1={hombro.x} y1={hombro.y} x2={hombro.x + L + 26} y2={hombro.y} stroke={arriba ? C.ok : C.line2} strokeWidth={2} strokeDasharray="3 5" />
+      {/* cuerpo de perfil, de pie y derecho */}
+      <circle cx={150} cy={40} r={16} {...cuerpo} />
+      <path d="M150 58 V132 L146 190 L166 190 M150 132 L156 190" {...cuerpo} />
+      {/* brazo extendido, codo recto (el otro brazo va igual, detrás) */}
+      <path d={`M${hombro.x} ${hombro.y} L${mano.x} ${mano.y}`} {...cuerpo} stroke={C.accent} />
       {!mini && (
         <>
           <Contador n={reps} />
           <Etiqueta x={12} y={30} texto="codos rectos" />
           <Etiqueta x={12} y={52} texto="los dos a la vez" />
-          <Etiqueta x={160} y={196} texto={arriba ? 'arriba, manos casi juntas' : 'despacio'} ancla="middle" ok />
+          <Etiqueta x={232} y={hombro.y - 8} texto={arriba ? 'altura de hombros' : ''} ancla="middle" />
+          <Etiqueta x={160} y={198} texto={arriba ? 'no subas más' : 'despacio, al frente'} ancla="middle" />
         </>
       )}
     </svg>
@@ -171,6 +173,6 @@ export function pasosMovimiento(ejercicio: 'brazos' | 'sentadilla'): PasoGuia[] 
     { titulo: 'Cámara a la altura del pecho', detalle: 'Si hace falta, sube la laptop sobre libros', escena: <Laptop /> },
     { titulo: ejercicio === 'sentadilla' ? 'Aléjate unos 2 metros' : 'Aléjate como 1 metro', detalle: 'Hasta que el cuadro se ponga verde', escena: <Encuadre ejercicio={ejercicio} /> },
     { titulo: 'Luz de frente', detalle: 'Nunca una ventana detrás de ti', escena: <Luz /> },
-    { titulo: ejercicio === 'sentadilla' ? 'Así se hace la sentadilla' : 'Así se suben los brazos', escena: ejercicio === 'sentadilla' ? <DemoSentadilla /> : <DemoBrazos />, ms: 8400 },
+    { titulo: ejercicio === 'sentadilla' ? 'Así se hace la sentadilla' : 'Brazos al frente, hasta los hombros', escena: ejercicio === 'sentadilla' ? <DemoSentadilla /> : <DemoBrazos />, ms: 8400 },
   ]
 }

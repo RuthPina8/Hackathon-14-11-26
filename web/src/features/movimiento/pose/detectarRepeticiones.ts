@@ -10,8 +10,8 @@ export type Fase = 'inicial' | 'bajando' | 'abajo' | 'subiendo'
 const UMBRALES: Record<Ejercicio, { inicio: number; fondo: number; sube: (a: number, u: number) => boolean }> = {
   // rodilla: de pie > 155°, abajo < 115° (más o menos el muslo por debajo de 45° respecto a la vertical)
   sentadilla: { inicio: 155, fondo: 115, sube: (a, u) => a < u },
-  // hombro: brazos abajo < 45°, arriba > 140°
-  brazos: { inicio: 45, fondo: 140, sube: (a, u) => a > u },
+  // hombro (elevación frontal): brazos abajo < 35°, extendidos al frente a la altura de los hombros > 80°
+  brazos: { inicio: 35, fondo: 80, sube: (a, u) => a > u },
 }
 
 const MIN_REP_MS = 600 // más rápido que esto es un rebote, no una repetición
@@ -84,7 +84,7 @@ export function resumen(c: Contador, ejercicio: Ejercicio) {
   const media = prom(durs)
   const cv = durs.length > 1 ? Math.sqrt(prom(durs.map((d) => (d - media) ** 2))) / (media || 1) : 0
   // Rango de movimiento aproximado: de la posición inicial al extremo promedio
-  const rango = c.extremos.length ? (ejercicio === 'sentadilla' ? 175 - prom(c.extremos) : prom(c.extremos) - 15) : null
+  const rango = c.extremos.length ? (ejercicio === 'sentadilla' ? 175 - prom(c.extremos) : prom(c.extremos) - 10) : null
   return {
     rango_grados: rango === null ? null : Math.max(0, Math.round(rango)),
     regularidad: durs.length > 1 ? Math.max(0, Math.min(1, Number((1 - cv).toFixed(2)))) : null,

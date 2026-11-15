@@ -73,13 +73,13 @@ class Movimiento:
         if tipo == "linea_base":
             reps = [12, 11, 12] if ejercicio == "brazos" else [10, 10, 11]
             return [
-                self.registrar(SesionIn(**base, repeticiones=r, duracion_s=45, rango_grados=150 if ejercicio == "brazos" else 85,
+                self.registrar(SesionIn(**base, repeticiones=r, duracion_s=45, rango_grados=88 if ejercicio == "brazos" else 85,
                                         regularidad=0.9, simetria=0.92 if ejercicio == "brazos" else None, calidad=0.9),
                                fecha=ahora - timedelta(days=3 - i))
                 for i, r in enumerate(reps)
             ]
         r = 8 if ejercicio == "brazos" else 7
-        return [self.registrar(SesionIn(**base, repeticiones=r, duracion_s=45, rango_grados=120 if ejercicio == "brazos" else 70,
+        return [self.registrar(SesionIn(**base, repeticiones=r, duracion_s=45, rango_grados=70 if ejercicio == "brazos" else 70,
                                         regularidad=0.72, simetria=0.81 if ejercicio == "brazos" else None, calidad=0.88))]
 
 

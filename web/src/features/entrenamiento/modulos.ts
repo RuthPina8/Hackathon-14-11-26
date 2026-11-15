@@ -76,7 +76,7 @@ export const MODULOS: Modulo[] = [
     porQue: 'En microgravedad los músculos y huesos que cargan peso se debilitan si no se ejercitan.',
     dato: 'La cámara cuenta repeticiones con tu pose corporal. Es una estimación funcional: no mide fuerza ni diagnostica.',
     pistas: [
-      { selector: '[data-tour="movimiento-brazos"]', texto: 'Elige "Elevación de brazos": funciona sentado frente a la laptop.' },
+      { selector: '[data-tour="movimiento-brazos"]', texto: 'Elige "Elevación frontal de brazos": brazos al frente hasta los hombros, sentado frente a la laptop.' },
       { selector: '[data-tour="movimiento-planb"]', texto: 'Si la cámara falla, aquí está el plan B con sesiones preparadas.' },
     ],
     resultado: 'Tus repeticiones quedan comparadas contra tu propia línea base. Si bajan 20% o más, Inteligencia de misión lo revisa junto con el ambiente.',
