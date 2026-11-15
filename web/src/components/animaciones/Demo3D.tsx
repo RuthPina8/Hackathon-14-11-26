@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
 import { DemoEjercicio } from './Ejercicios'
+import { ALTURA, apuntar, buscarHueso, cargarModelo, girarMundo, v, vestir } from './esqueleto'
 
 // El astronauta del Inicio (mismo modelo con esqueleto) haciendo los ejercicios de ASTRA-MOVE en 3D.
 // La animación se calcula moviendo sus huesos:
@@ -14,36 +14,9 @@ import { DemoEjercicio } from './Ejercicios'
 // En pantalla: el ángulo que mide la cámara (hombro o rodilla) y el contador de repeticiones.
 // 30 cuadros por segundo; con "reducir movimiento" queda quieto en la pose clave.
 
-const MODELO = '/models/humano.glb'
 const FPS = 30
-const ALTURA = 1.8
-
-let carga: Promise<GLTF> | null = null
-const cargarModelo = () => (carga ??= new GLTFLoader().loadAsync(MODELO))
 
 type Ejercicio = 'brazos' | 'sentadilla'
-const v = () => new THREE.Vector3()
-const q = () => new THREE.Quaternion()
-
-// Gira un hueso (en espacio de mundo) para que su hijo quede en la dirección pedida
-function apuntar(hueso: THREE.Object3D, hijo: THREE.Object3D, dir: THREE.Vector3) {
-  const a = hueso.getWorldPosition(v())
-  const actual = hijo.getWorldPosition(v()).sub(a).normalize()
-  const giro = q().setFromUnitVectors(actual, dir.clone().normalize())
-  const qMundo = hueso.getWorldQuaternion(q())
-  const qPadre = hueso.parent!.getWorldQuaternion(q())
-  hueso.quaternion.copy(qPadre.invert().multiply(giro.multiply(qMundo)))
-  hueso.updateMatrixWorld(true)
-}
-
-// Gira un hueso alrededor de un eje de mundo
-function girarMundo(hueso: THREE.Object3D, eje: THREE.Vector3, ang: number) {
-  const qMundo = hueso.getWorldQuaternion(q())
-  const qPadre = hueso.parent!.getWorldQuaternion(q())
-  const r = q().setFromAxisAngle(eje, ang)
-  hueso.quaternion.copy(qPadre.invert().multiply(r.multiply(qMundo)))
-  hueso.updateMatrixWorld(true)
-}
 
 export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercicio; mini?: boolean }) {
   const caja = useRef<HTMLDivElement>(null)
@@ -153,19 +126,9 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
       modelo.position.y = -bb.min.y * s
       grupo.add(modelo)
 
-      // Materiales sólidos tipo traje: blanco mate y articulaciones cian
-      const traje = new THREE.MeshStandardMaterial({ color: '#E6ECF5', roughness: 0.55, metalness: 0.08 })
-      const juntas = new THREE.MeshStandardMaterial({ color: C.accent, roughness: 0.35, metalness: 0.2, emissive: C.accent, emissiveIntensity: 0.25 })
-      mats.push(traje, juntas)
-      modelo.traverse((o) => {
-        const m = o as THREE.Mesh
-        if (!m.isMesh) return
-        m.material = m.name.includes('001') || m.name.toLowerCase().includes('joint') ? juntas : traje
-        m.castShadow = true
-        m.frustumCulled = false
-      })
+      vestir(modelo, C.accent, mats, true)
 
-      const h = (n: string) => modelo.getObjectByName(`mixamorig${n}`) ?? modelo.getObjectByName(`mixamorig:${n}`)!
+      const h = buscarHueso(modelo)
       const huesos = {
         cadera: h('Hips'), col: h('Spine'),
         brazoI: h('LeftArm'), anteI: h('LeftForeArm'), manoI: h('LeftHand'),

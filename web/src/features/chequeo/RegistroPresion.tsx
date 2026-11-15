@@ -6,6 +6,7 @@ import { baseMedicion, enviarPaso } from './enviar'
 import { api } from '../../lib/api'
 import GuiaAnimada from '../../components/animaciones/GuiaAnimada'
 import { PASOS_BRAZALETE } from '../../components/animaciones/Brazalete'
+import Brazalete3D from '../../components/animaciones/Brazalete3D'
 
 // Paso 3: presión con el brazalete del kit médico (la cámara NO mide presión).
 // Es opcional: sin brazalete se salta y en la demo la presión viene del simulador.
@@ -63,7 +64,7 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
       </header>
       <div className="flex flex-wrap gap-5">
         <div className="min-w-0 flex-[3_1_460px]">
-          <GuiaAnimada titulo="Cómo medir con el brazalete" pasos={PASOS_BRAZALETE} />
+          <GuiaAnimada titulo="Cómo medir con el brazalete" pasos={PASOS_BRAZALETE} escena3D={(o) => <Brazalete3D {...o} />} />
         </div>
         <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-4">
         <section className="flex flex-col gap-5 rounded-2xl border border-line bg-panel p-[26px]">

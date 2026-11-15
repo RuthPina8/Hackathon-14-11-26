@@ -13,7 +13,11 @@ export interface PasoGuia {
   ms?: number // cuánto dura el paso (por defecto 5 s)
 }
 
-export default function GuiaAnimada({ titulo, pasos, alTerminar }: { titulo: string; pasos: PasoGuia[]; alTerminar?: ReactNode }) {
+// Escena 3D que se queda montada en todos los pasos (la cámara viaja de un paso a otro).
+// `fallback` es la animación 2D del paso, por si el equipo no tiene WebGL.
+export type Escena3D = (o: { paso: number; ms: number; play: boolean; fallback: ReactNode }) => ReactNode
+
+export default function GuiaAnimada({ titulo, pasos, alTerminar, escena3D }: { titulo: string; pasos: PasoGuia[]; alTerminar?: ReactNode; escena3D?: Escena3D }) {
   const [i, setI] = useState(0)
   const [play, setPlay] = useState(!movimientoReducido())
   const [inicio, setInicio] = useState(() => performance.now())
@@ -41,11 +45,15 @@ export default function GuiaAnimada({ titulo, pasos, alTerminar }: { titulo: str
       </div>
 
       <div className="relative overflow-hidden rounded-xl border border-holo-line bg-holo-bg" style={{ aspectRatio: '16 / 10' }}>
-        <AnimatePresence mode="wait">
-          <motion.div key={i} className="absolute inset-0" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.25 }}>
-            {pasos[i].escena}
-          </motion.div>
-        </AnimatePresence>
+        {escena3D ? (
+          <div className="absolute inset-0">{escena3D({ paso: i, ms: dur, play, fallback: pasos[i].escena })}</div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div key={i} className="absolute inset-0" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.25 }}>
+              {pasos[i].escena}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       <div aria-live="polite" className="flex items-start gap-3">
