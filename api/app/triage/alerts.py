@@ -44,9 +44,21 @@ class _Store:
         self._sig += 1
         return i
 
-    def abierta(self, astronauta_id: int, senal: str) -> Alert | None:
-        for a in self.alertas.values():
-            if a.astronauta_id == astronauta_id and a.senal == senal and a.estado != "resuelta":
+    def abierta(self, astronauta_id: int, senales: str | list[str]) -> Alert | None:
+        """Alerta no resuelta del astronauta que comparta alguna señal.
+
+        Primero la que tenga una de esas señales como principal; si no, cualquiera que
+        la incluya entre sus señales. Así no se duplica si la principal cambia entre lecturas.
+        """
+        buscadas = {senales} if isinstance(senales, str) else set(senales)
+        abiertas = [
+            a for a in self.alertas.values() if a.astronauta_id == astronauta_id and a.estado != "resuelta"
+        ]
+        for a in abiertas:
+            if a.senal in buscadas:
+                return a
+        for a in abiertas:
+            if buscadas & set(self.senales.get(a.id, [])):
                 return a
         return None
 
@@ -85,7 +97,7 @@ async def handle_anomalies(
         return None
 
     ahora = _ahora()
-    existente = store.abierta(astronauta_id, decision.senal)
+    existente = store.abierta(astronauta_id, decision.senales)
 
     if existente:
         subio = rules.max_nivel(existente.nivel, decision.nivel) != existente.nivel

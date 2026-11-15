@@ -92,6 +92,14 @@ La idea que lo hace innovador y defendible: **la cámara no lee tu ánimo; apren
 | Rango clínico | Valores fuera de lo seguro | Por ejemplo, HR en reposo 60–100 |
 | Regla de sueño | Deuda de sueño | `sueno_horas` < 6 durante 3 o más días (hipótesis del Reaction Self Test de la NASA) |
 
+- **Cómo se aplican (implementado, 15 nov):**
+  - CUSUM y EWMA corren sobre los **últimos 7 días** contra una referencia de los días anteriores; necesitan **21 días** (14 de referencia + 7). Antes de eso solo hay z-score y rango clínico.
+  - CUSUM solo avisa **mientras el cambio sigue** (el último valor sigue a más de k·σ): así la alerta se resuelve sola cuando la persona se recupera.
+  - **Desviación mínima por señal** (`SD_MINIMA` en `intelligence/baseline.py`): un cambio más chico que la resolución de la medición no es anomalía. Por ejemplo, ritmo 2 lpm, presión 5 mmHg, estrés 1.2 puntos, ánimo 0.8. Sin esto, un brinco de 1 punto en una escala entera daba z ≥ 2.
+  - **Isolation Forest** solo avisa si el día sale raro **y** al menos 2 señales tienen |z| ≥ 2: esas señales son la explicación y sus factores.
+  - Una alerta se **resuelve sola** cuando **todas** sus señales pasan 2 días seguidos dentro de tu normal (Back 1 llama a `triage.resolver`). Como el triage encuentra la alerta por cualquiera de sus señales, resolver por una sola cerraría el episodio antes de tiempo.
+  - Con `confianza < 0.5` la medición se guarda pero no entra a la línea base ni a los detectores.
+  - PERCLOS y respiración por cámara **no son rango clínico** (auditoría P0-3): PERCLOS > 0.15 da amarillo, nunca rojo por sí solo.
 - **Factores de cada alerta:** `|z_i| / Σ|z|` en porcentaje.
 - Cada `Anomaly` lleva: `senal`, `detector`, `valor`, `referencia`, `z`, `desde`, `direccion`, `factores`.
 
@@ -112,7 +120,7 @@ Cualquier dato con `fuente="simulador"` sí pasa por los detectores, sea del `ti
 - **Readiness:** `100 − Σ penalizaciones`, cada una con `{senal, delta_pct, texto}` y ordenadas. Si falta un registro del día, −1.
 - **Semáforo por sistema:** el peor estado entre sus señales. Si no hay datos, `sin_datos` (nunca verde).
 - **Calibración general:** promedio ponderado de `peso_personal`: HR 0.25, PERCLOS 0.25, reacción 0.20, presión 0.15, ánimo 0.15. Con estos pesos sale el 64% del prototipo.
-- Emitir `calibration_changed {antes, despues, delta}` cuando la calibración sube 1 punto o más.
+- Emitir `calibration_changed` cuando la calibración cambia. Lleva las dos formas: `{astronauta_id, calibracion, antes, despues, delta}` (Front 2 lee `calibracion`; el contrato pedía `antes, despues, delta`).
 
 ---
 
@@ -227,6 +235,8 @@ Dos condiciones para que el guion dispare lo que promete:
 - **Inmune (días 25–29):** la congestión y el fuego labial siguen hasta el 29. Amarillo el 27 (3 días seguidos de congestión y 2 categorías el mismo día); rojo el 29 (fiebre 2 días seguidos con otro síntoma inmune). Sin la fiebre, 5 días de síntomas nunca llegan a rojo.
 
 - `/demo/advance` (Back 2) pide el siguiente día y lo manda por el mismo pipeline de `/measurements`.
+- **Resultado real del motor con el simulador (15 nov, con la auditoría de Back 2):** A1 amarilla el día 18 (durmió 5.4 h), roja el 20 (deuda de sueño + Isolation Forest: sueño, ritmo y reacción); el CUSUM del ritmo se suma a la misma alerta y se resuelve sola el 26, cuando todas sus señales llevan 2 días en su normal. A3 amarilla el 27, roja el 29 (se escala a Tierra), resuelta el 32. A2 y A4: cero alertas. Modelo de ánimo activo desde el día 10, con ~90% de acierto.
+- El ruido diario del simulador se recorta a ±1.3σ para que un día normal no parezca anomalía. Con datos reales sí habrá colas: la tasa de falsas alarmas se mide con las grabaciones del equipo.
 
 ---
 

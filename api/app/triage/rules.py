@@ -52,8 +52,10 @@ class Decision:
 
 
 def fase_de_dia(dia_mision: int | None) -> Fase:
+    # Sin día no sabemos si ya hay línea base personal: lo conservador es adaptación
+    # (solo alertan los rangos clínicos y el inmune)
     if dia_mision is None:
-        return "personal"
+        return "adaptacion"
     if dia_mision <= 0:
         return "tierra"
     if dia_mision <= 14:
@@ -70,8 +72,12 @@ def max_nivel(a: Nivel, b: Nivel) -> Nivel:
 
 
 def filtrar(anomalias: list[Anomaly], fase: Fase) -> list[Anomaly]:
-    """Regla de honestidad + fases."""
-    validas = [a for a in anomalias if a.capa != "sim" and a.fuente != "modelo"]
+    """Regla de honestidad + confianza mínima + fases."""
+    validas = [
+        a
+        for a in anomalias
+        if a.capa != "sim" and a.fuente != "modelo" and a.confianza >= umbrales.CONFIANZA_MIN_ALERTA
+    ]
     if fase == "tierra":
         return []
     if fase == "adaptacion":
@@ -82,6 +88,8 @@ def filtrar(anomalias: list[Anomaly], fase: Fase) -> list[Anomaly]:
 def nivel_de(a: Anomaly) -> Nivel:
     if a.nivel_sugerido:
         return a.nivel_sugerido
+    if a.detector == "rango_clinico" and a.valor is not None:
+        return umbrales.clasificar_rango(a.senal, a.valor) or "amarilla"  # type: ignore[return-value]
     if a.z is not None:
         if abs(a.z) >= umbrales.Z_ROJA:
             return "roja"
@@ -90,15 +98,23 @@ def nivel_de(a: Anomaly) -> Nivel:
     return umbrales.NIVEL_POR_DETECTOR.get(a.detector, "amarilla")  # type: ignore[return-value]
 
 
+def origen(senal: str) -> str:
+    return umbrales.ORIGEN.get(senal, senal)
+
+
 def calcular_factores(anomalias: list[Anomaly]) -> dict[str, float]:
-    """|z_i| / Σ|z| en porcentaje, por señal. Si el motor ya mandó factores, se usan esos."""
-    for a in anomalias:
-        if a.factores:
-            return {k: round(v, 1) for k, v in a.factores.items()}
+    """Contribución de cada señal en porcentaje, combinando TODAS las anomalías.
+
+    Cada anomalía pesa |z| (o 1 si no trae z). Si el motor mandó sus propios factores,
+    ese peso se reparte según ellos; si no, va completo a su señal. Al final se normaliza a 100.
+    """
     pesos: dict[str, float] = {}
     for a in anomalias:
         peso = abs(a.z) if a.z is not None else 1.0
-        pesos[a.senal] = max(pesos.get(a.senal, 0.0), peso)
+        reparto = {k: v for k, v in a.factores.items() if v > 0} or {a.senal: 1.0}
+        suma = sum(reparto.values())
+        for senal, v in reparto.items():
+            pesos[senal] = pesos.get(senal, 0.0) + peso * v / suma
     total = sum(pesos.values()) or 1.0
     return {k: round(100 * v / total, 1) for k, v in sorted(pesos.items(), key=lambda kv: -kv[1])}
 
@@ -129,11 +145,17 @@ def evaluar(anomalias: list[Anomaly], fase: Fase = "personal") -> Decision | Non
         nivel = max_nivel(nivel, nivel_de(a))
 
     senales = list(dict.fromkeys(a.senal for a in validas))
-    if len(senales) >= umbrales.SENALES_PARA_SUBIR_NIVEL:
+    # Se cuentan orígenes independientes, no señales: hr + VFC + respiración son una sola onda
+    if len({origen(s) for s in senales}) >= umbrales.SENALES_PARA_SUBIR_NIVEL:
         nivel = "roja"
+    # La cámara sola con poca confianza no llega a roja sin confirmación de otra fuente
+    if nivel == "roja" and all(
+        a.fuente == "camara" and a.confianza < umbrales.CONFIANZA_MIN_ROJA_CAMARA for a in validas
+    ):
+        nivel = "amarilla"
 
     factores = calcular_factores(validas)
-    # Principal: la de mayor contribución; empate -> la de nivel más alto
+    # Principal: la de mayor contribución entre las señales con anomalía
     principal_senal = max(senales, key=lambda s: factores.get(s, 0.0))
     principal = max(
         (a for a in validas if a.senal == principal_senal),

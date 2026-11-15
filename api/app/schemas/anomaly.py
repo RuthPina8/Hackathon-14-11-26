@@ -25,6 +25,8 @@ class Anomaly(BaseModel):
     # Regla de honestidad: capa sim o fuente modelo nunca generan alertas
     capa: Literal["real", "auto", "sim"] = "real"
     fuente: str | None = None
+    # Confianza de la lectura (0 a 1). Back 1: pasa la confianza de la medición tal cual
+    confianza: float = Field(default=1.0, ge=0, le=1)
     # Opcional: inmune ya trae su color calculado
     nivel_sugerido: Nivel | None = None
     texto: str | None = Field(default=None, description="qué cambió, en lenguaje simple")
