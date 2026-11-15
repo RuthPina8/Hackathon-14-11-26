@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { abrirCamaraReal } from '../lib/camaraReal'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check, Eye, Lock, ScanFace, Shuffle, UserPlus, X } from 'lucide-react'
 import type { FaceLandmarker, FaceLandmarkerResult } from '@mediapipe/tasks-vision'
@@ -73,7 +74,7 @@ export default function Login() {
 
     async function start() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' }, audio: false })
+        const stream = await abrirCamaraReal(640, 480)
         if (!alive) { stream.getTracks().forEach((t) => t.stop()); return }
         streamRef.current = stream
         const v = videoRef.current!
