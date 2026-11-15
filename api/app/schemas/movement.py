@@ -19,10 +19,10 @@ class SesionIn(BaseModel):
     ejercicio: Ejercicio
     repeticiones: int = Field(ge=0, le=500)
     duracion_s: float = Field(ge=0, le=3600)
-    rango_grados: float | None = Field(default=None, ge=0, le=200, description="rango de movimiento aproximado")
-    regularidad: float | None = Field(default=None, ge=0, le=1, description="1 = repeticiones muy parejas")
-    simetria: float | None = Field(default=None, ge=0, le=1, description="1 = ambos lados igual (brazos)")
-    calidad: float = Field(ge=0, le=1, description="proporción de cuadros con el cuerpo bien detectado")
+    rango_grados: float | None = Field(default=None, ge=0, le=200, description="approximate range of motion")
+    regularidad: float | None = Field(default=None, ge=0, le=1, description="1 = very even reps")
+    simetria: float | None = Field(default=None, ge=0, le=1, description="1 = both sides equal (arms)")
+    calidad: float = Field(ge=0, le=1, description="share of frames with the body well detected")
     fuente: Literal["webcam", "demo"] = "webcam"
     dia_mision: int | None = None
     # Sesión del entrenamiento: se guarda, pero no cuenta para tu normal ni para la correlación

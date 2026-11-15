@@ -28,7 +28,7 @@ class FichaMedica(BaseModel):
     tipo_sangre: Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", ""] = ""
     alergias: list[str] = Field(default_factory=list)
     medicamentos: list[str] = Field(default_factory=list)
-    condiciones: list[str] = Field(default_factory=list, description="antecedentes o condiciones crónicas")
+    condiciones: list[str] = Field(default_factory=list, description="history or chronic conditions")
     cirugias: list[str] = Field(default_factory=list)
     vacunas: list[str] = Field(default_factory=list)
     basales: Basales = Field(default_factory=Basales)
@@ -47,13 +47,13 @@ class ItemEvolucion(BaseModel):
     tipo: str
     nombre: str
     unidad: str
-    ficha: float | None = Field(default=None, description="valor de la ficha médica pre-vuelo")
-    inicio: float | None = Field(default=None, description="promedio de los primeros 7 días con datos")
-    reciente: float | None = Field(default=None, description="promedio de los últimos 7 días con datos")
+    ficha: float | None = Field(default=None, description="value from the pre-flight medical record")
+    inicio: float | None = Field(default=None, description="average of the first 7 days with data")
+    reciente: float | None = Field(default=None, description="average of the last 7 days with data")
     referencia: Literal["ficha", "inicio", "ninguna"] = "ninguna"
-    cambio: float | None = Field(default=None, description="reciente - referencia")
+    cambio: float | None = Field(default=None, description="recent - reference")
     cambio_pct: float | None = None
-    tendencia_semana: float | None = Field(default=None, description="pendiente por semana en los últimos 14 días")
+    tendencia_semana: float | None = Field(default=None, description="slope per week over the last 14 days")
     estado: Literal["mejora", "estable", "empeora", "sin_datos"] = "sin_datos"
     explicacion: str = ""
     n: int = 0

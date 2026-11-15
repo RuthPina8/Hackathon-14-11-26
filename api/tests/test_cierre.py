@@ -23,7 +23,7 @@ def test_indicators_marca_anomalias_contra_la_linea_base_previa(client):
     client.post("/measurements", json=[_hr(66 + (i % 3), i + 1) for i in range(10)])
     client.post("/measurements", json=_hr(95, 11))
     r = client.get("/indicators/hr").json()
-    assert r["nombre"] == "Ritmo en reposo"
+    assert r["nombre"] == "Resting heart rate"
     assert len(r["serie"]) == 11
     assert r["anomalias"] and r["anomalias"][-1]["valor"] == 95
     assert r["serie"][-1]["anomalo"] is True
@@ -47,7 +47,7 @@ def test_crew_sin_datos_y_con_datos(client):
     client.post("/measurements", json=[_hr(66, 1, astro=2),
                                        {"astronauta_id": 2, "tipo": "animo", "valor": 4, "capa": "auto", "fuente": "manual"}])
     c2 = client.get("/crew").json()[1]
-    assert c2["estado"] == "verde" and c2["ritmo"] == "66 lpm" and c2["animo"] == "4 de 5"
+    assert c2["estado"] == "verde" and c2["ritmo"] == "66 bpm" and c2["animo"] == "4 of 5"
 
 
 # ------------------------------------------------------------------ Apple Watch

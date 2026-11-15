@@ -29,14 +29,14 @@ type Phase =
   | 'pick' | 'enroll' | 'enrolled'
 
 const PHASE_TEXT: Partial<Record<Phase, string>> = {
-  loading: 'Preparando la cámara…',
-  search: 'Colócate frente a la cámara',
-  identify: 'Reconociendo…',
-  unknown: 'No te reconozco',
-  noFaces: 'Aún no hay caras registradas en este dispositivo',
-  pick: '¿Quién eres? Solo la primera vez',
-  enroll: 'Mira a la cámara y mueve un poco la cabeza',
-  enrolled: 'Cara registrada',
+  loading: 'Preparing the camera…',
+  search: 'Position yourself in front of the camera',
+  identify: 'Recognizing…',
+  unknown: 'I don’t recognize you',
+  noFaces: 'No faces registered on this device yet',
+  pick: 'Who are you? First time only',
+  enroll: 'Look at the camera and move your head a little',
+  enrolled: 'Face registered',
 }
 
 export default function Login() {
@@ -86,7 +86,7 @@ export default function Login() {
         return
       }
       let fl: FaceLandmarker
-      try { [fl] = await Promise.all([getFaceLandmarker(2), getFaceApi()]) } catch { go('nocam'); setHint('No se pudieron cargar los modelos de reconocimiento'); return }
+      try { [fl] = await Promise.all([getFaceLandmarker(2), getFaceApi()]) } catch { go('nocam'); setHint('Couldn’t load the recognition models'); return }
       if (!alive) return
       go(Object.keys(st.current.faces).length ? 'search' : 'noFaces')
 
@@ -135,16 +135,16 @@ export default function Login() {
       if (ph === 'welcome' || ph === 'enrolled' || ph === 'pick' || ph === 'unknown' || ph === 'noFaces' || ph === 'nocam' || ph === 'loading') return
 
       const n = res.faceLandmarks.length
-      if (n === 0) { if (ph !== 'enroll') { s.buf = []; go('search') } setHint(ph === 'enroll' ? 'No veo tu cara' : ''); return }
-      if (n > 1) { s.buf = []; setHint('Solo una persona frente a la cámara'); return }
+      if (n === 0) { if (ph !== 'enroll') { s.buf = []; go('search') } setHint(ph === 'enroll' ? 'I can’t see your face' : ''); return }
+      if (n > 1) { s.buf = []; setHint('Only one person in front of the camera'); return }
 
       const lm = res.faceLandmarks[0]
       const pose = poseCheck(lm)
-      const bad = !pose.nearEnough ? 'Acércate un poco' : pose.tooClose ? 'Aléjate un poco' : !pose.centered ? 'Centra tu cara en el óvalo' : !pose.frontal && ph !== 'enroll' && ph !== 'challenge' ? 'Mira de frente a la cámara' : ''
+      const bad = !pose.nearEnough ? 'Move a little closer' : pose.tooClose ? 'Move back a little' : !pose.centered ? 'Center your face in the oval' : !pose.frontal && ph !== 'enroll' && ph !== 'challenge' ? 'Look straight at the camera' : ''
 
       // ----- registro de cara -----
       if (ph === 'enroll') {
-        if (bad && bad !== 'Mira de frente a la cámara') { setHint(bad); return }
+        if (bad && bad !== 'Look straight at the camera') { setHint(bad); return }
         setHint('')
         sample(v, 'enroll', (d) => {
           s.enrollBuf.push(d)
@@ -171,7 +171,7 @@ export default function Login() {
         // la persona debe seguir siendo la misma durante el reto
         sample(v, 'challenge', (d) => {
           const ref = s.faces[s.who!]
-          if (ref && descriptorDistance(d, ref) > MATCH_THRESHOLD + 0.08) fail('La cara cambió durante la verificación')
+          if (ref && descriptorDistance(d, ref) > MATCH_THRESHOLD + 0.08) fail('The face changed during verification')
         })
         if (s.chalHold >= HOLD_FRAMES) {
           s.chalIdx++; s.chalNeutral = false; s.chalHold = 0; s.chalSince = performance.now()
@@ -181,7 +181,7 @@ export default function Login() {
             setTimeout(() => login(who), 1300)
           } else setChal({ list: s.chal, idx: s.chalIdx })
         } else if (performance.now() - s.chalSince > CHALLENGE_MS) {
-          fail('No se completó el gesto a tiempo')
+          fail('The gesture wasn’t completed in time')
         }
         return
       }
@@ -241,15 +241,15 @@ export default function Login() {
           <span className="font-[family-name:var(--font-display)] text-2xl font-bold">AstroHealth</span>
         </div>
         <div className="flex flex-col gap-4">
-          <h1 className="m-0 font-[family-name:var(--font-display)] text-[34px] leading-tight font-semibold">Tu médico de bolsillo en la misión</h1>
-          <p className="m-0 text-[15px] text-muted leading-relaxed">Entra solo con tu cara. La misma cámara que te identifica es la que te mide, así tus datos nunca se mezclan con los de otro tripulante.</p>
+          <h1 className="m-0 font-[family-name:var(--font-display)] text-[34px] leading-tight font-semibold">Your pocket doctor on the mission</h1>
+          <p className="m-0 text-[15px] text-muted leading-relaxed">Sign in with just your face. The same camera that identifies you is the one that measures you, so your data never gets mixed with another crew member’s.</p>
           <ul className="m-0 p-0 list-none flex flex-col gap-3 text-sm text-subtle">
-            <li className="flex items-center gap-3"><ScanFace size={18} color={C.accent} />Te reconoce sin usuario ni contraseña</li>
-            <li className="flex items-center gap-3"><Eye size={18} color={C.accent} />Un gesto al azar confirma que eres tú, no una foto ni un video</li>
-            <li className="flex items-center gap-3"><Lock size={18} color={C.accent} />Tu firma facial se queda a bordo, nunca viaja a Tierra</li>
+            <li className="flex items-center gap-3"><ScanFace size={18} color={C.accent} />It recognizes you with no username or password</li>
+            <li className="flex items-center gap-3"><Eye size={18} color={C.accent} />A random gesture confirms it’s you, not a photo or a video</li>
+            <li className="flex items-center gap-3"><Lock size={18} color={C.accent} />Your facial signature stays on board, it never travels to Earth</li>
           </ul>
         </div>
-        <p className="m-0 text-sm text-faint">{enrolledCount} de {crewForLogin.length} tripulantes con cara registrada en este dispositivo</p>
+        <p className="m-0 text-sm text-faint">{enrolledCount} of {crewForLogin.length} crew members with a registered face on this device</p>
       </aside>
 
       {/* ---------- cámara ---------- */}
@@ -272,9 +272,9 @@ export default function Login() {
           {/* estado */}
           <div className="absolute top-4 left-4 right-4 flex justify-between gap-2">
             <span className="tag" style={{ background: 'rgba(4,7,14,.85)', color: ovalColor, fontSize: 14, padding: '7px 10px', boxShadow: `inset 0 0 0 1px ${ovalColor}55` }}>
-              {phase === 'enroll' ? 'REGISTRANDO CARA' : 'INICIO DE SESIÓN'}
+              {phase === 'enroll' ? 'REGISTERING FACE' : 'SIGN IN'}
             </span>
-            {demo && dist !== null && <span className="tag num" style={{ background: 'rgba(4,7,14,.85)', color: C.muted }}>dist {dist.toFixed(3)} · umbral {MATCH_THRESHOLD}</span>}
+            {demo && dist !== null && <span className="tag num" style={{ background: 'rgba(4,7,14,.85)', color: C.muted }}>dist {dist.toFixed(3)} · threshold {MATCH_THRESHOLD}</span>}
           </div>
 
           {phase === 'challenge' && chal.list[chal.idx] && (
@@ -309,8 +309,8 @@ export default function Login() {
             <div className="absolute inset-0 grid place-items-center p-8 text-center">
               <div className="flex flex-col items-center gap-3">
                 <ScanFace size={40} color={C.line3} />
-                <p className="m-0 font-semibold">No pude usar la cámara</p>
-                <p className="m-0 text-sm text-muted">{hint || 'Permite el acceso a la cámara en el navegador y recarga la página'}</p>
+                <p className="m-0 font-semibold">I couldn’t use the camera</p>
+                <p className="m-0 text-sm text-muted">{hint || 'Allow camera access in the browser and reload the page'}</p>
               </div>
             </div>
           )}
@@ -321,24 +321,24 @@ export default function Login() {
           <AnimatePresence mode="wait">
             <motion.div key={phase + (hint || '')} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-1.5" aria-live="polite">
               <p className="m-0 font-[family-name:var(--font-display)] text-2xl font-semibold">
-                {phase === 'welcome' ? `Hola, ${person?.nombre}` : phase === 'challenge' ? CHALLENGES[chal.list[chal.idx]]?.label ?? '' : phase === 'enrolled' ? `Listo, ${person?.nombre}` : hint || PHASE_TEXT[phase] || ''}
+                {phase === 'welcome' ? `Hi, ${person?.nombre}` : phase === 'challenge' ? CHALLENGES[chal.list[chal.idx]]?.label ?? '' : phase === 'enrolled' ? `All set, ${person?.nombre}` : hint || PHASE_TEXT[phase] || ''}
               </p>
               <p className="m-0 text-sm text-muted">
-                {phase === 'welcome' && 'Abriendo tu sesión…'}
-                {phase === 'challenge' && `${person?.nombre}, comprobamos que eres tú y no una foto o un video`}
-                {(phase === 'search' || phase === 'align') && failMsg && <span style={{ color: C.critSoft }}>{failMsg}, intenta otra vez</span>}
-                {phase === 'identify' && 'Mantente quieto un momento'}
-                {phase === 'unknown' && 'Puede ser la luz o el ángulo. Si es tu primera vez aquí, registra tu cara'}
-                {phase === 'enroll' && `Registrando a ${person?.nombre}, solo toma unos segundos`}
-                {phase === 'enrolled' && 'Ahora ponte frente a la cámara para entrar'}
+                {phase === 'welcome' && 'Opening your session…'}
+                {phase === 'challenge' && `${person?.nombre}, we’re checking it’s you and not a photo or a video`}
+                {(phase === 'search' || phase === 'align') && failMsg && <span style={{ color: C.critSoft }}>{failMsg}, try again</span>}
+                {phase === 'identify' && 'Hold still for a moment'}
+                {phase === 'unknown' && 'It may be the light or the angle. If it’s your first time here, register your face'}
+                {phase === 'enroll' && `Registering ${person?.nombre}, it only takes a few seconds`}
+                {phase === 'enrolled' && 'Now face the camera to sign in'}
               </p>
             </motion.div>
           </AnimatePresence>
 
           {(phase === 'unknown' || phase === 'noFaces') && (
             <div className="flex flex-wrap justify-center gap-2.5">
-              {phase === 'unknown' && <button type="button" className="btn sec" onClick={retry}>Intentar de nuevo</button>}
-              <button type="button" className="btn pri" onClick={() => go('pick')}><UserPlus size={17} />Registrar mi cara</button>
+              {phase === 'unknown' && <button type="button" className="btn sec" onClick={retry}>Try again</button>}
+              <button type="button" className="btn pri" onClick={() => go('pick')}><UserPlus size={17} />Register my face</button>
             </div>
           )}
 
@@ -350,11 +350,11 @@ export default function Login() {
                     className="flex flex-col items-center gap-1.5 p-3.5 rounded-[14px] bg-panel border border-line hover:border-accent cursor-pointer text-text" style={{ fontFamily: 'Inter, sans-serif' }}>
                     <span className="w-11 h-11 rounded-[12px] grid place-items-center bg-sel font-[family-name:var(--font-display)] font-bold">{c.id}</span>
                     <span className="text-sm font-semibold">{c.nombre}</span>
-                    <span className="text-[13px] text-faint">{faces[c.id] ? 'Ya registrada, actualizar' : c.cargo}</span>
+                    <span className="text-[13px] text-faint">{faces[c.id] ? 'Already registered, update' : c.cargo}</span>
                   </button>
                 ))}
               </div>
-              <button type="button" className="btn sec sm self-center" onClick={retry}><X size={15} />Cancelar</button>
+              <button type="button" className="btn sec sm self-center" onClick={retry}><X size={15} />Cancel</button>
             </div>
           )}
 

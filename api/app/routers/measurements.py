@@ -117,14 +117,14 @@ def _anomalia_tendencia(m: Medicion) -> Anomaly | None:
             senal=m.tipo, detector="cusum", valor=round(valores[-1], 3), referencia=round(media, 3), z=z,
             desde=fechas.get(desde_dia), direccion=direccion,  # type: ignore[arg-type]
             capa=m.capa, fuente=m.fuente, confianza=m.confianza,  # type: ignore[arg-type]
-            texto=f"{nombre} {'sube' if c.lado == 'sube' else 'baja'} de forma sostenida desde hace {len(reciente) - c.indice_desde} días",
+            texto=f"{nombre} has been {'rising' if c.lado == 'sube' else 'dropping'} steadily for {len(reciente) - c.indice_desde} days",
         )
     e = detectors.ewma(reciente, media, sd, direccion)
     if e and e.alarma:
         return Anomaly(
             senal=m.tipo, detector="ewma", valor=round(valores[-1], 3), referencia=round(media, 3), z=z,
             direccion=direccion, capa=m.capa, fuente=m.fuente, confianza=m.confianza,  # type: ignore[arg-type]
-            texto=f"{nombre} se aleja poco a poco de tu normal",
+            texto=f"{nombre} is slowly drifting from your normal",
         )
     return None
 
@@ -137,7 +137,7 @@ def _anomalia_sueno(m: Medicion) -> Anomaly | None:
     return Anomaly(
         senal="sueno_horas", detector="sueno", valor=round(valores[-1], 2), direccion="baja",
         desde=fechas.get(dias[r.indice_desde]), capa=m.capa, fuente=m.fuente, confianza=m.confianza,  # type: ignore[arg-type]
-        texto=f"Deuda de sueño: {r.dias} noches seguidas con menos de {umbrales.SUENO_MIN_HORAS:g} h",
+        texto=f"Sleep debt: {r.dias} nights in a row under {umbrales.SUENO_MIN_HORAS:g} h",
     )
 
 
@@ -193,7 +193,7 @@ def _anomalia_isolation(astronauta_id: int, m: Medicion) -> Anomaly | None:
     return Anomaly(
         senal=next(iter(r.factores)), detector="isolation_forest", z=r.puntaje, factores=r.factores,
         capa=m.capa, fuente=m.fuente, confianza=m.confianza,  # type: ignore[arg-type]
-        texto=f"Combinación poco común para ti: {', '.join(principales)}",
+        texto=f"Unusual combination for you: {', '.join(principales)}",
     )
 
 

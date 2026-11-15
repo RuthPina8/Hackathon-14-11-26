@@ -14,14 +14,14 @@ Nivel = Literal["amarilla", "roja"]
 
 
 class Anomaly(BaseModel):
-    senal: str = Field(description="tipo de medición, p. ej. hr_reposo")
+    senal: str = Field(description="measurement type, e.g. hr_reposo")
     detector: Detector
     valor: float | None = None
-    referencia: float | None = Field(default=None, description="media de la línea base")
+    referencia: float | None = Field(default=None, description="baseline mean")
     z: float | None = None
-    desde: datetime | None = Field(default=None, description="desde cuándo (CUSUM)")
+    desde: datetime | None = Field(default=None, description="since when (CUSUM)")
     direccion: Literal["sube", "baja", "ambas"] | None = None
-    factores: dict[str, float] = Field(default_factory=dict, description="señal -> % de contribución")
+    factores: dict[str, float] = Field(default_factory=dict, description="signal -> % contribution")
     # Regla de honestidad: capa sim o fuente modelo nunca generan alertas
     capa: Literal["real", "auto", "sim"] = "real"
     fuente: str | None = None
@@ -29,4 +29,4 @@ class Anomaly(BaseModel):
     confianza: float = Field(default=1.0, ge=0, le=1)
     # Opcional: inmune ya trae su color calculado
     nivel_sugerido: Nivel | None = None
-    texto: str | None = Field(default=None, description="qué cambió, en lenguaje simple")
+    texto: str | None = Field(default=None, description="what changed, in plain language")

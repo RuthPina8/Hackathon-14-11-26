@@ -28,24 +28,24 @@ type Def = {
 }
 
 export const METRICAS: Def[] = [
-  { id: 'hr', label: 'Ritmo cardiaco', tipo: 'hr_reposo', unit: 'lpm', dec: 0, clin: [50, 100], dir: 'ambas', organo: 'corazon', capa: 'real', link: '/indicators/hr' },
-  { id: 'hrv', label: 'VFC (estrés)', tipo: 'hrv_rmssd', unit: 'ms', dec: 0, dir: 'baja', organo: 'corazon', capa: 'real', experimental: true, link: '/progress' },
-  { id: 'resp', label: 'Respiración', tipo: 'resp_rpm', unit: 'resp/min', dec: 0, clin: [12, 20], dir: 'ambas', organo: 'pulmones', capa: 'real', experimental: true, link: '/progress' },
-  { id: 'bp', label: 'Presión arterial', tipo: 'presion_sis', unit: 'mmHg', dec: 0, clin: [90, 140], dir: 'ambas', organo: 'corazon', capa: 'self', link: '/indicators/bp' },
-  { id: 'sintomas', label: 'Síntomas', tipo: 'sintomas', unit: 'activos', dec: 0, clin: [0, 2.5], dir: 'sube', organo: 'inmune', capa: 'self', link: '/camera?paso=3' },
-  { id: 'sleep', label: 'Sueño', tipo: 'sueno_horas', unit: 'h', dec: 1, clin: [6, 12], dir: 'baja', organo: 'ojos', capa: 'self', link: '/indicators/sleep' },
-  { id: 'rt', label: 'Reacción', tipo: 'reaccion_ms', unit: 'ms', dec: 0, clin: [0, 350], dir: 'sube', organo: 'cerebro', capa: 'real', link: '/indicators/rt' },
-  { id: 'mood', label: 'Ánimo', tipo: 'animo', unit: 'de 5', dec: 0, clin: [2.5, 5], dir: 'baja', organo: 'cerebro', capa: 'self', link: '/indicators/mood' },
-  { id: 'stress', label: 'Estrés', tipo: 'estres', unit: 'de 10', dec: 0, clin: [0, 7.5], dir: 'sube', organo: 'cerebro', capa: 'self', link: '/indicators/stress' },
-  { id: 'expr', label: 'Expresividad', tipo: 'expresividad', unit: 'de 100', dec: 0, escala: 100, dir: 'ambas', organo: 'cerebro', capa: 'real', link: '/progress' },
+  { id: 'hr', label: 'Heart rate', tipo: 'hr_reposo', unit: 'bpm', dec: 0, clin: [50, 100], dir: 'ambas', organo: 'corazon', capa: 'real', link: '/indicators/hr' },
+  { id: 'hrv', label: 'HRV (stress)', tipo: 'hrv_rmssd', unit: 'ms', dec: 0, dir: 'baja', organo: 'corazon', capa: 'real', experimental: true, link: '/progress' },
+  { id: 'resp', label: 'Breathing', tipo: 'resp_rpm', unit: 'resp/min', dec: 0, clin: [12, 20], dir: 'ambas', organo: 'pulmones', capa: 'real', experimental: true, link: '/progress' },
+  { id: 'bp', label: 'Blood pressure', tipo: 'presion_sis', unit: 'mmHg', dec: 0, clin: [90, 140], dir: 'ambas', organo: 'corazon', capa: 'self', link: '/indicators/bp' },
+  { id: 'sintomas', label: 'Symptoms', tipo: 'sintomas', unit: 'activos', dec: 0, clin: [0, 2.5], dir: 'sube', organo: 'inmune', capa: 'self', link: '/camera?paso=3' },
+  { id: 'sleep', label: 'Sleep', tipo: 'sueno_horas', unit: 'h', dec: 1, clin: [6, 12], dir: 'baja', organo: 'ojos', capa: 'self', link: '/indicators/sleep' },
+  { id: 'rt', label: 'Reaction', tipo: 'reaccion_ms', unit: 'ms', dec: 0, clin: [0, 350], dir: 'sube', organo: 'cerebro', capa: 'real', link: '/indicators/rt' },
+  { id: 'mood', label: 'Mood', tipo: 'animo', unit: 'of 5', dec: 0, clin: [2.5, 5], dir: 'baja', organo: 'cerebro', capa: 'self', link: '/indicators/mood' },
+  { id: 'stress', label: 'Stress', tipo: 'estres', unit: 'of 10', dec: 0, clin: [0, 7.5], dir: 'sube', organo: 'cerebro', capa: 'self', link: '/indicators/stress' },
+  { id: 'expr', label: 'Expressiveness', tipo: 'expresividad', unit: 'out of 100', dec: 0, escala: 100, dir: 'ambas', organo: 'cerebro', capa: 'real', link: '/progress' },
 ]
 
 export const ORGANOS: Record<Organo, { nombre: string; sistema: string; que: string }> = {
-  cerebro: { nombre: 'Cerebro', sistema: 'Mental y cognitivo', que: 'Reacción, ánimo, estrés y expresividad. El aislamiento y el mal sueño se notan primero aquí' },
-  ojos: { nombre: 'Ojos', sistema: 'Sueño', que: 'Horas de sueño. En órbita hay 16 amaneceres al día y el ritmo de sueño se rompe' },
-  corazon: { nombre: 'Corazón', sistema: 'Cardiovascular', que: 'Ritmo, variabilidad y presión. Sin gravedad los líquidos suben y el corazón se desacondiciona' },
-  pulmones: { nombre: 'Pulmones', sistema: 'Respiratorio', que: 'Respiraciones por minuto en reposo, medidas solo con la cámara' },
-  inmune: { nombre: 'Sistema inmune', sistema: 'Inmune', que: 'Síntomas reportados. La radiación y el estrés debilitan las defensas' },
+  cerebro: { nombre: 'Brain', sistema: 'Mental and cognitive', que: 'Reaction, mood, stress and expressiveness. Isolation and poor sleep show up here first' },
+  ojos: { nombre: 'Eyes', sistema: 'Sleep', que: 'Hours of sleep. In orbit there are 16 sunrises a day and the sleep rhythm breaks down' },
+  corazon: { nombre: 'Heart', sistema: 'Cardiovascular', que: 'Heart rate, variability and blood pressure. Without gravity fluids shift upward and the heart deconditions' },
+  pulmones: { nombre: 'Lungs', sistema: 'Respiratory', que: 'Resting breaths per minute, measured with just the camera' },
+  inmune: { nombre: 'Immune system', sistema: 'Immune', que: 'Reported symptoms. Radiation and stress weaken the immune system' },
 }
 
 // Sistema del motor que corresponde a cada órgano (status.sistemas)
@@ -66,13 +66,13 @@ export const peor = (a: Estado, b: Estado) => (ORDEN.indexOf(a) >= ORDEN.indexOf
 
 // Sin back solo hay el dato de hoy: se compara contra la referencia clínica
 function evaluarLocal(d: Def, v: number): { estado: Estado; motivo: string } {
-  if (!d.clin) return { estado: 'ok', motivo: 'Sin conexión con el motor para compararlo con tu normal' }
+  if (!d.clin) return { estado: 'ok', motivo: 'No engine connection to compare it with your normal' }
   const [lo, hi] = d.clin
   const alto = d.dir !== 'baja' && v > hi
   const bajo = d.dir !== 'sube' && v < lo && lo > 0
-  if (!alto && !bajo) return { estado: 'ok', motivo: 'Dentro del rango de referencia' }
+  if (!alto && !bajo) return { estado: 'ok', motivo: 'Within the reference range' }
   const exceso = alto ? (v - hi) / (hi || 1) : (lo - v) / lo
-  return { estado: exceso > 0.2 && !d.experimental ? 'crit' : 'warn', motivo: `Fuera del rango de referencia (${lo} a ${hi})` }
+  return { estado: exceso > 0.2 && !d.experimental ? 'crit' : 'warn', motivo: `Outside the reference range (${lo} to ${hi})` }
 }
 
 export function useSalud() {
@@ -130,15 +130,15 @@ export function useSalud() {
       const lb = ind?.linea_base
       const media = lb && lb.media != null && lb.n >= 3 ? lb.media * esc : null
       let estado: Estado = 'none'
-      let motivo = 'Sin datos todavía'
+      let motivo = 'No data yet'
       if (valor != null) {
         if (ind && ind.estado !== 'sin_datos') {
           estado = SEM[ind.estado]
           const ult = ind.serie[ind.serie.length - 1]
           motivo =
             estado === 'ok'
-              ? media == null ? 'Aprendiendo tu normal' : 'Dentro de tu normal'
-              : ult?.z != null ? `${ult.z > 0 ? 'Más alto' : 'Más bajo'} que tu normal (z ${ult.z.toFixed(1)})` : 'Fuera de tu rango'
+              ? media == null ? 'Learning your normal' : 'Within your normal'
+              : ult?.z != null ? `${ult.z > 0 ? 'Higher' : 'Lower'} than your normal (z ${ult.z.toFixed(1)})` : 'Outside your range'
         } else {
           ;({ estado, motivo } = evaluarLocal(d, valor))
         }

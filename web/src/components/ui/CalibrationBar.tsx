@@ -5,7 +5,7 @@ import { C } from '../../lib/paleta'
 // lleva anillo. Cuando sube la calibración (calibration_changed) los cuadros se llenan.
 export default function CalibrationStrip({ day, total }: { day: number; total: number }) {
   return (
-    <div role="img" aria-label={`Día ${day} de ${total} de la línea base personal`} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}>
+    <div role="img" aria-label={`Day ${day} of ${total} of the personal baseline`} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}>
       {Array.from({ length: total }, (_, i) => {
         const filled = i < day
         const current = i === day - 1

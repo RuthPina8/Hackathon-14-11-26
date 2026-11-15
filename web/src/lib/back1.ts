@@ -70,32 +70,32 @@ export const SEM: Record<SemaforoBack, Semaforo> = { verde: 'ok', amarillo: 'war
 // Sistemas del back -> ids de las pantallas
 const SISTEMAS: { id: string; back: string; nombre: string; href: string }[] = [
   { id: 'cardio', back: 'cardiovascular', nombre: 'Cardiovascular', href: '/indicators/hr' },
-  { id: 'sueno', back: 'sueno', nombre: 'Sueño', href: '/indicators/sleep' },
-  { id: 'mental', back: 'mental', nombre: 'Mental y cognitivo', href: '/indicators/rt' },
-  { id: 'inmune', back: 'inmune', nombre: 'Inmune', href: '/camera?paso=4' },
+  { id: 'sueno', back: 'sueno', nombre: 'Sleep', href: '/indicators/sleep' },
+  { id: 'mental', back: 'mental', nombre: 'Mental and cognitive', href: '/indicators/rt' },
+  { id: 'inmune', back: 'inmune', nombre: 'Immune', href: '/camera?paso=4' },
 ]
 
 // Palabras con que el motor nombra las señales de cada sistema en sus factores (readiness.py, NOMBRES)
 const PALABRAS: Record<string, string[]> = {
-  cardio: ['ritmo', 'presión', 'vfc', 'respiración'],
-  sueno: ['perclos', 'fatiga', 'sueño', 'dormiste', 'parpadeo'],
-  mental: ['reacción', 'lapsos', 'ánimo', 'estrés', 'expresividad'],
+  cardio: ['ritmo', 'presión', 'vfc', 'respiración', 'heart', 'pressure', 'hrv', 'breathing'],
+  sueno: ['perclos', 'fatiga', 'sueño', 'dormiste', 'parpadeo', 'fatigue', 'sleep', 'slept', 'blink'],
+  mental: ['reacción', 'lapsos', 'ánimo', 'estrés', 'expresividad', 'reaction', 'lapses', 'mood', 'stress', 'expressiveness'],
 }
 
 // Señales que alimentan el explorador del cuerpo (mini gráficas de cada sistema)
 export const METRICAS_SISTEMA: Record<string, { tipo: string; label: string; fmt: (v: number) => string }[]> = {
   cardio: [
-    { tipo: 'hr_reposo', label: 'Ritmo en reposo', fmt: (v) => `${Math.round(v)} lpm` },
-    { tipo: 'presion_sis', label: 'Presión sistólica', fmt: (v) => `${Math.round(v)} mmHg` },
+    { tipo: 'hr_reposo', label: 'Resting heart rate', fmt: (v) => `${Math.round(v)} bpm` },
+    { tipo: 'presion_sis', label: 'Systolic pressure', fmt: (v) => `${Math.round(v)} mmHg` },
   ],
   sueno: [
-    { tipo: 'sueno_horas', label: 'Horas de sueño', fmt: (v) => `${v.toFixed(1)} h` },
+    { tipo: 'sueno_horas', label: 'Hours of sleep', fmt: (v) => `${v.toFixed(1)} h` },
   ],
   mental: [
-    { tipo: 'reaccion_ms', label: 'Tiempo de reacción', fmt: (v) => `${Math.round(v)} ms` },
-    { tipo: 'animo', label: 'Ánimo', fmt: (v) => `${v.toFixed(0)} de 5` },
+    { tipo: 'reaccion_ms', label: 'Reaction time', fmt: (v) => `${Math.round(v)} ms` },
+    { tipo: 'animo', label: 'Mood', fmt: (v) => `${v.toFixed(0)} of 5` },
   ],
-  inmune: [{ tipo: 'sintomas', label: 'Síntomas reportados', fmt: (v) => (v === 0 ? 'ninguno' : `${v.toFixed(0)}`) }],
+  inmune: [{ tipo: 'sintomas', label: 'Reported symptoms', fmt: (v) => (v === 0 ? 'none' : `${v.toFixed(0)}`) }],
 }
 
 export const TIPOS_METRICAS = [...new Set(Object.values(METRICAS_SISTEMA).flat().map((m) => m.tipo))]
@@ -114,7 +114,7 @@ export function metricasDeSistema(id: string, inds: Record<string, ServerIndicat
     const ind = inds[d.tipo]
     const pts = ind?.serie.filter((p) => p.fuente !== 'modelo') ?? []
     if (!ind || pts.length === 0) {
-      out.push({ label: d.label, value: 'sin dato', base: 'sin datos', estado: 'none', serie: [] })
+      out.push({ label: d.label, value: 'no data', base: 'no data', estado: 'none', serie: [] })
       continue
     }
     const ult = pts[pts.length - 1]
@@ -136,17 +136,17 @@ export function adaptStatus(s: ServerStatus, prev: StatusMock, inds: Record<stri
     const estado = SEM[b?.estado ?? 'sin_datos']
     let nota: string | undefined
     if (x.id === 'inmune') {
-      nota = s.inmune ? s.inmune.motivo : 'Sin síntomas registrados todavía. Regístralos en el chequeo diario'
+      nota = s.inmune ? s.inmune.motivo : 'No symptoms logged yet. Log them in the daily check-up'
     } else if (estado === 'none') {
-      nota = 'Sin mediciones todavía. Haz tu chequeo diario para que se calcule'
+      nota = 'No measurements yet. Do your daily check-up so it can be computed'
     } else {
       const claves = PALABRAS[x.id] ?? []
       const fs = s.factores.filter((f) => claves.some((k) => f.label.toLowerCase().includes(k)))
-      nota = fs.length ? fs.map((f) => f.label).join('. ') : estado === 'ok' ? 'Tus señales de hoy están dentro de tu normal' : undefined
+      nota = fs.length ? fs.map((f) => f.label).join('. ') : estado === 'ok' ? 'Today’s signals are within your normal' : undefined
     }
     return {
       id: x.id, nombre: x.nombre, estado, href: x.href, nota,
-      valor: b?.valor ?? (x.id === 'inmune' ? 'sin datos' : 'sin dato'),
+      valor: b?.valor ?? (x.id === 'inmune' ? 'no data' : 'no data'),
       metricas: metricasDeSistema(x.id, inds),
       demo: s.dato_demo,
     }
@@ -175,12 +175,12 @@ export function adaptStatus(s: ServerStatus, prev: StatusMock, inds: Record<stri
 }
 
 const hace = (iso: string | null) => {
-  if (!iso) return 'sin chequeo'
+  if (!iso) return 'no check-up'
   const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
   if (min < 1) return 'ahora'
   if (min < 60) return `hace ${min} min`
   if (min < 1440) return `hace ${Math.round(min / 60)} h`
-  return `hace ${Math.round(min / 1440)} días`
+  return `${Math.round(min / 1440)} days ago`
 }
 
 export function adaptCrew(list: ServerCrewMember[], prev: CrewMember[]): CrewMember[] {
@@ -193,11 +193,11 @@ export function adaptCrew(list: ServerCrewMember[], prev: CrewMember[]): CrewMem
       rol: p?.rol ?? c.rol,
       estado: SEM[c.estado],
       // Los datos del simulador tienen fechas sintéticas: se muestra su día de misión
-      ultimo: c.dato_demo && c.ultimo_dia != null ? `día ${c.ultimo_dia} de misión` : hace(c.ultimo),
-      ritmo: c.ritmo ?? 'sin dato',
-      perclos: c.perclos ?? 'sin dato',
-      presion: c.presion ?? 'sin dato',
-      animo: c.animo ?? 'sin dato',
+      ultimo: c.dato_demo && c.ultimo_dia != null ? `mission day ${c.ultimo_dia}` : hace(c.ultimo),
+      ritmo: c.ritmo ?? 'no data',
+      perclos: c.perclos ?? 'no data',
+      presion: c.presion ?? 'no data',
+      animo: c.animo ?? 'no data',
       alertas: c.alertas_activas,
       demo: c.dato_demo,
     }

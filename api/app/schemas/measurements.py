@@ -56,7 +56,7 @@ class AnimoCamaraOut(BaseModel):
     estado: Literal["aprendiendo", "activo"]
     acierto_pct: float | None = None
     mae: float | None = None
-    n: int = Field(description="días con chequeo de cámara y registro de ánimo")
+    n: int = Field(description="days with a camera check-up and a mood log")
     explicacion: str | None = None
     estimado_hoy: float | None = None
 
@@ -70,8 +70,8 @@ class StatusOut(BaseModel):
     fase: Literal["tierra", "adaptacion", "personal"]
     dia_mision: int
     n_mediciones: int
-    racha: int = Field(default=0, description="días seguidos con al menos una medición propia, hasta el último")
-    dato_demo: bool = Field(default=False, description="el estado incluye datos del simulador")
+    racha: int = Field(default=0, description="consecutive days with at least one own measurement, up to the latest")
+    dato_demo: bool = Field(default=False, description="the status includes simulator data")
     inmune: InmuneOut | None = None
     animo_camara: AnimoCamaraOut | None = None
 
@@ -83,7 +83,7 @@ class PuntoOut(BaseModel):
     fuente: str
     confianza: float
     dia_mision: int | None = None
-    z: float | None = Field(default=None, description="contra la línea base que había antes de este punto")
+    z: float | None = Field(default=None, description="against the baseline that existed before this point")
     anomalo: bool = False
 
 
@@ -114,9 +114,9 @@ class IndicatorOut(BaseModel):
     anomalias: list[AnomaliaOut] = Field(default_factory=list)
     estado: Semaforo = "sin_datos"
     alerta_id: int | None = None
-    desde: datetime | None = Field(default=None, description="desde cuándo, de la alerta abierta (CUSUM)")
+    desde: datetime | None = Field(default=None, description="since when, from the open alert (CUSUM)")
     experimental: bool = False
-    dato_demo: bool = Field(default=False, description="hay datos del simulador en la serie")
+    dato_demo: bool = Field(default=False, description="the series contains simulator data")
 
 
 class CrewMemberOut(BaseModel):
@@ -126,7 +126,7 @@ class CrewMemberOut(BaseModel):
     estado: Semaforo
     readiness: int | None = None
     ultimo: datetime | None = None
-    ultimo_dia: int | None = Field(default=None, description="día de misión del último dato")
+    ultimo_dia: int | None = Field(default=None, description="mission day of the latest data point")
     ritmo: str | None = None
     perclos: str | None = None
     presion: str | None = None

@@ -108,7 +108,7 @@ function texturaPantalla() {
   g.beginPath(); g.roundRect(206, 150, 100, 96, 26); g.fill()
   g.fillStyle = '#0A1320'; g.fillRect(0, 276, 512, 44)
   g.fillStyle = '#3DDC97'; g.beginPath(); g.arc(34, 298, 9, 0, 7); g.fill()
-  g.fillStyle = '#C8D6E8'; g.font = '600 20px sans-serif'; g.fillText('ASTRA-MOVE · cámara', 56, 305)
+  g.fillStyle = '#C8D6E8'; g.font = '600 20px sans-serif'; g.fillText('ASTRA-MOVE · camera', 56, 305)
   return c
 }
 

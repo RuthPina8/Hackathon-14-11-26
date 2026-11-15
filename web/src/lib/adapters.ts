@@ -76,36 +76,36 @@ interface InfoSenal { nombre: string; icono: AlertItem['icono']; capa: Capa; tar
 
 const SENALES: Record<string, InfoSenal> = {
   hr_reposo: {
-    nombre: 'Ritmo en reposo', icono: 'pulse', capa: 'real',
-    tareas: ['Haz el chequeo en reposo, 10 minutos después de despertar', 'Revisa hidratación y consumo de cafeína', 'Mantén la rutina de ejercicio sin aumentar la intensidad'],
+    nombre: 'Resting heart rate', icono: 'pulse', capa: 'real',
+    tareas: ['Do the check-up at rest, 10 minutes after waking up', 'Check hydration and caffeine intake', 'Keep your exercise routine without increasing intensity'],
   },
   sueno_horas: {
-    nombre: 'Horas de sueño', icono: 'moon', capa: 'self',
-    tareas: ['Duerme al menos 7 h esta noche', 'Baja la luz del módulo 1 h antes de dormir', 'Evita pantallas en la última hora del día'],
+    nombre: 'Hours of sleep', icono: 'moon', capa: 'self',
+    tareas: ['Sleep at least 7 h tonight', 'Dim the module lights 1 h before bed', 'Avoid screens in the last hour of the day'],
   },
   perclos: {
-    nombre: 'Fatiga visual', icono: 'eye', capa: 'real',
-    tareas: ['Toma un descanso de 20 minutos lejos de pantallas', 'Revisa la iluminación del módulo', 'Repite el chequeo con cámara después del descanso'],
+    nombre: 'Visual fatigue', icono: 'eye', capa: 'real',
+    tareas: ['Take a 20-minute break away from screens', 'Check the module lighting', 'Repeat the camera check-up after the break'],
   },
   presion_sis: {
-    nombre: 'Presión sistólica', icono: 'heart', capa: 'self',
-    tareas: ['Siéntate y repite la medición en 5 minutos', 'Evita el esfuerzo físico mientras tanto', 'Avisa al comandante si sigue alta'],
+    nombre: 'Systolic pressure', icono: 'heart', capa: 'self',
+    tareas: ['Sit down and repeat the reading in 5 minutes', 'Avoid physical exertion in the meantime', 'Tell the commander if it stays high'],
   },
   presion_dia: {
-    nombre: 'Presión diastólica', icono: 'heart', capa: 'self',
-    tareas: ['Siéntate y repite la medición en 5 minutos', 'Evita el esfuerzo físico mientras tanto', 'Avisa al comandante si sigue alta'],
+    nombre: 'Diastolic pressure', icono: 'heart', capa: 'self',
+    tareas: ['Sit down and repeat the reading in 5 minutes', 'Avoid physical exertion in the meantime', 'Tell the commander if it stays high'],
   },
   resp_rpm: {
-    nombre: 'Respiración', icono: 'pulse', capa: 'real',
-    tareas: ['Respira con calma 5 minutos y repite la medición', 'Avisa al comandante si persiste'],
+    nombre: 'Breathing', icono: 'pulse', capa: 'real',
+    tareas: ['Breathe calmly for 5 minutes and repeat the reading', 'Tell the commander if it persists'],
   },
   inmune: {
-    nombre: 'Señales inmunes', icono: 'pulse', capa: 'self',
-    tareas: ['Anota tus síntomas en el chequeo diario', 'Descansa y mantente hidratado', 'Avisa al comandante si empeoras'],
+    nombre: 'Immune signals', icono: 'pulse', capa: 'self',
+    tareas: ['Log your symptoms in the daily check-up', 'Rest and stay hydrated', 'Tell the commander if you get worse'],
   },
 }
 
-const TAREAS_GENERICAS = ['Repite la medición en reposo', 'Avisa al comandante si persiste']
+const TAREAS_GENERICAS = ['Repeat the reading at rest', 'Tell the commander if it persists']
 
 const humanizar = (s: string) => {
   const t = s.replace(/_/g, ' ').trim()
@@ -119,7 +119,7 @@ function hace(iso: string): string {
   if (min < 1) return 'ahora'
   if (min < 60) return `hace ${min} min`
   if (min < 1440) return `hace ${Math.round(min / 60)} h`
-  return `hace ${Math.round(min / 1440)} días`
+  return `${Math.round(min / 1440)} days ago`
 }
 
 // ---------- alertas ----------
@@ -131,7 +131,7 @@ export function adaptAlert(a: ServerAlert): AlertItem {
     .sort((x, y) => y[1] - x[1])
     .map(([k, v]) => ({ name: nombreSenal(k), w: Math.round(v), capa: SENALES[k]?.capa ?? 'real' }))
   const tareas = [...(info?.tareas ?? TAREAS_GENERICAS)]
-  if (nivel === 'crit') tareas.push('Escala la alerta a Tierra para que el flight surgeon la revise')
+  if (nivel === 'crit') tareas.push('Escalate the alert to Earth so the flight surgeon can review it')
 
   return {
     id: String(a.id),
@@ -140,12 +140,12 @@ export function adaptAlert(a: ServerAlert): AlertItem {
     icono: info?.icono ?? 'pulse',
     titulo: nombre,
     resumen: a.que_cambio,
-    cuando: a.dia_mision != null ? `día ${a.dia_mision}` : hace(a.actualizada),
+    cuando: a.dia_mision != null ? `day ${a.dia_mision}` : hace(a.actualizada),
     queCambio: a.que_cambio,
-    cuanto: a.cuanto ?? 'Sin dato de cuánto cambió',
+    cuanto: a.cuanto ?? 'No data on how much it changed',
     desde: a.desde
-      ? `Desde el ${new Date(a.desde).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`
-      : a.dia_mision != null ? `Día ${a.dia_mision} de la misión` : 'Hace unos minutos',
+      ? `Since ${new Date(a.desde).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`
+      : a.dia_mision != null ? `Mission day ${a.dia_mision}` : 'A few minutes ago',
     factores: factores.length ? factores : [{ name: nombre, w: 100, capa: info?.capa ?? 'real' }],
     tareas,
     // "atendida" y "resuelta" ya no piden acción; "escalada" sigue abierta hasta que se resuelva
@@ -159,8 +159,8 @@ export function adaptQueue(m: ServerQueueMessage): QueueMessage {
   const payload = m.payload ?? {}
   let name: string
   if (typeof payload.texto === 'string') name = payload.texto
-  else if (m.tipo === 'alerta') name = `Alerta ${payload.nivel === 'roja' ? 'roja' : 'amarilla'}, ${nombreSenal(String(payload.senal ?? 'señal')).toLowerCase()}`
-  else if (m.tipo === 'reporte') name = 'Reporte'
+  else if (m.tipo === 'alerta') name = `${payload.nivel === 'roja' ? 'Red' : 'Yellow'} alert, ${nombreSenal(String(payload.senal ?? 'signal')).toLowerCase()}`
+  else if (m.tipo === 'reporte') name = 'Report'
   else name = humanizar(m.tipo)
 
   return {
@@ -190,10 +190,10 @@ export const astroNumero = (id: string | undefined | null): number | null => {
 export function adaptStatus(prev: StatusMock, s: ServerStatus): StatusMock {
   const sistemas = prev.sistemas.map((x) => {
     const clave = Object.keys(s.sistemas).find((k) => SISTEMA_BACK[k] === x.id)
-    if (!clave) return x.id === 'oseo' ? x : { ...x, estado: 'none' as const, valor: 'sin datos', nota: undefined }
+    if (!clave) return x.id === 'oseo' ? x : { ...x, estado: 'none' as const, valor: 'no data', nota: undefined }
     const r = s.sistemas[clave]
     const estado = SEMAFORO_BACK[r.estado] ?? 'none'
-    return { ...x, estado, valor: r.valor ?? 'sin datos', nota: undefined }
+    return { ...x, estado, valor: r.valor ?? 'no data', nota: undefined }
   })
   return {
     ...prev,

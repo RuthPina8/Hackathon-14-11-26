@@ -112,7 +112,7 @@ def test_modelo_animo_aprende_de_tus_senales():
     r = mood_model.entrenar(dias, etiquetas, hoy={"sueno_horas": -2, "expresividad": -1})
     assert r.estado == "activo" and r.acierto_pct >= 70
     assert r.estimado_hoy < 3
-    assert "sueño" in r.explicacion
+    assert "sleep" in r.explicacion
 
 
 def test_modelo_animo_aprendiendo_con_pocos_dias():
@@ -142,7 +142,7 @@ def test_inmune_por_pipeline_y_status(client):
                                            "detalle": {"lista": [{"clave": "fiebre", "intensidad": 2}, {"clave": "congestion", "intensidad": 1}]}})
     s = client.get("/status").json()
     assert s["sistemas"]["inmune"]["estado"] == "rojo"
-    assert s["inmune"]["estado"] == "rojo" and "Fiebre" in s["inmune"]["motivo"]
+    assert s["inmune"]["estado"] == "rojo" and "Fever" in s["inmune"]["motivo"]
     assert client.get("/alerts").json()["activas"][0]["nivel"] == "roja"
 
 

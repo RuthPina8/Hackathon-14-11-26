@@ -26,7 +26,7 @@ export const C = {
   subtle: '#C5CEDF',
   muted: '#A3AEC4',
   faint: '#93A0B8',
-  none: '#8A9BB8', // "sin datos": antes #5C7896 (contraste 4.1), ahora pasa 6:1 sobre el panel
+  none: '#8A9BB8', // "no data": antes #5C7896 (contraste 4.1), ahora pasa 6:1 sobre el panel
 
   accent: '#5CC8F5',
   accentSoft: '#8AD9F8',

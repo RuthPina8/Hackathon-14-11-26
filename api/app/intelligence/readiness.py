@@ -27,11 +27,11 @@ SISTEMAS: dict[str, list[str]] = {
 }
 
 NOMBRES = {
-    "hr_reposo": "Ritmo en reposo", "presion_sis": "Presión sistólica", "presion_dia": "Presión diastólica",
-    "perclos": "Fatiga visual (PERCLOS)", "parpadeo_min": "Parpadeos por minuto", "sueno_horas": "Horas de sueño",
-    "sueno_eficiencia_pct": "Eficiencia del sueño", "sueno_calidad": "Calidad del sueño", "reaccion_ms": "Tiempo de reacción",
-    "lapsos": "Lapsos de atención", "animo": "Ánimo", "estres": "Estrés", "sintomas": "Síntomas",
-    "hrv_rmssd": "Variabilidad del ritmo (VFC)", "resp_rpm": "Respiración", "expresividad": "Expresividad facial",
+    "hr_reposo": "Resting heart rate", "presion_sis": "Systolic pressure", "presion_dia": "Diastolic pressure",
+    "perclos": "Visual fatigue (PERCLOS)", "parpadeo_min": "Blinks per minute", "sueno_horas": "Hours of sleep",
+    "sueno_eficiencia_pct": "Sleep efficiency", "sueno_calidad": "Sleep quality", "reaccion_ms": "Reaction time",
+    "lapsos": "Attention lapses", "animo": "Mood", "estres": "Stress", "sintomas": "Symptoms",
+    "hrv_rmssd": "Heart rate variability (HRV)", "resp_rpm": "Breathing", "expresividad": "Facial expressiveness",
 }
 
 PENALIZACION = {"amarillo": 8, "rojo": 20}
@@ -65,39 +65,39 @@ def evaluar_senal(tipo: str, valor: float, lb: LineaBase | None) -> EstadoSenal:
     nombre = NOMBRES.get(tipo, tipo)
     clinico = _fuera_de_rango(tipo, valor)
     if clinico:
-        rango = "clínico" if clinico == "rojo" else "de atención"
-        return EstadoSenal(tipo, valor, clinico, f"{nombre} fuera del rango {rango} de referencia")
+        rango = "clinical" if clinico == "rojo" else "watch"
+        return EstadoSenal(tipo, valor, clinico, f"{nombre} outside the {rango} reference range")
     # Reglas simples para señales sin rango clínico
     if tipo == "perclos" and valor > UMBRAL_PERCLOS:
-        return EstadoSenal(tipo, valor, "amarillo", f"Fatiga visual (PERCLOS {valor:.2f}) arriba del umbral de {UMBRAL_PERCLOS}")
+        return EstadoSenal(tipo, valor, "amarillo", f"Visual fatigue (PERCLOS {valor:.2f}) above the {UMBRAL_PERCLOS} threshold")
     if tipo == "sueno_horas" and valor < umbrales.SUENO_MIN_HORAS:
-        return EstadoSenal(tipo, valor, "amarillo", f"Dormiste {valor:.1f} h, menos de {umbrales.SUENO_MIN_HORAS:g} h")
+        return EstadoSenal(tipo, valor, "amarillo", f"You slept {valor:.1f} h, less than {umbrales.SUENO_MIN_HORAS:g} h")
     if tipo == "animo" and valor <= 2:
-        return EstadoSenal(tipo, valor, "amarillo", "Ánimo bajo reportado")
+        return EstadoSenal(tipo, valor, "amarillo", "Low mood reported")
     if tipo == "estres" and valor >= 8:
-        return EstadoSenal(tipo, valor, "amarillo", "Estrés alto reportado")
+        return EstadoSenal(tipo, valor, "amarillo", "High stress reported")
     if tipo == "sintomas" and valor >= 3:
-        return EstadoSenal(tipo, valor, "amarillo", f"{valor:g} síntomas reportados")
+        return EstadoSenal(tipo, valor, "amarillo", f"{valor:g} symptoms reported")
     z = zscore(lb, valor, tipo) if lb else None
     if z is not None:
         direccion = DIRECCION.get(tipo, "ambas")
         malo = abs(z) if direccion == "ambas" else (z if direccion == "sube" else -z)
         if malo >= umbrales.Z_ROJA:
-            return EstadoSenal(tipo, valor, "rojo", f"{nombre} muy fuera de tu normal", z)
+            return EstadoSenal(tipo, valor, "rojo", f"{nombre} far outside your normal", z)
         if malo >= umbrales.Z_AMARILLA:
-            return EstadoSenal(tipo, valor, "amarillo", f"{nombre} fuera de tu normal", z)
-    return EstadoSenal(tipo, valor, "verde", f"{nombre} dentro de lo esperado", z)
+            return EstadoSenal(tipo, valor, "amarillo", f"{nombre} outside your normal", z)
+    return EstadoSenal(tipo, valor, "verde", f"{nombre} as expected", z)
 
 
 def _formato(tipo: str, valor: float) -> str:
     if tipo == "hr_reposo":
-        return f"{valor:.0f} lpm"
+        return f"{valor:.0f} bpm"
     if tipo == "perclos":
         return f"{valor:.2f}"
     if tipo == "reaccion_ms":
         return f"{valor:.0f} ms"
     if tipo == "sintomas":
-        return "sin síntomas" if valor == 0 else f"{valor:.0f} síntomas"
+        return "no symptoms" if valor == 0 else f"{valor:.0f} symptoms"
     if tipo.startswith("presion"):
         return f"{valor:.0f} mmHg"
     if tipo == "sueno_horas":

@@ -47,7 +47,7 @@ export function medicionesCognitivo(r: ResultadoCognitivo, b: Base): MedicionEnv
 
 export function medicionesPresion(r: ResultadoPresion, b: Base): MedicionEnvio[] {
   if ('omitida' in r) return []
-  const det = { origen: 'brazalete del kit médico' }
+  const det = { origen: 'medical kit cuff' }
   const out = [m(b, 'presion_sis', r.sis, 'mmHg', 'auto', 'manual', 0.9, det), m(b, 'presion_dia', r.dia, 'mmHg', 'auto', 'manual', 0.9, det)]
   return out
 }

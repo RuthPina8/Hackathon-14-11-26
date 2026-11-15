@@ -21,7 +21,7 @@ class Base(DeclarativeBase):
 @lru_cache
 def get_engine() -> Engine:
     if not settings.database_url:
-        raise RuntimeError("DATABASE_URL no está definido en api/.env")
+        raise RuntimeError("DATABASE_URL is not set in api/.env")
     return create_engine(settings.database_url, pool_pre_ping=True)
 
 

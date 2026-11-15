@@ -147,4 +147,4 @@ def test_guion_inmune_a3_amarillo_el_27_y_rojo_el_29_por_fiebre(client):
     client.post("/demo/advance", json={"dias": 1})  # día 29: fiebre 2 días -> rojo y a Tierra
     a3 = [x for x in client.get("/alerts").json()["activas"] if x["astronauta_id"] == 3]
     assert len(a3) == 1 and a3[0]["nivel"] == "roja" and a3[0]["estado"] == "escalada"
-    assert "Fiebre 2 días" in a3[0]["que_cambio"]
+    assert "Fever for 2 days" in a3[0]["que_cambio"]

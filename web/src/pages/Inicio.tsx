@@ -20,7 +20,7 @@ import { ORGANOS, useSalud, useSexo, type Estado, type Metrica, type Organo } fr
 import { C } from '../lib/paleta'
 
 const COLOR: Record<Estado, string> = { ok: C.ok, warn: C.warn, crit: C.crit, none: C.none }
-const TEXTO: Record<Estado, string> = { ok: 'Normal', warn: 'Atención', crit: 'Crítico', none: 'Sin datos' }
+const TEXTO: Record<Estado, string> = { ok: 'Normal', warn: 'Attention', crit: 'Critical', none: 'No data' }
 
 // Número que cuenta desde cero hasta su valor real durante el encendido de cabina
 function Cuenta({ texto, activo }: { texto: string; activo: boolean }) {
@@ -94,7 +94,7 @@ function Panel({ m, activo, onTocar, onHover, i, encendido }: {
       </div>
       <Linea serie={m.serie} color={c} />
       <span className="text-[13px] leading-snug text-faint">
-        {m.valor == null ? 'Haz tu chequeo para medirlo' : m.media != null ? `Tu normal ${m.media.toFixed(m.dec)} · ${m.motivo.toLowerCase()}` : m.motivo}
+        {m.valor == null ? 'Do your check-up to measure it' : m.media != null ? `Your normal ${m.media.toFixed(m.dec)} · ${m.motivo.toLowerCase()}` : m.motivo}
       </span>
     </motion.button>
   )
@@ -102,11 +102,11 @@ function Panel({ m, activo, onTocar, onHover, i, encendido }: {
 
 // Texto bajo la disposición: sale del número y de los factores reales, nunca fijo
 function lectura(readiness: number, factores: number, sinDatos: boolean) {
-  if (sinDatos) return 'Aún no hay mediciones tuyas. Haz tu primer chequeo para que el motor calcule tu estado'
-  if (readiness >= 85) return factores ? 'Puedes operar con normalidad, hay una señal menor que conviene vigilar' : 'Puedes operar con normalidad, todo está dentro de tu normal'
-  if (readiness >= 65) return `Puedes operar, ${factores === 1 ? 'hay una señal' : `hay ${factores} señales`} que conviene atender hoy`
-  if (readiness >= 45) return 'Evita tareas críticas o de precisión hasta atender las señales de abajo'
-  return 'Estado bajo: sigue las alertas y avisa al comandante'
+  if (sinDatos) return 'No measurements of yours yet. Do your first check-up so the engine can compute your status'
+  if (readiness >= 85) return factores ? 'You can operate normally, there’s a minor signal worth watching' : 'You can operate normally, everything is within your normal'
+  if (readiness >= 65) return `You can operate, ${factores === 1 ? 'there is one signal' : `hay ${factores} señales`} worth addressing today`
+  if (readiness >= 45) return 'Avoid critical or precision tasks until you address the signals below'
+  return 'Low status: follow the alerts and tell the commander'
 }
 
 export default function Inicio() {
@@ -114,10 +114,10 @@ export default function Inicio() {
   const user = useSession((s) => s.user)
   const { camara, cognitivo, presion, registro } = useChequeoStore()
   const rutina = [
-    { label: 'Chequeo con cámara', capa: 'real', done: !!camara, to: '/camera' },
-    { label: 'Prueba de atención', capa: 'real', done: !!cognitivo, to: '/camera?paso=1' },
-    { label: 'Presión arterial', capa: 'self', done: !!presion, to: '/camera?paso=2' },
-    { label: 'Ánimo, sueño y síntomas', capa: 'self', done: !!registro, to: '/camera?paso=3' },
+    { label: 'Camera check-up', capa: 'real', done: !!camara, to: '/camera' },
+    { label: 'Attention test', capa: 'real', done: !!cognitivo, to: '/camera?paso=1' },
+    { label: 'Blood pressure', capa: 'self', done: !!presion, to: '/camera?paso=2' },
+    { label: 'Mood, sleep and symptoms', capa: 'self', done: !!registro, to: '/camera?paso=3' },
   ]
   const alerts = useMyAlerts()
   const env = useAppStore((s) => s.environment)
@@ -159,11 +159,11 @@ export default function Inicio() {
   const derecha = ['sleep', 'rt', 'mood', 'stress', 'expr'].map(por)
   const conValor = (id: string, sufijo: string, o: Organo) => (por(id).valor != null ? `${por(id).texto}${sufijo}` : TEXTO[organos[o]])
   const etiquetas: Record<Organo, string> = {
-    cerebro: `Cerebro · ${conValor('rt', ' ms', 'cerebro')}`,
-    ojos: `Sueño · ${conValor('sleep', ' h', 'ojos')}`,
-    corazon: `Corazón · ${conValor('hr', ' lpm', 'corazon')}`,
-    pulmones: `Pulmones · ${conValor('resp', '/min', 'pulmones')}`,
-    inmune: `Inmune · ${por('sintomas').valor != null ? `${por('sintomas').texto} síntomas` : TEXTO[organos.inmune]}`,
+    cerebro: `Brain · ${conValor('rt', ' ms', 'cerebro')}`,
+    ojos: `Sleep · ${conValor('sleep', ' h', 'ojos')}`,
+    corazon: `Heart · ${conValor('hr', ' bpm', 'corazon')}`,
+    pulmones: `Lungs · ${conValor('resp', '/min', 'pulmones')}`,
+    inmune: `Immune · ${por('sintomas').valor != null ? `${por('sintomas').texto} symptoms` : TEXTO[organos.inmune]}`,
   }
   const enAlerta = metricas.filter((m) => m.estado === 'warn' || m.estado === 'crit').length
   const conDatos = metricas.filter((m) => m.valor != null).length
@@ -172,17 +172,17 @@ export default function Inicio() {
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Sin conexión con el motor: tu estado, tu línea base y las gráficas son de ejemplo. Arranca la API para ver tus datos reales</SimBanner>}
-      {statusReal && status.datoDemo && <SimBanner tag="DATO DE DEMO">Tu estado incluye datos del simulador de la misión (modo demo)</SimBanner>}
+      {!statusReal && <SimBanner tag="SAMPLE DATA">No engine connection: your status, baseline and charts are sample data. Start the API to see your real data</SimBanner>}
+      {statusReal && status.datoDemo && <SimBanner tag="DEMO DATA">Your status includes mission simulator data (demo mode)</SimBanner>}
       <PageHeader
-        kicker={`Día ${status.diaMision} de misión · ${environmentProfiles[env].nombre}`}
-        title={`Hola, ${user?.nombre ?? ''}`}
+        kicker={`Mission day ${status.diaMision} · ${environmentProfiles[env].nombre}`}
+        title={`Hi, ${user?.nombre ?? ''}`}
         right={
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl bg-panel border border-line text-[13px] text-muted">
               Racha <strong className="num text-[15px] text-text">{status.racha}</strong> días
             </span>
-            <Link className="btn pri" to={siguiente?.to ?? '/camera?paso=4'}>{hechos === 0 ? 'Iniciar chequeo diario' : siguiente ? 'Continuar chequeo' : 'Ver resumen de hoy'} <ArrowRight size={18} strokeWidth={2.2} /></Link>
+            <Link className="btn pri" to={siguiente?.to ?? '/camera?paso=4'}>{hechos === 0 ? 'Start daily check-up' : siguiente ? 'Continue check-up' : 'See today’s summary'} <ArrowRight size={18} strokeWidth={2.2} /></Link>
           </div>
         }
       />
@@ -194,10 +194,10 @@ export default function Inicio() {
           <span className="num text-[56px] font-bold leading-none" style={{ color: sinDatos ? C.none : status.readiness >= 85 ? C.ok : status.readiness >= 45 ? C.warn : C.crit }}>
             {sinDatos ? '--' : <Cuenta texto={String(status.readiness)} activo={encendido} />}
           </span>
-          <span className="text-base text-muted">de 100</span>
+          <span className="text-base text-muted">out of 100</span>
         </div>
         <div className="min-w-[260px] flex-1">
-          <h2 id="operar" className="m-0 font-display text-[22px] font-semibold leading-snug">¿Puedo operar hoy?</h2>
+          <h2 id="operar" className="m-0 font-display text-[22px] font-semibold leading-snug">Can I operate today?</h2>
           <p className="m-0 mt-1 text-[17px] leading-snug text-subtle">{lectura(status.readiness, status.factores.length, sinDatos)}</p>
         </div>
         {status.factores.length > 0 && (
@@ -222,13 +222,13 @@ export default function Inicio() {
           <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'linear-gradient(#5CC8F5 1px, transparent 1px), linear-gradient(90deg, #5CC8F5 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 px-4 pt-3.5">
             <div>
-              <h2 id="escaneo" className="m-0 font-display text-[15px] font-semibold tracking-wide text-accent-soft">ESCANEO CORPORAL 360°</h2>
+              <h2 id="escaneo" className="m-0 font-display text-[15px] font-semibold tracking-wide text-accent-soft">360° BODY SCAN</h2>
               <p className="m-0 text-[13px] text-faint">
-                {conDatos ? (enAlerta ? `${enAlerta} ${enAlerta === 1 ? 'señal' : 'señales'} para atender` : 'Todo dentro de tu normal') : 'Sin mediciones todavía'}
+                {conDatos ? (enAlerta ? `${enAlerta} ${enAlerta === 1 ? 'signal' : 'signals'} to address` : 'Everything within your normal') : 'No measurements yet'}
               </p>
             </div>
-            <div role="group" aria-label="Vista del cuerpo" className="flex gap-1 rounded-lg border border-holo-line bg-holo-bg/80 p-1">
-              {(['Frente', 'Espalda'] as const).map((t, i) => (
+            <div role="group" aria-label="Body view" className="flex gap-1 rounded-lg border border-holo-line bg-holo-bg/80 p-1">
+              {(['Front', 'Back'] as const).map((t, i) => (
                 <button
                   key={t}
                   type="button"
@@ -278,7 +278,7 @@ export default function Inicio() {
               </div>
             ) : (
               <p className="m-0 flex items-center gap-2 text-sm text-faint">
-                <RotateCw size={14} className="shrink-0" /> Arrastra para girar el cuerpo. Toca un órgano o un panel para ver su detalle. El corazón late a tu ritmo medido y los pulmones respiran a tu frecuencia
+                <RotateCw size={14} className="shrink-0" /> Drag to rotate el cuerpo. Toca un órgano o un panel para ver su detalle. El corazón late a tu ritmo medido y los pulmones respiran a tu frecuencia
               </p>
             )}
           </div>
@@ -294,11 +294,11 @@ export default function Inicio() {
           <div style={{ flex: '0 1 200px', opacity: sinDatos ? 0.35 : 1 }}><ReadinessGauge value={sinDatos ? null : status.readiness} ayer={status.ayer} /></div>
           <div className="flex flex-col gap-3.5 min-w-0" style={{ flex: '1 1 240px' }}>
             <div>
-              <h2 id="mr" className="h2" style={{ fontSize: 20 }}>Disposición para la misión</h2>
+              <h2 id="mr" className="h2" style={{ fontSize: 20 }}>Mission readiness</h2>
               <p className="mt-1.5 mb-0 text-sm text-muted leading-relaxed">{lectura(status.readiness, status.factores.length, sinDatos)}</p>
             </div>
-            <p className="k">{status.factores.length ? 'Por qué bajó' : sinDatos ? 'Qué falta' : 'Sin factores en contra'}</p>
-            {status.factores.length === 0 && <p className="m-0 text-sm text-muted">{sinDatos ? 'Completa la rutina de hoy' : 'Ninguna señal fuera de tu normal'}</p>}
+            <p className="k">{status.factores.length ? 'Why it dropped' : sinDatos ? 'What’s missing' : 'No factors against'}</p>
+            {status.factores.length === 0 && <p className="m-0 text-sm text-muted">{sinDatos ? 'Complete today’s routine' : 'No signals outside your normal'}</p>}
             <ul className="m-0 p-0 list-none flex flex-col gap-2.5 text-sm">
               {status.factores.map((f, i) => (
                 <motion.li key={f.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.15 }} className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export default function Inicio() {
 
         <section className="card flex flex-col gap-3.5" style={{ flex: '2 1 320px', minWidth: 0 }} aria-labelledby="rutina">
           <div className="flex justify-between items-baseline gap-2">
-            <h2 id="rutina" className="h2">Rutina de hoy</h2>
+            <h2 id="rutina" className="h2">Today’s routine</h2>
             <span className="num text-[13px] text-muted">{hechos} de {rutina.length}</span>
           </div>
           <div className="h-1.5 rounded bg-line"><motion.div className="h-full rounded bg-ok" initial={{ width: 0 }} animate={{ width: `${(hechos / rutina.length) * 100}%` }} /></div>
@@ -338,20 +338,20 @@ export default function Inicio() {
       <div className="flex flex-wrap gap-5">
         <section className="card flex flex-col gap-3" style={{ flex: '1.4 1 340px', minWidth: 0 }} aria-labelledby="alertas">
           <div className="flex justify-between items-baseline gap-2">
-            <h2 id="alertas" className="h2">Alertas activas</h2>
-            <Link to="/alerts" className="text-[13px] font-semibold">Ver todas</Link>
+            <h2 id="alertas" className="h2">Active alerts</h2>
+            <Link to="/alerts" className="text-[13px] font-semibold">See all</Link>
           </div>
           {active.length === 0
-            ? <p className="m-0 text-sm text-muted">Sin alertas activas, todo dentro de tu normal</p>
+            ? <p className="m-0 text-sm text-muted">No active alerts, everything within your normal</p>
             : active.map((a) => <AlertLink key={a.id} alert={a} />)}
-          {!server && <p className="mt-auto mb-0 text-sm text-faint">Alertas de ejemplo: el back no está conectado</p>}
+          {!server && <p className="mt-auto mb-0 text-sm text-faint">Sample alerts: the server isn’t connected</p>}
         </section>
 
         <section className="card flex flex-col gap-3" style={{ flex: '1 1 260px', minWidth: 0 }} aria-labelledby="cal">
-          <h2 id="cal" className="h2">Calibración del modelo</h2>
-          <div className="flex items-baseline gap-2.5"><p className="big" style={{ color: C.accent }}>{status.calibracion}%</p><span className="text-[13px] text-muted">{status.calibracion >= 80 ? 'tu normal ya está calibrado' : 'aprendiendo tu normal'}</span></div>
+          <h2 id="cal" className="h2">Model calibration</h2>
+          <div className="flex items-baseline gap-2.5"><p className="big" style={{ color: C.accent }}>{status.calibracion}%</p><span className="text-[13px] text-muted">{status.calibracion >= 80 ? 'your normal is already calibrated' : 'learning your normal'}</span></div>
           <CalibrationStrip day={status.diaBase} total={status.diasBase} />
-          <p className="m-0 text-[13px] text-muted leading-relaxed">{status.fase === 'tierra' ? 'Línea base en Tierra, antes del lanzamiento' : status.fase === 'personal' ? 'Fase personal: las alertas comparan contra tu propio normal' : `Día ${status.diaBase} de ${status.diasBase} de adaptación`}. Cada chequeo hace que las alertas dependan más de tu propio normal</p>
+          <p className="m-0 text-[13px] text-muted leading-relaxed">{status.fase === 'tierra' ? 'Baseline on Earth, before launch' : status.fase === 'personal' ? 'Personal phase: alerts compare against your own normal' : `Day ${status.diaBase} of ${status.diasBase} of adaptation`}. Every check-up makes alerts depend more on your own normal</p>
         </section>
       </div>
 

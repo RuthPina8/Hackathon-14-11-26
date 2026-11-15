@@ -1,9 +1,9 @@
-const PASOS = ['Cámara', 'Prueba cognitiva', 'Presión', 'Ánimo y síntomas', 'Resumen']
+const PASOS = ['Camera', 'Cognitive test', 'Blood pressure', 'Mood and symptoms', 'Summary']
 
 // Barra de los 5 pasos del chequeo: verde lo hecho, cian el actual
 export default function StepBar({ actual }: { actual: number }) {
   return (
-    <ol aria-label="Pasos del chequeo" className="m-0 grid list-none grid-cols-5 gap-2 p-0">
+    <ol aria-label="Check-up steps" className="m-0 grid list-none grid-cols-5 gap-2 p-0">
       {PASOS.map((nombre, i) => {
         const hecho = i < actual
         const ahora = i === actual

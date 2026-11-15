@@ -29,44 +29,44 @@ export default function TarjetaMision() {
   return (
     <section className="card flex flex-col gap-4" aria-labelledby="mov-amb">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="mov-amb" className="h2">Movimiento y ambiente</h2>
-        {obs > 0 && <Link to="/mission-intelligence" className="text-[13px] font-semibold">{obs === 1 ? 'Hay 1 observación contextual' : `Hay ${obs} observaciones contextuales`}</Link>}
+        <h2 id="mov-amb" className="h2">Movement and environment</h2>
+        {obs > 0 && <Link to="/mission-intelligence" className="text-[13px] font-semibold">{obs === 1 ? 'There is 1 contextual observation' : `There are ${obs} contextual observations`}</Link>}
       </div>
-      {cargado && !ctx && <p className="m-0 text-sm text-warn-soft">Sin conexión con la API: arráncala para ver tu movimiento y el ambiente</p>}
+      {cargado && !ctx && <p className="m-0 text-sm text-warn-soft">No connection to the API: start it to see your movement and the environment</p>}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-2 rounded-xl border border-line p-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="k">Desempeño funcional</p>
+            <p className="k">Functional performance</p>
             {s && (s.dato_demo ? <span className="tag simt">DEMO</span> : <span className="tag real">Real</span>)}
           </div>
           {s ? (
             <>
-              <p className="m-0 text-sm text-muted"><strong className="num text-[22px] text-text">{s.repeticiones}</strong> repeticiones · {NOMBRE_EJERCICIO[s.ejercicio]}</p>
+              <p className="m-0 text-sm text-muted"><strong className="num text-[22px] text-text">{s.repeticiones}</strong> reps · {NOMBRE_EJERCICIO[s.ejercicio]}</p>
               <p className="m-0 text-sm font-semibold" style={{ color: COLOR[s.comparacion.estado] }}>{s.comparacion.texto}</p>
             </>
           ) : (
-            <p className="m-0 text-sm text-muted">Sin evaluaciones todavía: haz una para ver tu desempeño contra tu normal</p>
+            <p className="m-0 text-sm text-muted">No assessments yet: do one to see your performance against your normal</p>
           )}
-          <Link to="/movement" className="btn sec mt-auto"><Activity size={18} /> {s ? 'Nueva evaluación ASTRA-MOVE' : 'Hacer evaluación ASTRA-MOVE'}</Link>
+          <Link to="/movement" className="btn sec mt-auto"><Activity size={18} /> {s ? 'New ASTRA-MOVE assessment' : 'Do an ASTRA-MOVE assessment'}</Link>
         </div>
 
         <div className="flex flex-col gap-2 rounded-xl border border-line p-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="k">Ambiente de la misión</p>
-            {ctx?.ambiente && (ctx.ambiente.capa === 'real' ? <span className="tag real">Sensor</span> : <span className="tag simt">SIMULADO</span>)}
+            <p className="k">Mission environment</p>
+            {ctx?.ambiente && (ctx.ambiente.capa === 'real' ? <span className="tag real">Sensor</span> : <span className="tag simt">SIMULATED</span>)}
           </div>
           {ctx?.ambiente ? (
             <>
               <p className="m-0 text-sm font-semibold" style={{ color: fuera.length ? C.warn : C.ok }}>
-                {fuera.length ? `Fuera de rango: ${nombres}` : 'Todas las variables dentro de rango'}
+                {fuera.length ? `Out of range: ${nombres}` : 'All variables within range'}
               </p>
-              <p className="m-0 text-sm text-muted">Escenario de demostración: {NOMBRE_ESCENARIO[ctx.escenario]}</p>
+              <p className="m-0 text-sm text-muted">Demo scenario: {NOMBRE_ESCENARIO[ctx.escenario]}</p>
             </>
           ) : (
-            <p className="m-0 text-sm text-muted">Sin lecturas todavía</p>
+            <p className="m-0 text-sm text-muted">No readings yet</p>
           )}
-          <Link to="/mission-intelligence" className="btn sec mt-auto"><Radar size={18} /> Ver inteligencia de misión</Link>
+          <Link to="/mission-intelligence" className="btn sec mt-auto"><Radar size={18} /> View mission intelligence</Link>
         </div>
       </div>
     </section>

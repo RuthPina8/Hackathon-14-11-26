@@ -14,7 +14,7 @@ const pos: Record<string, { cx: number; cy: number }> = {
 
 export default function BodyFigure({ sistemas, hovered }: { sistemas: SystemStatus[]; hovered?: string | null }) {
   return (
-    <svg width="120" height="224" viewBox="0 0 150 280" role="img" aria-label="Figura del cuerpo con el estado de cada sistema" className="shrink-0">
+    <svg width="120" height="224" viewBox="0 0 150 280" role="img" aria-label="Body figure with the status of each system" className="shrink-0">
       <g fill={C.raised} stroke={C.line2} strokeWidth="1.5">
         <circle cx="75" cy="30" r="21" />
         <path d="M48 62h54a14 14 0 0 1 14 14v62a8 8 0 0 1-16 0V92h-4v60H54V92h-4v46a8 8 0 0 1-16 0V76a14 14 0 0 1 14-14z" />

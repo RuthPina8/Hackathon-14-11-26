@@ -115,7 +115,7 @@ class ResultadoIsolation:
     activo: bool  # False mientras no hay días suficientes
     alarma: bool = False
     puntaje: float | None = None  # más negativo = más raro
-    factores: dict[str, float] = field(default_factory=dict)  # señal -> % de contribución
+    factores: dict[str, float] = field(default_factory=dict)  # signal -> % contribution
     z_hoy: dict[str, float] = field(default_factory=dict)
     dias: int = 0
 

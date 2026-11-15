@@ -39,10 +39,10 @@ export function DemoBrazos({ mini = false }: { mini?: boolean }) {
       {!mini && (
         <>
           <Contador n={reps} />
-          <Etiqueta x={12} y={30} texto="codos rectos" />
-          <Etiqueta x={12} y={52} texto="los dos a la vez" />
-          <Etiqueta x={232} y={hombro.y - 8} texto={arriba ? 'altura de hombros' : ''} ancla="middle" />
-          <Etiqueta x={160} y={198} texto={arriba ? 'no subas más' : 'despacio, al frente'} ancla="middle" />
+          <Etiqueta x={12} y={30} texto="elbows straight" />
+          <Etiqueta x={12} y={52} texto="both at once" />
+          <Etiqueta x={232} y={hombro.y - 8} texto={arriba ? 'shoulder height' : ''} ancla="middle" />
+          <Etiqueta x={160} y={198} texto={arriba ? 'don’t go higher' : 'slowly, forward'} ancla="middle" />
         </>
       )}
     </svg>
@@ -75,9 +75,9 @@ export function DemoSentadilla({ mini = false }: { mini?: boolean }) {
       {!mini && (
         <>
           <g transform="translate(-232 100)"><Contador n={reps} /></g>
-          <Etiqueta x={12} y={30} texto="espalda recta" />
-          <Etiqueta x={12} y={52} texto="talones en el piso" />
-          <Etiqueta x={12} y={74} texto={abajo ? 'muslos casi paralelos' : 'cadera hacia atrás'} />
+          <Etiqueta x={12} y={30} texto="back straight" />
+          <Etiqueta x={12} y={52} texto="heels on the floor" />
+          <Etiqueta x={12} y={74} texto={abajo ? 'thighs almost parallel' : 'hips back'} />
         </>
       )}
     </svg>
@@ -91,7 +91,7 @@ export function DemoEjercicio({ ejercicio, mini }: { ejercicio: 'brazos' | 'sent
 // ---------- Cómo acomodar la cámara ----------
 function Laptop() {
   const f = useFase(4000, 0.9)
-  const sube = tramo(f, 0.2, 0.55) * 26 // la laptop sube sobre libros hasta la altura del pecho
+  const sube = tramo(f, 0.2, 0.55) * 26 // la laptop sube sobre libros hasta la chest height
   const ok = sube > 24
   const camY = 116 - sube
   return (
@@ -106,7 +106,7 @@ function Laptop() {
       {/* persona */}
       <circle cx={70} cy={52} r={15} {...cuerpo} />
       <path d="M70 68 V130 M50 90 L70 80 L90 90 M70 130 L60 188 M70 130 L80 188" {...cuerpo} />
-      <text x={150} y={30} fill={ok ? C.ok : C.warn} fontSize={16} fontWeight={700}>{ok ? 'cámara a la altura del pecho' : 'muy baja'}</text>
+      <text x={150} y={30} fill={ok ? C.ok : C.warn} fontSize={16} fontWeight={700}>{ok ? 'camera at chest height' : 'too low'}</text>
     </svg>
   )
 }
@@ -129,7 +129,7 @@ function Encuadre({ ejercicio }: { ejercicio: 'brazos' | 'sentadilla' }) {
       </g></g>
       <rect x={70} y={14} width={180} height={172} rx={10} fill="none" stroke={cabe ? C.ok : C.warn} strokeWidth={4} />
       <text x={160} y={198} textAnchor="middle" fill={cabe ? C.ok : C.warn} fontSize={16} fontWeight={700}>
-        {cabe ? (ejercicio === 'sentadilla' ? 'te veo de la cabeza a los tobillos' : 'te veo de la cabeza a la cadera') : 'aléjate un poco'}
+        {cabe ? (ejercicio === 'sentadilla' ? 'I can see you head to ankles' : 'I can see you head to hips') : 'step back a little'}
       </text>
       <text x={290} y={100} textAnchor="middle" fill={C.text} fontSize={20} fontWeight={700} fontFamily="JetBrains Mono">{ejercicio === 'sentadilla' ? '≈2 m' : '≈1 m'}</text>
     </svg>
@@ -149,13 +149,13 @@ function Luz() {
         <g>
           <circle cx={254} cy={40} r={14} fill={C.warnSoft} />
           {[0, 1, 2, 3].map((n) => <line key={n} x1={240} y1={46 + n * 6} x2={186} y2={58 + n * 8} stroke={C.warnSoft} strokeWidth={2} opacity={0.6} />)}
-          <text x={160} y={24} textAnchor="middle" fill={C.ok} fontSize={16} fontWeight={700}>luz de frente</text>
+          <text x={160} y={24} textAnchor="middle" fill={C.ok} fontSize={16} fontWeight={700}>light in front</text>
         </g>
       ) : (
         <g>
           <rect x={28} y={30} width={70} height={100} rx={4} fill={C.subtle} opacity={0.9} />
           <path d="M63 30 V130 M28 80 H98" stroke={C.line3} strokeWidth={3} />
-          <text x={160} y={24} textAnchor="middle" fill={C.crit} fontSize={16} fontWeight={700}>ventana detrás: contraluz</text>
+          <text x={160} y={24} textAnchor="middle" fill={C.crit} fontSize={16} fontWeight={700}>window behind: backlit</text>
         </g>
       )}
       <g transform="translate(274 150)">
@@ -170,9 +170,9 @@ function Luz() {
 
 export function pasosMovimiento(ejercicio: 'brazos' | 'sentadilla'): PasoGuia[] {
   return [
-    { titulo: 'Cámara a la altura del pecho', detalle: 'Si hace falta, sube la laptop sobre libros', escena: <Laptop /> },
-    { titulo: ejercicio === 'sentadilla' ? 'Aléjate unos 2 metros' : 'Aléjate como 1 metro', detalle: 'Hasta que el cuadro se ponga verde', escena: <Encuadre ejercicio={ejercicio} /> },
-    { titulo: 'Luz de frente', detalle: 'Nunca una ventana detrás de ti', escena: <Luz /> },
-    { titulo: ejercicio === 'sentadilla' ? 'Así se hace la sentadilla' : 'Brazos al frente, hasta los hombros', escena: ejercicio === 'sentadilla' ? <DemoSentadilla /> : <DemoBrazos />, ms: 8400 },
+    { titulo: 'Camera at chest height', detalle: 'If needed, raise the laptop on some books', escena: <Laptop /> },
+    { titulo: ejercicio === 'sentadilla' ? 'Step back about 2 meters' : 'Step back about 1 meter', detalle: 'Until the frame turns green', escena: <Encuadre ejercicio={ejercicio} /> },
+    { titulo: 'Light in front', detalle: 'Never a window behind you', escena: <Luz /> },
+    { titulo: ejercicio === 'sentadilla' ? 'This is how to squat' : 'Arms forward, up to shoulder height', escena: ejercicio === 'sentadilla' ? <DemoSentadilla /> : <DemoBrazos />, ms: 8400 },
   ]
 }

@@ -43,10 +43,10 @@ function initialDemo(): boolean {
 }
 
 const redAlert = (n: number): AlertItem => ({
-  id: `demo-red-${n}`, nivel: 'crit', icono: 'heart', titulo: 'Presión arterial muy alta', resumen: '168/104 mmHg, tu normal es 117/75', cuando: 'ahora',
-  queCambio: 'Presión 168/104 mmHg, tu normal es 117/75', cuanto: '+51 mmHg sistólica, arriba del rango clínico', desde: 'Medición de hace 2 minutos, confirmada 2 veces',
-  factores: [{ name: 'Presión sistólica', w: 70, capa: 'self' }, { name: 'Ritmo cardiaco', w: 20, capa: 'real' }, { name: 'Dolor de cabeza', w: 10, capa: 'self' }],
-  tareas: ['Siéntate y no hagas esfuerzo físico', 'Repite la medición en 5 minutos en el otro brazo', 'Avisa al comandante, ya se envió un aviso a Tierra con prioridad crítica', 'Ten listo el kit médico por si Tierra indica medicación'],
+  id: `demo-red-${n}`, nivel: 'crit', icono: 'heart', titulo: 'Very high blood pressure', resumen: '168/104 mmHg, your normal is 117/75', cuando: 'ahora',
+  queCambio: 'Blood pressure 168/104 mmHg, your normal is 117/75', cuanto: '+51 mmHg systolic, above the clinical range', desde: 'Reading from 2 minutes ago, confirmed twice',
+  factores: [{ name: 'Systolic pressure', w: 70, capa: 'self' }, { name: 'Heart rate', w: 20, capa: 'real' }, { name: 'Headache', w: 10, capa: 'self' }],
+  tareas: ['Sit down and avoid physical exertion', 'Repeat the reading in 5 minutes on the other arm', 'Tell the commander, a critical-priority notice has already been sent to Earth', 'Have the medical kit ready in case Earth prescribes medication'],
   estado: 'activa',
 })
 
@@ -162,7 +162,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const pri = a?.nivel === 'crit' ? 4 : 3
       return {
         alerts: s.alerts.map((x) => (x.id === id ? { ...x, escalada: true } : x)),
-        queue: [{ id: nextQueueId(s.queue), pri, name: `Alerta escalada, ${a?.titulo.toLowerCase() ?? 'alerta'}`, kb: 2.2, sent: 0, arrive: null }, ...s.queue],
+        queue: [{ id: nextQueueId(s.queue), pri, name: `Escalated alert, ${a?.titulo.toLowerCase() ?? 'alert'}`, kb: 2.2, sent: 0, arrive: null }, ...s.queue],
       }
     })
   },
@@ -279,12 +279,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       return {
         redCount: n,
         alerts: [alert, ...s.alerts],
-        queue: [{ id: nextQueueId(s.queue), pri: 4, name: 'ALERTA ROJA, presión muy alta', kb: 1.2, sent: 0, arrive: null }, ...s.queue],
+        queue: [{ id: nextQueueId(s.queue), pri: 4, name: 'RED ALERT, very high blood pressure', kb: 1.2, sent: 0, arrive: null }, ...s.queue],
         status: {
           ...s.status,
           readiness: Math.min(s.status.readiness, 58),
-          factores: [{ label: 'Presión arterial muy alta', delta: -24, peso: 100 }, ...s.status.factores.filter((f) => f.label !== 'Presión arterial muy alta')],
-          sistemas: s.status.sistemas.map((x) => (x.id === 'cardio' ? { ...x, estado: 'crit', valor: '168/104', nota: 'Presión de 168/104 mmHg hace 2 minutos, confirmada 2 veces. Ya se mandó un aviso crítico a Tierra' } : x)),
+          factores: [{ label: 'Very high blood pressure', delta: -24, peso: 100 }, ...s.status.factores.filter((f) => f.label !== 'Very high blood pressure')],
+          sistemas: s.status.sistemas.map((x) => (x.id === 'cardio' ? { ...x, estado: 'crit', valor: '168/104', nota: 'Blood pressure of 168/104 mmHg 2 minutes ago, confirmed twice. A critical notice has already been sent to Earth' } : x)),
         },
       }
     })
@@ -299,7 +299,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => {
       // Con el motor conectado, el estado lo calcula el back con la línea base real
       if (s.statusReal || s.server) return {}
-      const aprende = `Aún estamos aprendiendo tu normal (día ${s.status.diaBase} de ${s.status.diasBase}), por eso todavía no se compara`
+      const aprende = `We’re still learning your normal (day ${s.status.diaBase} of ${s.status.diasBase}), so it isn’t compared yet`
       return {
         status: {
           ...s.status,
@@ -307,10 +307,10 @@ export const useAppStore = create<AppState>((set, get) => ({
             const estado = x.estado === 'crit' ? 'crit' : 'none'
             if (x.id === 'cardio' && r.bpm !== null) {
               const bpm = Math.round(r.bpm)
-              return { ...x, estado, valor: `${bpm} lpm`, real: { 'Ritmo en reposo': `${bpm} lpm` }, nota: `Medido hoy con la cámara (confianza ${r.confianza.toFixed(2)}). ${aprende}` }
+              return { ...x, estado, valor: `${bpm} bpm`, real: { 'Resting heart rate': `${bpm} bpm` }, nota: `Measured today with the camera (confidence ${r.confianza.toFixed(2)}). ${aprende}` }
             }
             if (x.id === 'sueno' && r.perclos !== null) {
-              return { ...x, estado, valor: r.perclos.toFixed(2), real: { PERCLOS: r.perclos.toFixed(2) }, nota: `PERCLOS medido hoy con la cámara: ${r.perclos.toFixed(2)}. ${aprende}` }
+              return { ...x, estado, valor: r.perclos.toFixed(2), real: { PERCLOS: r.perclos.toFixed(2) }, nota: `PERCLOS measured today with the camera: ${r.perclos.toFixed(2)}. ${aprende}` }
             }
             return x
           }),
@@ -379,7 +379,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       case 'pong':
         break
       default:
-        console.warn('[ws] evento no manejado:', event, data)
+        console.warn('[ws] unhandled event:', event, data)
     }
   },
 }))

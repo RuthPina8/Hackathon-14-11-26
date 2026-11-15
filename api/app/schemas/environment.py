@@ -7,8 +7,8 @@ class EnvironmentProfile(BaseModel):
     descripcion: str
     gravedad_g: float
     radiacion_msv_dia: float
-    retraso_s: float = Field(description="retraso real de ida con Tierra, en segundos")
-    retraso_demo_s: float = Field(description="retraso visible en la demo")
+    retraso_s: float = Field(description="actual one-way delay with Earth, in seconds")
+    retraso_demo_s: float = Field(description="delay shown in the demo")
     ancho_banda_kbps: float
     perdida_osea_pct_mes: float
     evacuacion: str

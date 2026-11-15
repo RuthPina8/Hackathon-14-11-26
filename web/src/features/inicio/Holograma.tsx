@@ -323,7 +323,7 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
         }
       },
       undefined,
-      (e) => console.error('No se pudo cargar el modelo 3D', e),
+      (e) => console.error('Couldn’t load the 3D model', e),
     )
 
     // ---------- plataforma, escáner y partículas ----------
@@ -569,7 +569,7 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
       if (ladoRef.current) {
         const ang = ((cuerpo.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
         const grados = Math.round((ang * 180) / Math.PI)
-        const lado = grados < 45 || grados > 315 ? 'Frente' : grados < 135 ? 'Lado izquierdo' : grados < 225 ? 'Espalda' : 'Lado derecho'
+        const lado = grados < 45 || grados > 315 ? 'Front' : grados < 135 ? 'Left side' : grados < 225 ? 'Back' : 'Right side'
         const texto = `${lado} · ${grados}°`
         if (ladoRef.current.textContent !== texto) ladoRef.current.textContent = texto
       }
@@ -616,10 +616,10 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <div ref={contenedor} className="absolute inset-0" role="img" aria-label="Cuerpo en 3D con el estado de cada sistema, arrastra para girar" />
+      <div ref={contenedor} className="absolute inset-0" role="img" aria-label="3D body with the status of each system, drag to rotate" />
       <div className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-holo-line bg-holo-bg/80 px-3 py-1 font-mono text-[13px] text-accent-soft">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-        Viendo: <span ref={ladoRef}>Frente · 0°</span>
+        Viendo: <span ref={ladoRef}>Front · 0°</span>
       </div>
       {LISTA.map((o) => (
         <button

@@ -33,9 +33,9 @@ SINTOMAS_A3: dict[int, list[dict]] = {
 
 # Color inmune que darían las reglas de immune.py con esos síntomas
 GUION_INMUNE_A3: dict[int, tuple[str, str]] = {
-    27: ("amarilla", "Congestión 3 días seguidos y fuego labial: 2 categorías inmunes el mismo día"),
-    28: ("amarilla", "Se suma fiebre a la congestión y el fuego labial; vigila tu temperatura"),
-    29: ("roja", "Fiebre 2 días seguidos con congestión y fuego labial: posible reactivación viral"),
+    27: ("amarilla", "Congestion 3 days in a row and a cold sore: 2 immune categories on the same day"),
+    28: ("amarilla", "Fever adds to the congestion and cold sore; watch your temperature"),
+    29: ("roja", "Fever 2 days in a row with congestion and a cold sore: possible viral reactivation"),
 }
 
 
@@ -87,7 +87,7 @@ async def correr_dia(dia: int, calibracion_previa: list[float]) -> list[str]:
         eventos.append("calibration_changed")
 
     if dia == 15:
-        await broadcast("status_changed", {"fase": "personal", "texto": "Empieza la fase personal", "fuente": FUENTE})
+        await broadcast("status_changed", {"fase": "personal", "texto": "The personal phase begins", "fuente": FUENTE})
         eventos.append("status_changed: fase personal")
 
     # A1: deuda de sueño -> alerta el día 23
@@ -98,19 +98,19 @@ async def correr_dia(dia: int, calibracion_previa: list[float]) -> list[str]:
             [
                 Anomaly(senal="sueno_horas", detector="sueno", valor=5.2, referencia=7.2, z=-2.6,
                         desde=desde, direccion="baja", capa="auto", fuente=FUENTE,
-                        texto="Llevas 5 noches durmiendo menos de 6 h"),
+                        texto="You’ve slept less than 6 h for 5 nights"),
                 Anomaly(senal="hr_reposo", detector="cusum", valor=70, referencia=64, z=2.2,
                         desde=desde, direccion="sube", fuente=FUENTE),
             ],
             dia_mision=dia,
         )
         await broadcast("status_changed", {"astronauta_id": 1, "readiness": 71, "sistemas": {"sueno": "amarillo", "cardiovascular": "amarillo"}, "fuente": FUENTE})
-        eventos.append("alert_raised: A1 sueño")
+        eventos.append("alert_raised: A1 sleep")
 
     if dia == 26:
         await alerts.resolver(1, "sueno_horas")
         await broadcast("status_changed", {"astronauta_id": 1, "readiness": 86, "sistemas": {"sueno": "verde", "cardiovascular": "verde"}, "fuente": FUENTE})
-        eventos.append("alerta resuelta: A1 descansó")
+        eventos.append("alert resolved: A1 rested")
 
     # A3 (docs/motor.md, secciones 5 y 8): congestión desde el 25, fuego labial desde el 27,
     # fiebre el 28 y el 29. Amarillo el 27 (congestión 3 días seguidos y 2 categorías el mismo
@@ -133,7 +133,7 @@ async def correr_dia(dia: int, calibracion_previa: list[float]) -> list[str]:
                 "detalle": {"sintomas": sintomas},
             },
         )
-        eventos.append("measurement_added: síntomas A3")
+        eventos.append("measurement_added: A3 symptoms")
 
     if dia in GUION_INMUNE_A3:
         nivel, texto = GUION_INMUNE_A3[dia]
@@ -144,19 +144,19 @@ async def correr_dia(dia: int, calibracion_previa: list[float]) -> list[str]:
             dia_mision=dia,
         )
         if alerta and nivel == "roja":
-            await alerts.escalate(alerta.id, nota="Escalada automática del guion de demo")
-            eventos.append("alert_raised: A3 inmune rojo + escalada a Tierra")
+            await alerts.escalate(alerta.id, nota="Automatic escalation from the demo script")
+            eventos.append("alert_raised: A3 immune red + escalated to Earth")
         else:
-            eventos.append(f"alerta A3 inmune {nivel}")
+            eventos.append(f"alert A3 immune {nivel}")
 
     if dia == 30:
         await broadcast("status_changed", {"animo_camara": {"estado": "activo", "acierto_pct": 78, "n": 12}, "fuente": FUENTE})
-        eventos.append("status_changed: modelo de ánimo activo")
+        eventos.append("status_changed: mood model active")
 
     # Reporte semanal a Tierra
     if dia % 7 == 0:
-        m = queue_engine.encolar("reporte", 3, 6.0, {"dia_mision": dia, "texto": f"Reporte semanal día {dia}"})
+        m = queue_engine.encolar("reporte", 3, 6.0, {"dia_mision": dia, "texto": f"Weekly report day {dia}"})
         await broadcast("queue_updated", queue_engine.vista(m))
-        eventos.append("queue_updated: reporte semanal")
+        eventos.append("queue_updated: weekly report")
 
     return eventos

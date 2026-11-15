@@ -15,25 +15,25 @@ from app.schemas.anomaly import Anomaly, Nivel
 Fase = Literal["tierra", "adaptacion", "personal"]
 
 NOMBRES = {
-    "hr_reposo": "Ritmo en reposo",
-    "hrv_rmssd": "Variabilidad del ritmo",
-    "hrv_sdnn": "Variabilidad del ritmo",
-    "resp_rpm": "Respiración",
-    "presion_sis": "Presión sistólica",
-    "presion_dia": "Presión diastólica",
-    "perclos": "Fatiga ocular (PERCLOS)",
-    "parpadeo_min": "Parpadeos por minuto",
-    "parpadeo_dur_ms": "Duración del parpadeo",
-    "sueno_horas": "Horas de sueño",
-    "sueno_eficiencia_pct": "Eficiencia del sueño",
-    "reaccion_ms": "Tiempo de reacción",
-    "lapsos": "Lapsos de atención",
-    "animo": "Ánimo",
-    "estres": "Estrés",
-    "expresividad": "Expresividad",
-    "movimiento_cabeza": "Inquietud",
-    "sintomas": "Síntomas",
-    "inmune": "Sistema inmune",
+    "hr_reposo": "Resting heart rate",
+    "hrv_rmssd": "Heart rate variability",
+    "hrv_sdnn": "Heart rate variability",
+    "resp_rpm": "Breathing",
+    "presion_sis": "Systolic pressure",
+    "presion_dia": "Diastolic pressure",
+    "perclos": "Eye fatigue (PERCLOS)",
+    "parpadeo_min": "Blinks per minute",
+    "parpadeo_dur_ms": "Blink duration",
+    "sueno_horas": "Hours of sleep",
+    "sueno_eficiencia_pct": "Sleep efficiency",
+    "reaccion_ms": "Reaction time",
+    "lapsos": "Attention lapses",
+    "animo": "Mood",
+    "estres": "Stress",
+    "expresividad": "Expressiveness",
+    "movimiento_cabeza": "Restlessness",
+    "sintomas": "Symptoms",
+    "inmune": "Immune system",
 }
 
 _ORDEN_NIVEL = {"amarilla": 1, "roja": 2}
@@ -122,7 +122,7 @@ def calcular_factores(anomalias: list[Anomaly]) -> dict[str, float]:
 def _cuanto(a: Anomaly) -> str | None:
     partes = []
     if a.valor is not None and a.referencia is not None:
-        partes.append(f"{a.valor:g} vs {a.referencia:g} de tu normal")
+        partes.append(f"{a.valor:g} vs {a.referencia:g} your normal")
     if a.z is not None:
         partes.append(f"{a.z:+.1f} σ")
     return ", ".join(partes) or None
@@ -131,8 +131,8 @@ def _cuanto(a: Anomaly) -> str | None:
 def _que_cambio(a: Anomaly) -> str:
     if a.texto:
         return a.texto
-    verbo = {"sube": "sube", "baja": "baja"}.get(a.direccion or "", "cambia")
-    return f"{nombre(a.senal)} {verbo} fuera de tu normal"
+    verbo = {"sube": "rising", "baja": "dropping"}.get(a.direccion or "", "changing")
+    return f"{nombre(a.senal)} {verbo} outside your normal"
 
 
 def evaluar(anomalias: list[Anomaly], fase: Fase = "personal") -> Decision | None:

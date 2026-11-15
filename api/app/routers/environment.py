@@ -21,7 +21,7 @@ async def cambiar_entorno(body: EnvironmentIn):
     try:
         activo.cambiar(body.id)
     except KeyError as e:
-        raise HTTPException(404, f"Entorno desconocido: {body.id}. Opciones: {list(cargar_perfiles())}") from e
+        raise HTTPException(404, f"Unknown environment: {body.id}. Options: {list(cargar_perfiles())}") from e
     estado = _estado()
     await broadcast("environment_changed", estado)
     return estado

@@ -12,19 +12,19 @@ import { C } from '../lib/paleta'
 
 // Indicadores con los que se calcula la calibración general (mismos pesos que motor.md §3)
 const FILAS = [
-  { tipo: 'hr_reposo', ind: 'Ritmo cardiaco', capa: 'real', peso: 0.25 },
+  { tipo: 'hr_reposo', ind: 'Heart rate', capa: 'real', peso: 0.25 },
   { tipo: 'perclos', ind: 'PERCLOS', capa: 'real', peso: 0.25 },
-  { tipo: 'reaccion_ms', ind: 'Tiempo de reacción', capa: 'real', peso: 0.2 },
-  { tipo: 'presion_sis', ind: 'Presión arterial', capa: 'self', peso: 0.15 },
-  { tipo: 'animo', ind: 'Ánimo', capa: 'self', peso: 0.15 },
+  { tipo: 'reaccion_ms', ind: 'Reaction time', capa: 'real', peso: 0.2 },
+  { tipo: 'presion_sis', ind: 'Blood pressure', capa: 'self', peso: 0.15 },
+  { tipo: 'animo', ind: 'Mood', capa: 'self', peso: 0.15 },
 ] as const
 
 const EJEMPLO: Record<string, number> = { hr_reposo: 34, perclos: 34, reaccion_ms: 3, presion_sis: 8, animo: 9 }
 
 const FASES = [
-  { id: 'tierra', t: 'Línea base en Tierra', d: 'Antes del lanzamiento: aprende tu normal con gravedad (las mediciones del equipo en el hackathon)' },
-  { id: 'adaptacion', t: 'Adaptación', d: 'Días 1 a 14 de misión: solo alerta por rangos clínicos porque el cuerpo cambia solo' },
-  { id: 'personal', t: 'Línea base personal', d: 'Desde el día 15: tu normal en este entorno, contra el que se detectan las anomalías' },
+  { id: 'tierra', t: 'Baseline on Earth', d: 'Before launch: it learns your normal under gravity (the team’s measurements at the hackathon)' },
+  { id: 'adaptacion', t: 'Adaptation', d: 'Mission days 1 to 14: alerts only on clinical ranges because the body changes on its own' },
+  { id: 'personal', t: 'Personal baseline', d: 'From day 15: your normal in this environment, used to detect anomalies' },
 ] as const
 
 type Ingesta = { recibidas: number; guardadas: number; duplicadas: number; ignoradas: number; por_tipo: Record<string, number> }
@@ -60,7 +60,7 @@ export default function Perfil() {
   const subir = async (f: File) => {
     setErrorWatch(null)
     setIngesta(null)
-    if (f.size > 25 * 1024 * 1024) { setErrorWatch('El archivo pesa más de 25 MB, exporta menos días'); return }
+    if (f.size > 25 * 1024 * 1024) { setErrorWatch('The file is over 25 MB, export fewer days'); return }
     setSubiendo(true)
     try {
       const datos = JSON.parse(await f.text())
@@ -69,13 +69,13 @@ export default function Perfil() {
       })
       if (!r.ok) {
         const e = await r.json().catch(() => null)
-        setErrorWatch(typeof e?.detail === 'string' ? e.detail : 'El back no aceptó el archivo')
+        setErrorWatch(typeof e?.detail === 'string' ? e.detail : 'The server didn’t accept the file')
       } else {
         setIngesta(await r.json())
         void useAppStore.getState().refreshBack1()
       }
     } catch {
-      setErrorWatch('No es un JSON válido de Health Auto Export')
+      setErrorWatch('It’s not a valid Health Auto Export JSON')
     } finally {
       setSubiendo(false)
       if (archivo.current) archivo.current.value = ''
@@ -88,15 +88,15 @@ export default function Perfil() {
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Sin conexión con el motor: la calibración y la línea base son de ejemplo</SimBanner>}
+      {!statusReal && <SimBanner tag="SAMPLE DATA">No engine connection: calibration and baseline are sample data</SimBanner>}
       <PageHeader
         kicker={`${user?.nombre ?? ''} · ${user?.cargo ?? ''}`}
-        title="Perfil y calibración"
-        right={<div className="flex items-baseline gap-2.5"><p className="big" style={{ fontSize: 40, color: C.accent }}>{status.calibracion}%</p><span className="text-[13px] text-muted">calibración general</span></div>}
+        title="Profile and calibration"
+        right={<div className="flex items-baseline gap-2.5"><p className="big" style={{ fontSize: 40, color: C.accent }}>{status.calibracion}%</p><span className="text-[13px] text-muted">overall calibration</span></div>}
       />
 
       <section className="card flex flex-col gap-[18px]" aria-labelledby="fases">
-        <h2 id="fases" className="h2">Fases de tu línea base</h2>
+        <h2 id="fases" className="h2">Phases of your baseline</h2>
         <ol className="m-0 p-0 list-none grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))' }}>
           {FASES.map((f, i) => {
             const estado = i < idxFase ? 'done' : i === idxFase ? 'now' : 'next'
@@ -112,7 +112,7 @@ export default function Perfil() {
                   </span>
                 </span>
                 <span className="k" style={{ color: estado === 'done' ? C.okSoft : C.accentSoft }}>
-                  {estado === 'done' ? 'Completa' : estado === 'now' ? (f.id === 'adaptacion' ? `En curso · día ${status.diaMision} de 14` : 'En curso') : 'Siguiente'}
+                  {estado === 'done' ? 'Complete' : estado === 'now' ? (f.id === 'adaptacion' ? `In progress · day ${status.diaMision} of 14` : 'In progress') : 'Next'}
                 </span>
                 <strong className="text-[15px]">{f.t}</strong>
                 <span className="text-[13px] text-muted leading-relaxed">{f.d}</span>
@@ -124,9 +124,9 @@ export default function Perfil() {
 
       <div className="flex flex-wrap gap-5">
         <section className="card" style={{ flex: '3 1 540px', minWidth: 0, padding: 0, overflow: 'hidden' }} aria-labelledby="ind">
-          <h2 id="ind" className="h2" style={{ padding: '20px 18px 12px' }}>Calibración por indicador</h2>
+          <h2 id="ind" className="h2" style={{ padding: '20px 18px 12px' }}>Calibration by indicator</h2>
           <div className="overflow-x-auto"><div className="min-w-[560px]">
-            <div className="trow" style={{ ...cols, minHeight: 38 }}><span className="k">Indicador</span><span className="k">Capa</span><span className="k">Datos</span><span className="k">Peso</span><span className="k">Tu normal</span></div>
+            <div className="trow" style={{ ...cols, minHeight: 38 }}><span className="k">Indicator</span><span className="k">Layer</span><span className="k">Data</span><span className="k">Weight</span><span className="k">Your normal</span></div>
             {FILAS.map((r, i) => {
               const ind = inds[r.tipo]
               const datos = statusReal ? ind?.linea_base.n ?? 0 : EJEMPLO[r.tipo]
@@ -139,18 +139,18 @@ export default function Perfil() {
                   <span className="num">{w.toFixed(2)}</span>
                   <span className="flex items-center gap-2">
                     <span className="h-2 flex-1 rounded bg-line"><motion.span className="block h-full rounded" style={{ background: r.capa === 'real' ? C.accent : C.self }} initial={{ width: 0 }} animate={{ width: `${w * 100}%` }} transition={{ delay: 0.1 + i * 0.08 }} /></span>
-                    {ind?.linea_base.congelada && <span className="tag" title="Congelada mientras hay una alerta abierta" style={{ background: C.warnBg, color: C.warn }}>Congelada</span>}
+                    {ind?.linea_base.congelada && <span className="tag" title="Frozen while an alert is open" style={{ background: C.warnBg, color: C.warn }}>Frozen</span>}
                   </span>
                 </div>
               )
             })}
             <div className="trow" style={cols}>
-              <span>Lectura de ánimo por cámara</span>
-              <span><span className="tag" style={{ background: C.sel, color: C.subtle }}>Estimado</span></span>
+              <span>Camera mood reading</span>
+              <span><span className="tag" style={{ background: C.sel, color: C.subtle }}>Estimated</span></span>
               <span className="num">{ac?.n ?? 0}</span>
               <span className="num">—</span>
               <span className="text-[13px] text-muted">
-                {!ac || ac.estado === 'aprendiendo' ? `Aprendiendo (${ac?.n ?? 0} días con cámara y ánimo)` : `Acierta ${Math.round(ac.acierto_pct ?? 0)}%`}
+                {!ac || ac.estado === 'aprendiendo' ? `Learning (${ac?.n ?? 0} days with camera and mood)` : `Acierta ${Math.round(ac.acierto_pct ?? 0)}%`}
               </span>
             </div>
           </div></div>
@@ -161,39 +161,39 @@ export default function Perfil() {
 
         <div className="flex flex-col gap-4" style={{ flex: '2 1 320px', minWidth: 0 }}>
           <section className="card flex flex-col gap-3.5" aria-labelledby="formula">
-            <h2 id="formula" className="h2">Cómo se calcula</h2>
+            <h2 id="formula" className="h2">How it’s computed</h2>
             <p className="num m-0 p-3.5 rounded-xl bg-input border border-line text-[17px] font-bold text-center">peso = n / (n + 7)</p>
             <label className="flex flex-col gap-1.5 text-[13px] text-muted">
-              <span>Prueba con <strong className="num text-text">{n}</strong> datos</span>
+              <span>Try with <strong className="num text-text">{n}</strong> data points</span>
               <input type="range" min={0} max={60} value={n} onChange={(e) => setN(Number(e.target.value))} />
             </label>
-            <div role="img" aria-label={`Con ${n} datos, ${pers}% tu normal y ${100 - pers}% rango clínico`} className="flex h-[30px] rounded-lg overflow-hidden text-[13px] font-bold">
+            <div role="img" aria-label={`With ${n} data points, ${pers}% your normal and ${100 - pers}% clinical range`} className="flex h-[30px] rounded-lg overflow-hidden text-[13px] font-bold">
               <motion.span animate={{ width: `${100 - pers}%` }} className="bg-track text-subtle flex items-center pl-2 whitespace-nowrap overflow-hidden">Clínico {100 - pers}%</motion.span>
               <motion.span animate={{ width: `${pers}%` }} className="bg-accent text-on-accent flex items-center justify-end pr-2 whitespace-nowrap overflow-hidden">Tú {pers}%</motion.span>
             </div>
-            <p className="m-0 text-[13px] text-muted leading-relaxed">Con pocos datos manda el rango clínico, con muchos manda tu propio normal</p>
+            <p className="m-0 text-[13px] text-muted leading-relaxed">With little data the clinical range rules, with plenty your own normal rules</p>
           </section>
 
           <section className="card flex flex-col gap-1" aria-labelledby="fuentes">
-            <h2 id="fuentes" className="h2 mb-2">Fuentes de datos</h2>
+            <h2 id="fuentes" className="h2 mb-2">Data sources</h2>
             <div className="flex justify-between items-center min-h-[44px] text-sm">
-              <span>Cámara web</span>
-              <Link to="/reliability" className="text-[13px] font-semibold">Ver confiabilidad</Link>
+              <span>Webcam</span>
+              <Link to="/reliability" className="text-[13px] font-semibold">View reliability</Link>
             </div>
             <div className="flex justify-between items-center min-h-[44px] text-sm">
-              <span>Ficha médica pre-misión</span>
-              <Link to="/record" className="text-[13px] font-semibold">Abrir ficha</Link>
+              <span>Pre-mission medical record</span>
+              <Link to="/record" className="text-[13px] font-semibold">Open record</Link>
             </div>
             <div className="flex justify-between items-center gap-3 min-h-[44px] text-sm">
               <span>Apple Watch <span className="text-faint">(Health Auto Export)</span></span>
               <input ref={archivo} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void subir(f) }} />
               <button type="button" className="btn sec sm" disabled={!apiEnabled || subiendo} onClick={() => archivo.current?.click()}>
-                <Upload size={15} />{subiendo ? 'Subiendo…' : 'Subir JSON'}
+                <Upload size={15} />{subiendo ? 'Uploading…' : 'Upload JSON'}
               </button>
             </div>
             {ingesta && (
               <p role="status" className="mt-1.5 mb-0 text-sm text-ok-soft leading-relaxed">
-                {ingesta.guardadas} lecturas nuevas ({Object.entries(ingesta.por_tipo).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguna'}){ingesta.duplicadas ? `, ${ingesta.duplicadas} ya estaban` : ''}{ingesta.ignoradas ? `, ${ingesta.ignoradas} métricas que no usamos` : ''}
+                {ingesta.guardadas} new readings ({Object.entries(ingesta.por_tipo).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguna'}){ingesta.duplicadas ? `, ${ingesta.duplicadas} were already there` : ''}{ingesta.ignoradas ? `, ${ingesta.ignoradas} metrics we don’t use` : ''}
               </p>
             )}
             {errorWatch && <p role="alert" className="mt-1.5 mb-0 text-sm text-warn">{errorWatch}</p>}

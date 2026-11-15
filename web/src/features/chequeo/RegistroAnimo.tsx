@@ -8,27 +8,27 @@ import { baseMedicion, enviarPaso } from './enviar'
 // Paso 4: ánimo, estrés, sueño de anoche (Consensus Sleep Diary) y síntomas por sistema.
 // Claves de síntomas = las de api/app/intelligence/immune.py (categorías de la NASA en la ISS).
 const GRUPOS: { sistema: string; items: { clave: string; nombre: string }[] }[] = [
-  { sistema: 'Inmune e infecciones', items: [
-    { clave: 'fiebre', nombre: 'Fiebre o escalofríos' }, { clave: 'congestion', nombre: 'Congestión nasal' },
-    { clave: 'garganta', nombre: 'Dolor de garganta' }, { clave: 'oido', nombre: 'Dolor de oído' },
-    { clave: 'fuego_labial', nombre: 'Fuego labial' }, { clave: 'erupcion_piel', nombre: 'Ronchas o erupción' },
-    { clave: 'infeccion_piel', nombre: 'Herida que no sana' }, { clave: 'urinario', nombre: 'Ardor al orinar' },
+  { sistema: 'Immune and infections', items: [
+    { clave: 'fiebre', nombre: 'Fever or chills' }, { clave: 'congestion', nombre: 'Nasal congestion' },
+    { clave: 'garganta', nombre: 'Sore throat' }, { clave: 'oido', nombre: 'Earache' },
+    { clave: 'fuego_labial', nombre: 'Cold sore' }, { clave: 'erupcion_piel', nombre: 'Hives or rash' },
+    { clave: 'infeccion_piel', nombre: 'Wound that won’t heal' }, { clave: 'urinario', nombre: 'Burning when urinating' },
   ] },
-  { sistema: 'Cabeza y equilibrio', items: [
-    { clave: 'dolor_cabeza', nombre: 'Dolor de cabeza' }, { clave: 'mareo', nombre: 'Mareo' }, { clave: 'nausea', nombre: 'Náusea' },
+  { sistema: 'Head and balance', items: [
+    { clave: 'dolor_cabeza', nombre: 'Headache' }, { clave: 'mareo', nombre: 'Dizziness' }, { clave: 'nausea', nombre: 'Nausea' },
   ] },
-  { sistema: 'Ojos', items: [
-    { clave: 'vision_borrosa', nombre: 'Visión borrosa' }, { clave: 'ojos_irritados', nombre: 'Ojos secos o irritados' },
+  { sistema: 'Eyes', items: [
+    { clave: 'vision_borrosa', nombre: 'Blurred vision' }, { clave: 'ojos_irritados', nombre: 'Dry or irritated eyes' },
   ] },
-  { sistema: 'Músculos y huesos', items: [
-    { clave: 'dolor_espalda', nombre: 'Dolor de espalda' }, { clave: 'dolor_muscular', nombre: 'Dolor muscular o articular' },
+  { sistema: 'Muscles and bones', items: [
+    { clave: 'dolor_espalda', nombre: 'Back pain' }, { clave: 'dolor_muscular', nombre: 'Muscle or joint pain' },
   ] },
-  { sistema: 'Digestivo', items: [
-    { clave: 'estrenimiento', nombre: 'Estreñimiento' }, { clave: 'malestar_estomacal', nombre: 'Malestar estomacal' },
+  { sistema: 'Digestive', items: [
+    { clave: 'estrenimiento', nombre: 'Constipation' }, { clave: 'malestar_estomacal', nombre: 'Upset stomach' },
   ] },
 ]
 
-const ANIMOS = ['Muy mal', 'Mal', 'Regular', 'Bien', 'Muy bien']
+const ANIMOS = ['Very bad', 'Bad', 'Okay', 'Good', 'Very good']
 const SUENO_DEFECTO: Sueno = { acostarse: '23:00', intento: '23:00', latenciaMin: 15, despertares: 1, wasoMin: 10, despertar: '06:30', levantarse: '06:40', calidad: 3, medicamento: false }
 
 export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: () => void; onAtras: () => void }) {
@@ -45,14 +45,14 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
   const [error, setError] = useState<string | null>(null)
 
   const calc = calcularSueno(sueno)
-  const errorSueno = conSueno && (calc.tstH <= 0 || calc.tibH > 16) ? 'Revisa los horarios: el sueño calculado no tiene sentido' : null
+  const errorSueno = conSueno && (calc.tstH <= 0 || calc.tibH > 16) ? 'Check the times: the calculated sleep doesn’t make sense' : null
   const set = <K extends keyof Sueno>(k: K, v: Sueno[K]) => setSueno((s) => ({ ...s, [k]: v }))
   const intensidad = (clave: string) => sintomas.find((s) => s.clave === clave)?.intensidad ?? 0
   const cambiar = (clave: string, i: number) =>
     setSintomas((l) => (i === 0 ? l.filter((s) => s.clave !== clave) : [...l.filter((s) => s.clave !== clave), { clave, intensidad: i }]))
 
   const enviar = () => {
-    if (animo === null) { setError('Elige cómo te sientes hoy'); return }
+    if (animo === null) { setError('Choose how you feel today'); return }
     if (errorSueno) { setError(errorSueno); return }
     const r = { animo, estres, sueno: conSueno ? sueno : null, sintomas, nota: nota.trim(), fecha: new Date().toISOString() }
     guardar(r)
@@ -64,8 +64,8 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
     <div className="flex flex-col gap-[22px]">
       <header className="flex flex-col gap-[18px]">
         <div>
-          <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 4 de 5</p>
-          <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Ánimo, sueño y síntomas</h1>
+          <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Daily check-up · step 4 of 5</p>
+          <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Mood, sleep and symptoms</h1>
         </div>
         <StepBar actual={3} />
       </header>
@@ -73,8 +73,8 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
       <div className="flex flex-wrap gap-5">
         <div className="flex min-w-0 flex-[3_1_480px] flex-col gap-5">
           <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-[22px]" aria-labelledby="animo">
-            <h2 id="animo" className="m-0 font-display text-base font-semibold">¿Cómo te sientes hoy?</h2>
-            <div role="radiogroup" aria-label="Ánimo" className="grid grid-cols-5 gap-2">
+            <h2 id="animo" className="m-0 font-display text-base font-semibold">How do you feel today?</h2>
+            <div role="radiogroup" aria-label="Mood" className="grid grid-cols-5 gap-2">
               {ANIMOS.map((t, i) => (
                 <button key={t} type="button" role="radio" aria-checked={animo === i + 1} onClick={() => { setAnimo(i + 1); setError(null) }}
                   className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border text-sm font-semibold ${animo === i + 1 ? 'border-accent bg-accent-bg text-ink' : 'border-line-strong text-soft hover:bg-nav'}`}>
@@ -83,38 +83,38 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
               ))}
             </div>
             <label className="flex flex-col gap-2 text-[13px] text-soft">
-              <span className="flex justify-between"><span>Estrés</span><strong className="font-mono text-ink">{estres} de 10</strong></span>
-              <input type="range" min={0} max={10} value={estres} onChange={(e) => setEstres(Number(e.target.value))} aria-label="Estrés de 0 a 10" />
-              <span className="flex justify-between text-[13px] text-muted"><span>Nada</span><span>Máximo</span></span>
+              <span className="flex justify-between"><span>Stress</span><strong className="font-mono text-ink">{estres} de 10</strong></span>
+              <input type="range" min={0} max={10} value={estres} onChange={(e) => setEstres(Number(e.target.value))} aria-label="Stress from 0 to 10" />
+              <span className="flex justify-between text-[13px] text-muted"><span>None</span><span>Maximum</span></span>
             </label>
             <label className="flex flex-col gap-1.5 text-[13px] text-soft">Algo que quieras anotar (opcional)
               <input value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} className="min-h-14 rounded-xl border border-line-strong bg-input px-3 text-ink outline-none focus:border-accent" />
             </label>
-            <p className="m-0 text-sm leading-relaxed text-muted">La cámara aprende de tus registros; lo que cuenta es lo que tú reportas.</p>
+            <p className="m-0 text-sm leading-relaxed text-muted">The camera learns from your logs; what counts is what you report.</p>
           </section>
 
           <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-[22px]" aria-labelledby="sueno">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="sueno" className="m-0 font-display text-base font-semibold">Sueño de anoche</h2>
+              <h2 id="sueno" className="m-0 font-display text-base font-semibold">Last night’s sleep</h2>
               <label className="flex items-center gap-2 text-[13px] text-soft">
                 <input type="checkbox" checked={!conSueno} onChange={(e) => setConSueno(!e.target.checked)} />
-                Lo registra el Apple Watch
+                Logged by the Apple Watch
               </label>
             </div>
             {conSueno && (
               <>
-                {anterior && <p className="m-0 text-[14px] text-soft">Precargado con tu último registro: ajusta solo lo que cambió.</p>}
+                {anterior && <p className="m-0 text-[14px] text-soft">Prefilled with your last log: adjust only what changed.</p>}
                 <div className="grid gap-x-5 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))' }}>
-                  <StepperHora etiqueta="Me acosté" valor={sueno.acostarse} onCambiar={(v) => { set('acostarse', v); set('intento', v) }} />
-                  <Stepper etiqueta="Tardé en dormirme" unidad="min" paso={5} max={300} valor={sueno.latenciaMin} onCambiar={(v) => set('latenciaMin', v)} />
-                  <Stepper etiqueta="Veces que desperté" max={30} valor={sueno.despertares} onCambiar={(v) => set('despertares', v)} />
-                  <Stepper etiqueta="Minutos despierto en total" unidad="min" paso={5} max={600} valor={sueno.wasoMin} onCambiar={(v) => set('wasoMin', v)} />
-                  <StepperHora etiqueta="Desperté" valor={sueno.despertar} onCambiar={(v) => set('despertar', v)} />
-                  <StepperHora etiqueta="Me levanté" valor={sueno.levantarse} onCambiar={(v) => set('levantarse', v)} />
+                  <StepperHora etiqueta="Went to bed" valor={sueno.acostarse} onCambiar={(v) => { set('acostarse', v); set('intento', v) }} />
+                  <Stepper etiqueta="Time to fall asleep" unidad="min" paso={5} max={300} valor={sueno.latenciaMin} onCambiar={(v) => set('latenciaMin', v)} />
+                  <Stepper etiqueta="Times I woke up" max={30} valor={sueno.despertares} onCambiar={(v) => set('despertares', v)} />
+                  <Stepper etiqueta="Total minutes awake" unidad="min" paso={5} max={600} valor={sueno.wasoMin} onCambiar={(v) => set('wasoMin', v)} />
+                  <StepperHora etiqueta="Woke up" valor={sueno.despertar} onCambiar={(v) => set('despertar', v)} />
+                  <StepperHora etiqueta="Got up" valor={sueno.levantarse} onCambiar={(v) => set('levantarse', v)} />
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                  <span className="text-[13px] text-soft">Calidad</span>
-                  <div role="radiogroup" aria-label="Calidad del sueño" className="flex gap-1.5">
+                  <span className="text-[13px] text-soft">Quality</span>
+                  <div role="radiogroup" aria-label="Sleep quality" className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((c) => (
                       <button key={c} type="button" role="radio" aria-checked={sueno.calidad === c} onClick={() => set('calidad', c)}
                         className={`h-[60px] w-[60px] rounded-xl border-2 font-mono text-lg font-bold active:translate-y-[2px] ${sueno.calidad === c ? 'border-accent bg-accent-bg' : 'border-line-strong text-soft'}`}>{c}</button>
@@ -125,7 +125,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
                   </label>
                 </div>
                 <p className={`m-0 text-sm ${errorSueno ? 'text-warn' : 'text-soft'}`}>
-                  {errorSueno ?? <>Dormiste <strong className="font-mono text-ink">{calc.tstH.toFixed(1)} h</strong> con eficiencia de <strong className="font-mono text-ink">{calc.eficiencia.toFixed(0)}%</strong> ({calc.tibH.toFixed(1)} h en cama)</>}
+                  {errorSueno ?? <>You slept <strong className="font-mono text-ink">{calc.tstH.toFixed(1)} h</strong> with an efficiency of <strong className="font-mono text-ink">{calc.eficiencia.toFixed(0)}%</strong> ({calc.tibH.toFixed(1)} h en cama)</>}
                 </p>
               </>
             )}
@@ -134,8 +134,8 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
 
         <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-4">
           <section className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]" aria-labelledby="sint">
-            <h2 id="sint" className="m-0 font-display text-base font-semibold">Síntomas de hoy</h2>
-            <p className="m-0 text-sm text-muted">Marca Sí si lo tienes hoy. Si no lo tienes, déjalo en No.</p>
+            <h2 id="sint" className="m-0 font-display text-base font-semibold">Today’s symptoms</h2>
+            <p className="m-0 text-sm text-muted">Mark Yes if you have it today. If not, leave it on No.</p>
             {GRUPOS.map((g) => (
               <div key={g.sistema} className="flex flex-col gap-1">
                 <p className="m-0 mt-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">{g.sistema}</p>
@@ -144,7 +144,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
                   return (
                     <div key={it.clave} className="flex min-h-14 items-center gap-2 text-base">
                       <span className={`flex-1 ${v ? 'text-ink' : 'text-soft'}`}>{it.nombre}</span>
-                      {([['No', 0], ['Sí', 1]] as const).map(([texto, valor]) => {
+                      {([['No', 0], ['Yes', 1]] as const).map(([texto, valor]) => {
                         const activo = valor === 0 ? v === 0 : v > 0
                         return (
                           <button key={texto} type="button" aria-label={`${it.nombre}: ${texto}`} aria-pressed={activo} onClick={() => cambiar(it.clave, valor)}
@@ -159,8 +159,8 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
           </section>
           <p role="alert" className="m-0 min-h-5 text-sm text-warn">{error ?? ''}</p>
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={onAtras} className="btn sec">Atrás</button>
-            <button type="button" data-tour="registro-guardar" onClick={enviar} className="btn pri">Guardar y ver resumen</button>
+            <button type="button" onClick={onAtras} className="btn sec">Back</button>
+            <button type="button" data-tour="registro-guardar" onClick={enviar} className="btn pri">Save and see summary</button>
           </div>
         </div>
       </div>

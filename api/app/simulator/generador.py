@@ -8,7 +8,7 @@ Así el modelo personal de ánimo y el Isolation Forest tienen algo real que apr
 
 Guion (motor.md §8):
 - Días 1 a 14: adaptación, la calibración sube.
-- Días 18 a 22: A1 duerme menos de 6 h; su ritmo en reposo sube ~2σ (lo detecta CUSUM) y la
+- Días 18 a 22: A1 duerme menos de 6 h; su resting heart rate sube ~2σ (lo detecta CUSUM) y la
   regla de sueño avisa. Desde el día 23 descansa y la alerta se resuelve sola.
 - Días 25 a 29: A3 con congestión desde el 25, fuego labial desde el 27 (amarillo) y fiebre los
   días 28 y 29 (rojo el 29, se escala a Tierra). La congestión sigue hasta el 31 y la alerta se

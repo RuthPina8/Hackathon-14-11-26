@@ -21,7 +21,7 @@ async def guardar(body: SesionIn):
 def ultima(astronauta_id: int = 1):
     s = movimiento.ultima(astronauta_id)
     if s is None:
-        raise HTTPException(404, "Todavía no hay sesiones de movimiento")
+        raise HTTPException(404, "No movement sessions yet")
     return s
 
 

@@ -381,8 +381,8 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
         if (p === 0) {
           // Reposo: reloj de 5 min (acelerado), espalda apoyada, pies planos, sin hablar
           const seg = Math.round(300 * (1 - f))
-          r = { texto: `Reposo ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`, ok: f >= 1 }
-          extra = 'Sin hablar · espalda apoyada · pies planos'
+          r = { texto: `Rest ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`, ok: f >= 1 }
+          extra = 'No talking · back supported · feet flat'
           piesMat.opacity = 0.35 + 0.5 * latido
           silla.respaldoMat.emissive.set(C.accent).multiplyScalar(0.25 + 0.25 * latido)
         } else if (p === 1) {
@@ -397,7 +397,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
           anillo.position.copy(c).addScaledVector(e, DESDE_CODO)
           anillo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), e)
           anilloMat.color.set(bien ? C.ok : C.warn)
-          r = bien ? { texto: 'Brazo a la altura del corazón', ok: true } : { texto: 'Brazo colgando: marca más alto', ok: false }
+          r = bien ? { texto: 'Arm at heart level', ok: true } : { texto: 'Arm hanging: reads higher', ok: false }
         } else if (p === 2) {
           // El brazalete entra por la mano y sube hasta 2–3 cm arriba del codo
           const sAnt = suave(tramo(f, 0.05, 0.35)), sBra = suave(tramo(f, 0.35, 0.62))
@@ -411,15 +411,15 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
             rB = R_FLOJO + (R_AJUSTADO - R_FLOJO) * tramo(f, 0.62, 0.8)
           }
           const listo = f > 0.62
-          r = listo ? { texto: '2–3 cm arriba del codo', ok: true } : { texto: 'Desliza el brazalete por el brazo', ok: null }
-          extra = 'Sobre la piel, sin manga'
+          r = listo ? { texto: '2–3 cm above the elbow', ok: true } : { texto: 'Slide the cuff up the arm', ok: null }
+          extra = 'On bare skin, no sleeve'
         } else if (p === 3) {
           // La arteria late por la cara interna; la marca ▼ queda encima
           opTela = 0.5
           arteriaMat.opacity = 0.45 + 0.55 * latido
           arteriaMat.emissiveIntensity = 0.4 + 1.2 * latido
-          r = { texto: 'Marca ▼ sobre la arteria', ok: f > 0.4 }
-          extra = 'El tubo sale por la cara interna del brazo'
+          r = { texto: '▼ mark over the artery', ok: f > 0.4 }
+          extra = 'The tube comes out on the inner arm'
         } else if (p === 4) {
           // Se ajusta y luego entran dos dedos bajo el borde de arriba
           rB = R_FLOJO + (R_AJUSTADO - R_FLOJO) * suave(tramo(f, 0.05, 0.35))
@@ -433,8 +433,8 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
               .addScaledVector(eje, 0.06 - entra * 0.065)
             d.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), eje)
           })
-          r = f > 0.75 ? { texto: 'Caben 2 dedos: bien ajustado', ok: true } : { texto: 'Ajusta el brazalete', ok: null }
-          extra = 'Ni apretado ni flojo'
+          r = f > 0.75 ? { texto: '2 fingers fit: snug', ok: true } : { texto: 'Tighten the cuff', ok: null }
+          extra = 'Not too tight, not too loose'
         } else {
           // Dos mediciones con 1 minuto entre ellas; el brazalete se infla y se desinfla
           const m1 = tramo(f, 0.05, 0.3), espera = tramo(f, 0.35, 0.65), m2 = tramo(f, 0.7, 0.92)
@@ -443,23 +443,23 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
           const mmHg = Math.round(170 * Math.max(inflar(m1), inflar(m2)))
           if (m2 >= 1) {
             pintar('117/76', 'promedio', '#4ADE9A')
-            r = { texto: 'Anota el promedio: 117/76', ok: true }
+            r = { texto: 'Log the average: 117/76', ok: true }
             extra = '1.ª 118/76 · 2.ª 116/75'
           } else if (m2 > 0) {
-            pintar(String(mmHg), 'midiendo 2.ª', '#7DD3FC')
-            r = { texto: '2.ª medición', ok: null }
+            pintar(String(mmHg), 'measuring 2nd', '#7DD3FC')
+            r = { texto: '2nd reading', ok: null }
             extra = '1.ª 118/76'
           } else if (espera > 0 && m1 >= 1) {
             const seg = Math.round(60 * (1 - espera))
-            pintar('118/76', `espera 0:${String(seg).padStart(2, '0')}`, '#4ADE9A')
-            r = { texto: 'Espera 1 minuto', ok: null }
-            extra = 'Sin hablar ni moverte'
+            pintar('118/76', `wait 0:${String(seg).padStart(2, '0')}`, '#4ADE9A')
+            r = { texto: 'Wait 1 minute', ok: null }
+            extra = 'Don’t talk or move'
           } else if (m1 > 0) {
-            pintar(m1 >= 1 ? '118/76' : String(mmHg), m1 >= 1 ? '1.ª' : 'midiendo 1.ª', m1 >= 1 ? '#4ADE9A' : '#7DD3FC')
-            r = { texto: '1.ª medición', ok: null }
-            extra = 'Sin hablar ni moverte'
+            pintar(m1 >= 1 ? '118/76' : String(mmHg), m1 >= 1 ? '1.ª' : 'measuring 1st', m1 >= 1 ? '#4ADE9A' : '#7DD3FC')
+            r = { texto: '1st reading', ok: null }
+            extra = 'Don’t talk or move'
           } else {
-            r = { texto: 'Presiona iniciar en el monitor', ok: null }
+            r = { texto: 'Press start on the monitor', ok: null }
           }
         }
 
@@ -507,7 +507,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
 
   return (
     <div className="relative h-full w-full" style={{ background: 'radial-gradient(ellipse at 50% 40%, #12304A 0%, #0A1626 55%, #060B16 100%)' }}>
-      <div ref={caja} className="absolute inset-0" role="img" aria-label="Astronauta en 3D midiendo su presión con el brazalete, paso a paso" />
+      <div ref={caja} className="absolute inset-0" role="img" aria-label="3D astronaut measuring blood pressure with the cuff, step by step" />
       <div className="pointer-events-none absolute left-3 top-3 flex max-w-[80%] flex-col items-start gap-1.5">
         <span className="flex items-center gap-2 rounded-lg bg-[rgba(6,11,22,.82)] px-3 py-1.5">
           <span ref={okRef} className="grid h-6 w-6 place-items-center rounded-full text-[14px] font-bold text-void transition-opacity" style={{ opacity: 0 }} />

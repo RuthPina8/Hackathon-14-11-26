@@ -31,7 +31,7 @@ def construir_estado(astronauta_id: int = 1) -> StatusOut:
     ei = estado_inmune(astronauta_id)
     if ei.estado != "sin_datos":
         inmune = {"estado": ei.estado, "puntaje": ei.puntaje, "motivo": ei.motivo, "dia_desde": ei.dia_desde}
-        valor = "sin síntomas" if ei.puntaje == 0 else f"puntaje {ei.puntaje:g}"
+        valor = "no symptoms" if ei.puntaje == 0 else f"score {ei.puntaje:g}"
         estado.sistemas["inmune"] = {"estado": ei.estado, "valor": valor}
         if ei.estado in PENALIZACION:
             estado.readiness = max(20, estado.readiness - PENALIZACION[ei.estado])
@@ -41,7 +41,7 @@ def construir_estado(astronauta_id: int = 1) -> StatusOut:
     _, horas, _ = serie_diaria(astronauta_id, "sueno_horas")
     racha = regla_sueno(horas, umbrales.SUENO_MIN_HORAS, umbrales.SUENO_DIAS_SEGUIDOS)
     if racha.alarma:
-        texto = f"Deuda de sueño: {racha.dias} noches con menos de {umbrales.SUENO_MIN_HORAS:g} h"
+        texto = f"Sleep debt: {racha.dias} nights under {umbrales.SUENO_MIN_HORAS:g} h"
         if estado.sistemas.get("sueno", {}).get("estado") in (None, "sin_datos", "verde"):
             estado.sistemas["sueno"] = {"estado": "amarillo", "valor": f"{horas[-1]:.1f} h"}
         estado.readiness = max(20, estado.readiness - PENALIZACION["amarillo"])

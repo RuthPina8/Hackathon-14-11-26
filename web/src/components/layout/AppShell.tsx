@@ -23,15 +23,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <div className="hidden lg:flex h-full"><Sidebar /></div>
 
       {abierto && (
-        <div className="lg:hidden fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="Menú">
+        <div className="lg:hidden fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="h-full shadow-2xl"><Sidebar /></div>
-          <button type="button" aria-label="Cerrar menú" className="flex-1 bg-black/60 border-0 cursor-pointer" onClick={() => setAbierto(false)} />
+          <button type="button" aria-label="Close menu" className="flex-1 bg-black/60 border-0 cursor-pointer" onClick={() => setAbierto(false)} />
         </div>
       )}
 
       <main className="flex-1 min-w-0 overflow-y-auto" style={{ paddingBottom: demo ? 190 : undefined }}>
         <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 bg-deep/95 backdrop-blur border-b border-line">
-          <button type="button" aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setAbierto((x) => !x)}
+          <button type="button" aria-label={abierto ? 'Close menu' : 'Open menu'} onClick={() => setAbierto((x) => !x)}
             className="w-[52px] h-[52px] grid place-items-center rounded-xl border-2 border-line2 bg-transparent text-text cursor-pointer">
             {abierto ? <X size={20} /> : <Menu size={20} />}
           </button>

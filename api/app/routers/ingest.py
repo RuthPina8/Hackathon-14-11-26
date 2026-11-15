@@ -91,7 +91,7 @@ def convertir(payload: dict, astronauta_id: int) -> tuple[list[MedicionIn], int]
 async def apple_health(payload: dict = Body(...), astronauta_id: int = 1):
     mediciones, ignoradas = convertir(payload, astronauta_id)
     if not mediciones and not ignoradas:
-        raise HTTPException(422, "No encontré métricas de Health Auto Export en el JSON (se espera data.metrics)")
+        raise HTTPException(422, "No Health Auto Export metrics found in the JSON (expected data.metrics)")
     ya = {(m.tipo, m.fecha) for m in almacen.listar(astronauta_id) if m.fuente == "apple_watch"}
     nuevas, vistas = [], set()
     for m in sorted(mediciones, key=lambda m: m.fecha):

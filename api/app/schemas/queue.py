@@ -8,16 +8,16 @@ EstadoMensaje = Literal["en_cola", "transmitiendo", "en_transito", "entregado"]
 
 class QueueMessage(BaseModel):
     id: int
-    prioridad: int = Field(description="1 = más urgente")
-    tipo: str = Field(description="alerta | reporte | ...")
+    prioridad: int = Field(description="1 = most urgent")
+    tipo: str = Field(description="alert | report | ...")
     tamano: float = Field(description="kB")
     payload: dict[str, Any] = Field(default_factory=dict)
     estado: EstadoMensaje = "en_cola"
     creado: datetime
     enviado: datetime | None = None
     entregado: datetime | None = None
-    progreso: float = Field(default=0.0, description="0 a 1, para animar el paquete")
-    eta_s: float | None = Field(default=None, description="segundos que faltan para llegar a Tierra")
+    progreso: float = Field(default=0.0, description="0 to 1, to animate the packet")
+    eta_s: float | None = Field(default=None, description="seconds left to reach Earth")
 
 
 class QueueState(BaseModel):

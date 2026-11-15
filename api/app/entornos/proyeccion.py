@@ -32,11 +32,11 @@ def dosis(perfil: EnvironmentProfile, dia: int) -> float:
 
 def texto_retraso(segundos: float) -> str:
     if segundos < 2:
-        return f"{segundos:.1f} s de ida: conversación casi en vivo"
+        return f"{segundos:.1f} s one way: almost live conversation"
     if segundos < 60:
-        return f"{segundos:.0f} s de ida: se nota la pausa"
+        return f"{segundos:.0f} s one way: the pause is noticeable"
     minutos = segundos / 60
-    return f"{minutos:.1f} min de ida, {2 * minutos:.0f} min ida y vuelta: el astronauta decide solo"
+    return f"{minutos:.1f} min one way, {2 * minutos:.0f} min round trip: the astronaut decides alone"
 
 
 def riesgo(perfil: EnvironmentProfile, perdida_pct: float, pct_limite: float) -> Riesgo:
@@ -44,21 +44,21 @@ def riesgo(perfil: EnvironmentProfile, perdida_pct: float, pct_limite: float) ->
     motivos: list[str] = []
     if perdida_pct >= 10:
         puntaje += 40
-        motivos.append(f"Pérdida ósea de {perdida_pct:.1f}%: riesgo de fractura")
+        motivos.append(f"Bone loss of {perdida_pct:.1f}%: fracture risk")
     elif perdida_pct >= 5:
         puntaje += 20
-        motivos.append(f"Pérdida ósea de {perdida_pct:.1f}%: vigilar ejercicio de resistencia")
+        motivos.append(f"Bone loss of {perdida_pct:.1f}%: keep up resistance exercise")
     if pct_limite >= 50:
         puntaje += 40
-        motivos.append(f"Dosis al {pct_limite:.0f}% del límite de carrera")
+        motivos.append(f"Dose at {pct_limite:.0f}% of the career limit")
     elif pct_limite >= 20:
         puntaje += 20
-        motivos.append(f"Dosis al {pct_limite:.0f}% del límite de carrera")
+        motivos.append(f"Dose at {pct_limite:.0f}% of the career limit")
     if perfil.retraso_s >= 60:
         puntaje += 20
-        motivos.append("Retraso de minutos: el apoyo de Tierra no es inmediato")
+        motivos.append("Minutes of delay: support from Earth isn’t immediate")
     if not motivos:
-        motivos.append("Sin factores de riesgo relevantes a este día")
+        motivos.append("No relevant risk factors on this day")
     nivel = "alto" if puntaje >= 60 else "medio" if puntaje >= 30 else "bajo"
     return Riesgo(nivel=nivel, puntaje=min(puntaje, 100), motivos=motivos)
 

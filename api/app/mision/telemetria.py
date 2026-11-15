@@ -19,8 +19,8 @@ SEGUNDOS_LECTURA = 3.0
 MAX_HISTORIAL = 600
 SUAVIZADO = 0.35  # qué tanto se acerca cada lectura al valor objetivo del escenario
 
-NOTA = ("Datos SIMULADOS para la demostración: no provienen de un sensor físico. "
-        "Rangos del escenario de demo, ajustables; verificar contra NASA-STD-3001 antes de citarlos.")
+NOTA = ("SIMULATED data for the demo: not from a physical sensor. "
+        "Demo scenario ranges, adjustable; verify against NASA-STD-3001 before citing them.")
 
 # variable -> (nombre, unidad, mínimo, máximo); None = sin límite de ese lado
 RANGOS: dict[str, tuple[str, str, float | None, float | None]] = {

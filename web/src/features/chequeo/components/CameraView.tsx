@@ -41,10 +41,10 @@ function textoDerecho(ctx: CanvasRenderingContext2D, texto: string, x: number, y
 
 function mensajeError(e: unknown): string {
   const nombre = (e as { name?: string })?.name
-  if (nombre === 'NotAllowedError' || nombre === 'SecurityError') return 'El navegador no tiene permiso para usar la cámara. Actívalo en el candado de la barra de direcciones y vuelve a intentar'
-  if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') return 'No se encontró esa cámara. Conecta una o elige otra'
-  if (nombre === 'NotReadableError' || nombre === 'AbortError') return 'La cámara está ocupada por otra aplicación (Zoom, Teams, OBS). Ciérrala y vuelve a intentar'
-  return 'No se pudo abrir la cámara'
+  if (nombre === 'NotAllowedError' || nombre === 'SecurityError') return 'The browser doesn’t have permission to use the camera. Allow it from the lock icon in the address bar and try again'
+  if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') return 'That camera wasn’t found. Connect one or choose another'
+  if (nombre === 'NotReadableError' || nombre === 'AbortError') return 'The camera is being used by another app (Zoom, Teams, OBS). Close it and try again'
+  return 'Couldn’t open the camera'
 }
 
 type Ajustes = MediaTrackCapabilities & { exposureMode?: string[]; whiteBalanceMode?: string[] }
@@ -91,7 +91,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
     let cancelado = false
     async function buscarCamaras() {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setErrorCamara('Este navegador no da acceso a la cámara. Usa Chrome o Edge, y abre la app desde localhost o https')
+        setErrorCamara('This browser doesn’t allow camera access. Use Chrome or Edge, and open the app from localhost or https')
         return
       }
       try {
@@ -101,13 +101,13 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
         const dispositivos = await navigator.mediaDevices.enumerateDevices()
         const lista = dispositivos
           .filter((d) => d.kind === 'videoinput')
-          .map((d, i) => ({ id: d.deviceId, nombre: d.label || `Cámara ${i + 1}` }))
+          .map((d, i) => ({ id: d.deviceId, nombre: d.label || `Camera ${i + 1}` }))
         if (cancelado) return
         setCamaras(lista)
         const guardada = (() => { try { return localStorage.getItem('astro_camara') } catch { return null } })()
         const real = lista.find((c) => c.id === guardada) ?? lista.find((c) => !VIRTUALES.test(c.nombre)) ?? lista[0]
         if (real) setCamaraId(real.id)
-        else setErrorCamara('No se encontró ninguna cámara')
+        else setErrorCamara('No camera found')
       } catch (e) {
         if (!cancelado) setErrorCamara(mensajeError(e))
       }
@@ -137,7 +137,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
         const track = s.getVideoTracks()[0]
         trackRef.current = track ?? null
         // Si la cámara se desconecta o el sistema la quita, se avisa en vez de quedarse congelado
-        if (track) track.onended = () => { if (!cancelado) setErrorCamara('Se perdió la cámara (¿se desconectó?). Vuelve a conectarla e intenta de nuevo') }
+        if (track) track.onended = () => { if (!cancelado) setErrorCamara('Lost the camera (was it disconnected?). Reconnect it and try again') }
         try { localStorage.setItem('astro_camara', camaraId) } catch { /* sin storage */ }
         const video = videoRef.current
         if (!video) return
@@ -150,7 +150,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
             .then(() => {
               if (!cancelado) setCamaraLista(true)
             })
-            .catch(() => setErrorCamara('El navegador no dejó reproducir el video de la cámara'))
+            .catch(() => setErrorCamara('The browser blocked the camera video from playing'))
         }
       })
       .catch((e) => { if (!cancelado) setErrorCamara(mensajeError(e)) })
@@ -273,7 +273,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
               ctx.lineWidth = 1.5
               ctx.strokeRect(x, y, w, h)
               ctx.fillStyle = C.okSoft
-              textoDerecho(ctx, roi.nombre, x + w / 2, roi.nombre === 'FRENTE' ? y - 6 : y + h + 14)
+              textoDerecho(ctx, roi.nombre, x + w / 2, roi.nombre === 'FOREHEAD' ? y - 6 : y + h + 14)
             }
           }
         }
@@ -318,16 +318,16 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
 
   let aviso: string | null = null
   if (errorCamara) aviso = errorCamara
-  else if (estado === 'error') aviso = 'Error al cargar el modelo de visión: ' + error
-  else if (estado === 'cargando') aviso = 'Cargando modelo de visión…'
-  else if (!camaraLista) aviso = 'Abriendo cámara…'
+  else if (estado === 'error') aviso = 'Error loading the vision model: ' + error
+  else if (estado === 'cargando') aviso = 'Loading vision model…'
+  else if (!camaraLista) aviso = 'Opening camera…'
 
   const colorOvalo = ovalo === 'ok' ? 'border-ok' : ovalo === 'alerta' ? 'border-warn' : 'border-accent'
 
   return (
     <div className="flex flex-col gap-3">
       <section
-        aria-label="Vista de la cámara"
+        aria-label="Camera view"
         className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] border border-line bg-void"
       >
         <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
@@ -354,7 +354,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
       </section>
       {camaras.length > 1 && (
         <label className="flex items-center gap-3 text-sm text-soft">
-          Cámara
+          Camera
           <select
             value={camaraId ?? ''}
             onChange={(e) => {

@@ -11,22 +11,22 @@ export type Problema =
   | 'luz_inestable' | 'camara_lenta'
 
 export const MENSAJES: Record<Problema, { texto: string; bloquea: boolean }> = {
-  imagen_negra: { texto: 'La cámara manda la imagen en negro: revisa que no esté tapada o elige otra cámara', bloquea: true },
-  sin_cara: { texto: 'No encuentro tu cara, que se vea completa en el centro', bloquea: true },
-  fuera_cuadro: { texto: 'Parte de tu cara queda fuera del cuadro, céntrate', bloquea: true },
-  lejos: { texto: 'Estás muy lejos, acércate hasta que tu cara llene el óvalo', bloquea: true },
-  cerca: { texto: 'Estás muy cerca, aléjate un poco', bloquea: true },
-  de_lado: { texto: 'Mira de frente a la cámara', bloquea: true },
-  tapado: { texto: 'Algo tapa tu frente o tus mejillas (cabello, mano), despéjalas', bloquea: true },
-  movimiento: { texto: 'Movimiento brusco, esos cuadros no se cuentan', bloquea: true },
-  otra_persona: { texto: 'Hay otra persona en cuadro: mido solo la cara más cercana', bloquea: false },
-  cabeza_abajo: { texto: 'Levanta un poco la vista hacia la cámara, mirar abajo parece ojos cerrados', bloquea: false },
-  poca_luz: { texto: 'Hay poca luz, acércate a una lámpara o ventana de frente', bloquea: false },
-  mucha_luz: { texto: 'Hay demasiada luz directa en tu cara, la piel se ve quemada', bloquea: false },
-  contraluz: { texto: 'Tienes una luz detrás de ti, ponla de frente', bloquea: false },
-  luz_lateral: { texto: 'La luz te llega de un solo lado, ilumina tu cara de frente', bloquea: false },
-  luz_inestable: { texto: 'La luz está cambiando (pantalla, lámpara que parpadea), busca una luz fija', bloquea: false },
-  camara_lenta: { texto: 'La cámara va lenta, cierra otras apps que la usen', bloquea: false },
+  imagen_negra: { texto: 'The camera is sending a black image: make sure it isn’t covered or pick another camera', bloquea: true },
+  sin_cara: { texto: 'I can’t find your face, make sure it’s fully visible in the center', bloquea: true },
+  fuera_cuadro: { texto: 'Part of your face is out of frame, center yourself', bloquea: true },
+  lejos: { texto: 'You’re too far, move closer until your face fills the oval', bloquea: true },
+  cerca: { texto: 'You’re too close, move back a little', bloquea: true },
+  de_lado: { texto: 'Look straight at the camera', bloquea: true },
+  tapado: { texto: 'Something is covering your forehead or cheeks (hair, hand), clear them', bloquea: true },
+  movimiento: { texto: 'Sudden movement, those frames don’t count', bloquea: true },
+  otra_persona: { texto: 'Someone else is in frame: I only measure the closest face', bloquea: false },
+  cabeza_abajo: { texto: 'Look up a little toward the camera, looking down reads as closed eyes', bloquea: false },
+  poca_luz: { texto: 'It’s too dark, move closer to a lamp or window in front of you', bloquea: false },
+  mucha_luz: { texto: 'Too much direct light on your face, your skin looks washed out', bloquea: false },
+  contraluz: { texto: 'There’s a light behind you, move it in front of you', bloquea: false },
+  luz_lateral: { texto: 'Light is coming from one side only, light your face from the front', bloquea: false },
+  luz_inestable: { texto: 'The light keeps changing (screen, flickering lamp), find a steady light', bloquea: false },
+  camara_lenta: { texto: 'The camera is slow, close other apps using it', bloquea: false },
 }
 
 // Orden en que se muestran: primero lo que impide medir

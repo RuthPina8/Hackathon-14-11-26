@@ -39,9 +39,9 @@ def _miembro(astro: int, nombre: str, rol: str) -> CrewMemberOut:
         astronauta_id=astro, nombre=nombre, rol=rol, estado=peor, readiness=estado.readiness,
         ultimo=max(m.fecha for m in mediciones),
         ultimo_dia=max((m.dia_mision for m in mediciones if m.dia_mision is not None), default=None),
-        ritmo=fmt("hr_reposo", "{:.0f} lpm"), perclos=fmt("perclos", "{:.2f}"),
+        ritmo=fmt("hr_reposo", "{:.0f} bpm"), perclos=fmt("perclos", "{:.2f}"),
         presion=f"{sis.valor:.0f}/{dia.valor:.0f}" if sis and dia else None,
-        animo=fmt("animo", "{:.0f} de 5"),
+        animo=fmt("animo", "{:.0f} of 5"),
         alertas_activas=len(activas),
         dato_demo=any(m.fuente == "simulador" for m in mediciones),
     )

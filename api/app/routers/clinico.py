@@ -40,7 +40,7 @@ def ver_ficha(astronauta_id: int):
 @router.put("/ficha/{astronauta_id}", response_model=FichaMedica)
 def guardar_ficha(astronauta_id: int, ficha: FichaMedica):
     if ficha.astronauta_id != astronauta_id:
-        raise HTTPException(422, "El astronauta de la ficha no coincide con la ruta")
+        raise HTTPException(422, "The record’s astronaut doesn’t match the route")
     f = ficha.model_copy(update={"actualizada": datetime.now(timezone.utc)})
     return clinico.guardar_ficha(f)
 
@@ -67,7 +67,7 @@ def evolucion_de(astronauta_id: int, tipo: str, unidad: str, ficha_valor: float 
     item = ItemEvolucion(tipo=tipo, nombre=nombre, unidad=unidad, ficha=ficha_valor, n=len(vals),
                          serie=[{"dia": d, "valor": round(v, 3)} for d, v in zip(dias, vals)][-60:])
     if not vals:
-        item.explicacion = "Sin mediciones todavía"
+        item.explicacion = "No measurements yet"
         return item
     item.inicio = round(_prom(vals[:7]), 3)
     item.reciente = round(_prom(vals[-7:]), 3)
@@ -77,7 +77,7 @@ def evolucion_de(astronauta_id: int, tipo: str, unidad: str, ficha_valor: float 
     elif len(vals) >= 10:
         ref, item.referencia = item.inicio, "inicio"
     else:
-        item.explicacion = f"Faltan datos: {len(vals)} días, se compara desde los 10 días o con la ficha médica"
+        item.explicacion = f"Not enough data: {len(vals)} days, comparison starts at 10 days or with the medical record"
         return item
     item.cambio = round(item.reciente - ref, 3)
     item.cambio_pct = round(100 * item.cambio / ref, 1) if ref else None
@@ -86,15 +86,15 @@ def evolucion_de(astronauta_id: int, tipo: str, unidad: str, ficha_valor: float 
     sd = (sum((v - media) ** 2 for v in vals) / max(1, len(vals) - 1)) ** 0.5
     tol = max(0.5 * sd, 0.03 * abs(ref), 1e-9)
     direccion = DIRECCION.get(tipo, "ambas")
-    contra = "tu ficha médica pre-vuelo" if item.referencia == "ficha" else "tu primera semana"
+    contra = "your pre-flight medical record" if item.referencia == "ficha" else "your first week"
     if abs(item.cambio) <= tol:
         item.estado = "estable"
-        item.explicacion = f"Igual que {contra}"
+        item.explicacion = f"Same as {contra}"
     else:
         sube = item.cambio > 0
         malo = (direccion == "ambas") or (direccion == "sube" and sube) or (direccion == "baja" and not sube)
         item.estado = "empeora" if malo else "mejora"
-        item.explicacion = f"{'Subió' if sube else 'Bajó'} {abs(item.cambio):.3g} {unidad} contra {contra}".replace("  ", " ")
+        item.explicacion = f"{'Up' if sube else 'Down'} {abs(item.cambio):.3g} {unidad} vs {contra}".replace("  ", " ")
     return item
 
 
@@ -107,13 +107,13 @@ def ver_evolucion(astronauta_id: int):
     mejores = [i for i in items if i.estado == "mejora"]
     dias = len({d for t, _ in EVOLUCION for d in serie_diaria(astronauta_id, t)[0]})
     if dias == 0:
-        resumen = "Aún no hay mediciones. Haz tu chequeo diario y carga tu ficha médica para ver tu evolución."
+        resumen = "No measurements yet. Do your daily check-up and load your medical record to see your progress."
     elif peores:
-        resumen = f"{len(peores)} señales se alejan de tu referencia: " + ", ".join(i.nombre.lower() for i in peores[:3])
+        resumen = f"{len(peores)} signals are drifting from your reference: " + ", ".join(i.nombre.lower() for i in peores[:3])
     elif mejores:
-        resumen = f"Vas bien: {len(mejores)} señales mejoraron y ninguna empeoró"
+        resumen = f"You’re doing well: {len(mejores)} signals improved and none got worse"
     else:
-        resumen = "Estable: tus señales están como en tu referencia"
+        resumen = "Stable: your signals match your reference"
     return EvolucionOut(astronauta_id=astronauta_id, tiene_ficha=ficha is not None, dias_con_datos=dias,
                         resumen=resumen, items=items)
 
@@ -148,10 +148,10 @@ def registrar_referencia(body: ReferenciaIn):
     candidatas = [m for m in almacen.listar(body.astronauta_id, "hr_reposo")
                   if m.fuente == "camara" and abs(m.fecha - fecha) <= VENTANA_PAREO]
     if not candidatas:
-        raise HTTPException(404, "No hay una lectura de ritmo por cámara en los 15 minutos cercanos. Haz el chequeo con cámara y registra la referencia enseguida")
+        raise HTTPException(404, "There’s no camera heart rate reading within 15 minutes. Do the camera check-up and log the reference right after")
     m = min(candidatas, key=lambda m: abs(m.fecha - fecha))
     if any(p.astronauta_id == body.astronauta_id and p.fecha == m.fecha and p.fuente_referencia == body.fuente for p in clinico.pares):
-        raise HTTPException(409, "Esa lectura de cámara ya tiene una referencia de ese aparato")
+        raise HTTPException(409, "That camera reading already has a reference from that device")
     p = clinico.agregar_par(camara=m.valor, referencia=body.hr_lpm, confianza=m.confianza, origen="propio",
                             astronauta_id=body.astronauta_id, fuente_referencia=body.fuente, fecha=m.fecha)
     return _out(p)

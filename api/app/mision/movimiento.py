@@ -17,14 +17,14 @@ def comparar(nueva: SesionIn, previas: list[Sesion]) -> Comparacion:
     if nueva.calidad < CALIDAD_MINIMA:
         return Comparacion(
             estado="baja_calidad",
-            texto=f"Detección del cuerpo del {nueva.calidad:.0%}: la sesión no es confiable para comparar. Repite con el cuerpo completo a cuadro y buena luz",
+            texto=f"Body detection at {nueva.calidad:.0%}: the session isn’t reliable for comparison. Repeat with your whole body in frame and good light",
         )
     ref = [s.repeticiones for s in previas if s.ejercicio == nueva.ejercicio and s.calidad >= CALIDAD_MINIMA and not s.practica]
     if len(ref) < MIN_REFERENCIA:
         faltan = MIN_REFERENCIA - len(ref)
         return Comparacion(
             estado="sin_referencia", n_referencia=len(ref),
-            texto=f"Aprendiendo tu normal: falta{'n' if faltan > 1 else ''} {faltan} sesión{'es' if faltan > 1 else ''} para comparar",
+            texto=f"Learning your normal: {faltan} more session{'s' if faltan > 1 else ''} needed to compare",
         )
     media = sum(ref) / len(ref)
     cambio = 100 * (nueva.repeticiones - media) / media if media else 0.0
@@ -32,8 +32,8 @@ def comparar(nueva: SesionIn, previas: list[Sesion]) -> Comparacion:
     return Comparacion(
         estado="bajo" if bajo else "estable",
         referencia_reps=round(media, 1), n_referencia=len(ref), cambio_pct=round(cambio, 1),
-        texto=(f"{nueva.repeticiones} repeticiones, {abs(cambio):.0f}% {'menos' if cambio < 0 else 'más'} que tu normal ({media:.1f})"
-               if abs(cambio) >= 1 else f"{nueva.repeticiones} repeticiones, igual que tu normal"),
+        texto=(f"{nueva.repeticiones} reps, {abs(cambio):.0f}% {'fewer' if cambio < 0 else 'more'} than your normal ({media:.1f})"
+               if abs(cambio) >= 1 else f"{nueva.repeticiones} reps, same as your normal"),
     )
 
 

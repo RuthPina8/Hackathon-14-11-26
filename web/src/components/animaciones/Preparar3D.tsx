@@ -358,8 +358,8 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
         marca.visible = regla.visible = p === 1
         if (p === 0) {
           bien = sube > 0.97
-          texto = bien ? 'Cámara a la altura del pecho' : 'Muy baja: apunta al abdomen'
-          etq = bien ? 'altura del pecho' : 'muy baja'
+          texto = bien ? 'Camera at chest height' : 'Too low: it points at your stomach'
+          etq = bien ? 'chest height' : 'too low'
           const fin = new THREE.Vector3(0, posWeb.y, za + 0.15 * frente)
           punteria.colocar(posWeb, fin, reloj.elapsedTime)
           ancla = fin.clone().setX(lado * 0.2)
@@ -367,15 +367,15 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
           const partes = ejercicio === 'sentadilla' ? [hu.tope, hu.manoI, hu.manoD, hu.puntaI, hu.puntaD] : [hu.tope, hu.manoI, hu.manoD, hu.cadera]
           bien = partes.every((o) => enCuadro(o))
           const d = Math.abs(zL - za)
-          texto = bien ? 'Cabes completo en el cuadro' : 'Muy cerca: no cabes en el cuadro'
+          texto = bien ? 'You fit fully in the frame' : 'Too close: you don’t fit in the frame'
           etq = `≈ ${d.toFixed(1)} m`
           regla.position.set(lado * 0.45, 0.004, (zL + za) / 2)
           regla.scale.z = d
           ancla = new THREE.Vector3(lado * 0.45, 0.02, (zL + za) / 2)
         } else {
           bien = luz > 0.9
-          texto = bien ? 'Luz de frente: la cámara te ve bien' : luz < 0.15 ? 'Contraluz: la cámara solo ve tu sombra' : 'Mueve la luz al frente'
-          etq = bien ? 'luz de frente' : 'luz detrás'
+          texto = bien ? 'Light in front: the camera sees you well' : luz < 0.15 ? 'Backlit: the camera only sees your shadow' : 'Move the light in front of you'
+          etq = bien ? 'light in front' : 'light behind'
           ancla = lampara.position.clone().setY(2.0)
         }
         const color = bien ? C.ok : C.warn
@@ -452,7 +452,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ background: 'radial-gradient(ellipse at 50% 40%, #12304A 0%, #0A1626 55%, #060B16 100%)' }}>
-      <div ref={caja} className="absolute inset-0" role="img" aria-label="Astronauta en 3D acomodando la laptop, la distancia y la luz antes del ejercicio" />
+      <div ref={caja} className="absolute inset-0" role="img" aria-label="3D astronaut setting up the laptop, distance and light before the exercise" />
       <div className="pointer-events-none absolute left-3 top-3 flex max-w-[66%] items-center gap-2 rounded-lg bg-[rgba(6,11,22,.82)] px-3 py-1.5">
         <span ref={okRef} className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[14px] font-bold text-void" />
         <span ref={textoRef} className="text-[16px] font-bold text-text" />
@@ -461,7 +461,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       <span ref={etqRef} className="num pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-md border bg-[rgba(6,11,22,.85)] px-2 py-0.5 text-[14px] font-bold transition-opacity" style={{ opacity: 0 }} />
       {/* marco del recuadro de la webcam: mismo tamaño que el viewport que dibuja three.js */}
       <div ref={marcoRef} className="pointer-events-none absolute rounded-md border-2" style={{ right: 12, bottom: 12, width: '30%', aspectRatio: '4 / 3' }}>
-        <span className="absolute -top-6 left-0 whitespace-nowrap rounded bg-[rgba(6,11,22,.85)] px-1.5 text-[12px] font-semibold text-muted">Lo que ve la cámara</span>
+        <span className="absolute -top-6 left-0 whitespace-nowrap rounded bg-[rgba(6,11,22,.85)] px-1.5 text-[12px] font-semibold text-muted">What the camera sees</span>
       </div>
     </div>
   )

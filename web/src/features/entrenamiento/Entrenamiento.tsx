@@ -17,18 +17,18 @@ import { MODULOS, moduloPorId, type Insignia, type ModuloId } from './modulos'
 
 const ICONO: Record<ModuloId, typeof HeartPulse> = { camara: HeartPulse, atencion: Brain, presion: Gauge, registro: Moon, movimiento: PersonStanding, alerta: Siren }
 const INSIGNIAS: { id: Insignia; nombre: string; icono: typeof Gauge; modulo: ModuloId }[] = [
-  { id: 'presion', nombre: 'Presión', icono: Gauge, modulo: 'presion' },
-  { id: 'estres', nombre: 'Estrés', icono: Activity, modulo: 'registro' },
-  { id: 'movimiento', nombre: 'Movimiento', icono: PersonStanding, modulo: 'movimiento' },
+  { id: 'presion', nombre: 'Blood pressure', icono: Gauge, modulo: 'presion' },
+  { id: 'estres', nombre: 'Stress', icono: Activity, modulo: 'registro' },
+  { id: 'movimiento', nombre: 'Movement', icono: PersonStanding, modulo: 'movimiento' },
 ]
-const NOMBRE_ORGANO: Record<Organo, string> = { cerebro: 'Cerebro', ojos: 'Sueño', corazon: 'Corazón', pulmones: 'Pulmones', inmune: 'Inmune' }
+const NOMBRE_ORGANO: Record<Organo, string> = { cerebro: 'Brain', ojos: 'Sleep', corazon: 'Heart', pulmones: 'Lungs', inmune: 'Immune' }
 
 // Lo que se midió en la práctica, para explicar el resultado con TU dato
 function datoPractica(id: ModuloId, c: ReturnType<typeof useChequeoStore.getState>): string | null {
-  if (id === 'camara') return c.camara?.bpm != null ? `Tu ritmo en la práctica: ${c.camara.bpm} lpm` : 'La cámara no juntó una señal clara: en el chequeo real te dirá qué corregir'
-  if (id === 'atencion') return c.cognitivo ? `Tu reacción en la práctica: ${Math.round(c.cognitivo.medianaMs)} ms (mediana), ${c.cognitivo.lapsos} lapsos` : null
-  if (id === 'presion') return c.presion && 'sis' in c.presion ? `Registraste ${c.presion.sis}/${c.presion.dia} mmHg` : 'Sin brazalete: la presión se puede omitir'
-  if (id === 'registro' && c.registro) return `Ánimo ${c.registro.animo} de 5 · estrés ${c.registro.estres} de 10 · ${c.registro.sintomas.length} síntomas marcados`
+  if (id === 'camara') return c.camara?.bpm != null ? `Your heart rate in practice: ${c.camara.bpm} bpm` : 'The camera didn’t get a clear signal: in the real check-up it will tell you what to fix'
+  if (id === 'atencion') return c.cognitivo ? `Your reaction in practice: ${Math.round(c.cognitivo.medianaMs)} ms (median), ${c.cognitivo.lapsos} lapses` : null
+  if (id === 'presion') return c.presion && 'sis' in c.presion ? `You logged ${c.presion.sis}/${c.presion.dia} mmHg` : 'No cuff: blood pressure can be skipped'
+  if (id === 'registro' && c.registro) return `Mood ${c.registro.animo} of 5 · stress ${c.registro.estres} of 10 · ${c.registro.sintomas.length} symptoms marked`
   return null
 }
 
@@ -45,7 +45,7 @@ export default function Entrenamiento() {
   const listo = listoParaMision(completados)
   const organos = { cerebro: 'none', ojos: 'none', corazon: 'none', pulmones: 'none', inmune: 'none' } as Record<Organo, Estado>
   MODULOS.forEach((m) => { if (hecho(m.id)) m.enciende.forEach((o) => { organos[o] = 'ok' }) })
-  const etiquetas = Object.fromEntries((Object.keys(organos) as Organo[]).map((o) => [o, `${NOMBRE_ORGANO[o]} · ${organos[o] === 'ok' ? 'encendido' : 'apagado'}`])) as Record<Organo, string>
+  const etiquetas = Object.fromEntries((Object.keys(organos) as Organo[]).map((o) => [o, `${NOMBRE_ORGANO[o]} · ${organos[o] === 'ok' ? 'on' : 'off'}`])) as Record<Organo, string>
   const siguiente = MODULOS.find((m) => !hecho(m.id))
   const mod = activo ? moduloPorId(activo) : null
 
@@ -59,7 +59,7 @@ export default function Entrenamiento() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader kicker="Misión de entrenamiento · la app entrena a la tripulación" title="Entrenamiento"
+      <PageHeader kicker="Training mission · the app trains the crew" title="Training"
         right={<span className="inline-flex min-h-[52px] items-center gap-2 rounded-xl border-2 border-line bg-panel px-4 text-base"><GraduationCap size={20} className="text-accent" /><strong className="num">{completados.length}</strong> de {MODULOS.length} módulos</span>} />
 
       <AnimatePresence>
@@ -67,20 +67,20 @@ export default function Entrenamiento() {
           <motion.section initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="card flex flex-wrap items-center gap-5" style={{ borderWidth: 2, borderColor: 'var(--color-ok)', background: 'linear-gradient(135deg, var(--color-ok-bg), var(--color-panel))' }}>
             <Sparkles size={44} className="text-ok" />
             <div className="min-w-[240px] flex-1">
-              <p className="m-0 font-display text-[28px] font-bold text-ok-soft">Listo para la misión</p>
-              <p className="m-0 mt-1 text-[17px] text-subtle">Completaste todos los módulos: ya sabes medirte, registrar tu estado y atender una alerta roja.</p>
+              <p className="m-0 font-display text-[28px] font-bold text-ok-soft">Mission ready</p>
+              <p className="m-0 mt-1 text-[17px] text-subtle">You completed every module: you now know how to measure yourself, log your status and handle a red alert.</p>
             </div>
-            <BotonConfirmar onConfirmar={reiniciar} confirmar="¿Reiniciar el entrenamiento? Toca otra vez"><RotateCcw size={18} />Repetir entrenamiento</BotonConfirmar>
+            <BotonConfirmar onConfirmar={reiniciar} confirmar="Restart training? Tap again"><RotateCcw size={18} />Repeat training</BotonConfirmar>
           </motion.section>
         )}
       </AnimatePresence>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.9fr)_1.1fr]">
         {/* Tablero: el cuerpo se enciende por módulo */}
-        <section className="relative flex min-h-[560px] flex-col overflow-hidden rounded-2xl border-2 border-holo-line" aria-label="Progreso en el cuerpo">
+        <section className="relative flex min-h-[560px] flex-col overflow-hidden rounded-2xl border-2 border-holo-line" aria-label="Progress on the body">
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 px-4 pt-3.5">
-            <h2 className="m-0 font-display text-[16px] font-semibold tracking-wide text-accent-soft">TABLERO DE ENTRENAMIENTO</h2>
-            <span className="text-[14px] text-faint">{listo ? 'Todos los sistemas encendidos' : 'Cada módulo enciende un sistema'}</span>
+            <h2 className="m-0 font-display text-[16px] font-semibold tracking-wide text-accent-soft">TRAINING BOARD</h2>
+            <span className="text-[14px] text-faint">{listo ? 'All systems on' : 'Each module turns on a system'}</span>
           </div>
           <div className="relative flex-1">
             <Holograma organos={organos} etiquetas={etiquetas} bpm={hecho('camara') ? chequeo.camara?.bpm ?? null : null} rpm={null}
@@ -102,7 +102,7 @@ export default function Entrenamiento() {
         </section>
 
         {/* Módulos */}
-        <section className="flex flex-col gap-3" aria-label="Módulos">
+        <section className="flex flex-col gap-3" aria-label="Modules">
           {MODULOS.map((m, i) => {
             const ok = hecho(m.id)
             const Ic = ICONO[m.id]
@@ -119,12 +119,12 @@ export default function Entrenamiento() {
                   <span className="block font-display text-[20px] font-semibold">{i + 1}. {m.titulo}</span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[14px] text-muted">
                     <span className="inline-flex items-center gap-1"><Clock size={14} />{m.minutos} min</span>
-                    {m.enciende.length > 0 && <span>Enciende: {m.enciende.map((o) => NOMBRE_ORGANO[o]).join(' y ')}</span>}
+                    {m.enciende.length > 0 && <span>Turns on: {m.enciende.map((o) => NOMBRE_ORGANO[o]).join(' and ')}</span>}
                     {m.insignias.length > 0 && <span>Insignia: {m.insignias.map((x) => INSIGNIAS.find((y) => y.id === x)!.nombre).join(', ')}</span>}
                   </span>
                 </span>
                 <span className="shrink-0 text-[15px] font-semibold" style={{ color: ok ? 'var(--color-ok-soft)' : 'var(--color-accent)' }}>
-                  {ok ? 'Repetir' : esSiguiente ? 'Empezar' : 'Abrir'} <ArrowRight size={16} className="inline" />
+                  {ok ? 'Repeat' : esSiguiente ? 'Start' : 'Open'} <ArrowRight size={16} className="inline" />
                 </span>
               </motion.button>
             )
@@ -140,19 +140,19 @@ export default function Entrenamiento() {
               className="flex w-[min(640px,100%)] flex-col gap-5 rounded-3xl border-2 bg-raised p-7" style={{ borderColor: fase === 'resultado' ? 'var(--color-ok-line)' : 'var(--color-accent-line)' }}>
               <div className="flex items-center gap-3">
                 {fase === 'resultado' ? <CheckCircle2 size={34} className="text-ok" /> : (() => { const Ic = ICONO[mod.id]; return <Ic size={34} className="text-accent" /> })()}
-                <h2 id="mod-titulo" className="m-0 font-display text-[26px] font-bold">{fase === 'resultado' ? 'Módulo completado' : mod.titulo}</h2>
+                <h2 id="mod-titulo" className="m-0 font-display text-[26px] font-bold">{fase === 'resultado' ? 'Module complete' : mod.titulo}</h2>
               </div>
               {fase === 'por_que' ? (
                 <>
                   <div>
-                    <p className="k">Por qué importa</p>
+                    <p className="k">Why it matters</p>
                     <p className="m-0 mt-2 text-[19px] leading-relaxed">{mod.porQue}</p>
                   </div>
                   <p className="m-0 rounded-xl border-2 border-dashed border-line2 px-4 py-3 text-[16px] leading-relaxed text-subtle">{mod.dato}</p>
-                  <p className="m-0 text-[15px] text-faint">Es práctica: lo que hagas aquí no cuenta para tu normal ni genera alertas reales.</p>
+                  <p className="m-0 text-[15px] text-faint">This is practice: nothing you do here counts toward your normal or raises real alerts.</p>
                   <div className="flex flex-wrap gap-3">
-                    <button type="button" className="btn pri flex-1" style={{ minHeight: 68, fontSize: 19 }} onClick={() => void irAccion()}>Empezar práctica <ArrowRight size={20} /></button>
-                    <button type="button" className="btn sec" style={{ minHeight: 68 }} onClick={salir}>Ahora no</button>
+                    <button type="button" className="btn pri flex-1" style={{ minHeight: 68, fontSize: 19 }} onClick={() => void irAccion()}>Start practice <ArrowRight size={20} /></button>
+                    <button type="button" className="btn sec" style={{ minHeight: 68 }} onClick={salir}>Not now</button>
                   </div>
                 </>
               ) : (
@@ -162,11 +162,11 @@ export default function Entrenamiento() {
                   <p className="m-0 text-[18px] leading-relaxed">{mod.resultado}</p>
                   {(mod.enciende.length > 0 || mod.insignias.length > 0) && (
                     <p className="m-0 text-[16px] text-ok-soft">
-                      {mod.enciende.length > 0 && `Se encendió: ${mod.enciende.map((o) => NOMBRE_ORGANO[o]).join(' y ')}. `}
-                      {mod.insignias.length > 0 && `Ganaste la insignia: ${mod.insignias.map((x) => INSIGNIAS.find((y) => y.id === x)!.nombre).join(', ')}.`}
+                      {mod.enciende.length > 0 && `Turned on: ${mod.enciende.map((o) => NOMBRE_ORGANO[o]).join(' and ')}. `}
+                      {mod.insignias.length > 0 && `You earned the badge: ${mod.insignias.map((x) => INSIGNIAS.find((y) => y.id === x)!.nombre).join(', ')}.`}
                     </p>
                   )}
-                  <button type="button" className="btn pri" style={{ minHeight: 68, fontSize: 19 }} onClick={cerrarResultado}>Continuar</button>
+                  <button type="button" className="btn pri" style={{ minHeight: 68, fontSize: 19 }} onClick={cerrarResultado}>Continue</button>
                 </>
               )}
             </motion.section>

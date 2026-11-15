@@ -1,7 +1,7 @@
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
 
 // Zona de la cara de donde se saca el color de la piel, en coordenadas de 0 a 1
-export type Roi = { nombre: 'FRENTE' | 'MEJILLA'; x: number; y: number; w: number; h: number }
+export type Roi = { nombre: 'FOREHEAD' | 'CHEEK'; x: number; y: number; w: number; h: number }
 
 // Índices de MediaPipe Face Mesh
 const LADO_IZQ = 234
@@ -26,9 +26,9 @@ export function calcularRois(cara: NormalizedLandmark[], aspecto: number): Roi[]
   // Zonas amplias: más pixeles de piel = menos ruido (el filtro de piel quita lo que no es piel)
   const m = ancho * 0.21
   return [
-    caja('FRENTE', cara[FRENTE].x, cara[FRENTE].y - ancho * 0.02, ancho * 0.5, ancho * 0.15 * aspecto),
-    caja('MEJILLA', cara[MEJILLA_A].x, cara[MEJILLA_A].y, m, m * aspecto),
-    caja('MEJILLA', cara[MEJILLA_B].x, cara[MEJILLA_B].y, m, m * aspecto),
+    caja('FOREHEAD', cara[FRENTE].x, cara[FRENTE].y - ancho * 0.02, ancho * 0.5, ancho * 0.15 * aspecto),
+    caja('CHEEK', cara[MEJILLA_A].x, cara[MEJILLA_A].y, m, m * aspecto),
+    caja('CHEEK', cara[MEJILLA_B].x, cara[MEJILLA_B].y, m, m * aspecto),
   ]
 }
 

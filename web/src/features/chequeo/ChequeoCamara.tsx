@@ -282,49 +282,49 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const barrasCalidad = onda.length > 0 || terminado ? Math.max(1, Math.round(Math.min(1, confianzaMostrada / 0.4) * 5)) : 0
   const problema = principal(problemas)
 
-  let pista = 'Siéntate frente a la cámara con una luz de frente'
-  if (fase === 'pausa') pista = pausaAuto ? 'Pausé la medición porque cambiaste de pestaña' : 'Medición en pausa'
-  if (fase === 'analizando') pista = 'Analizando la señal…'
-  if (fase === 'completo') pista = hayRitmo ? 'Listo, ya puedes pasar a la prueba cognitiva' : 'No hubo señal clara de ritmo, puedes repetir la medición'
+  let pista = 'Sit in front of the camera with light facing you'
+  if (fase === 'pausa') pista = pausaAuto ? 'I paused the reading because you switched tabs' : 'Reading paused'
+  if (fase === 'analizando') pista = 'Analyzing the signal…'
+  if (fase === 'completo') pista = hayRitmo ? 'Done, you can move on to the cognitive test' : 'No clear heart rate signal, you can repeat the reading'
   if (midiendo) {
     if (problema) pista = MENSAJES[problema].texto
-    else if (senalDebil || bajaConfianza) pista = 'Señal débil: pon una luz de frente y evita lámparas detrás o arriba de ti'
-    else if (!hayRitmo) pista = 'Estabilizando la señal…'
-    else pista = 'Muy bien, mantén la cara en el óvalo y respira normal'
+    else if (senalDebil || bajaConfianza) pista = 'Weak signal: put a light in front of you and avoid lamps behind or above you'
+    else if (!hayRitmo) pista = 'Stabilizing the signal…'
+    else pista = 'Great, keep your face in the oval and breathe normally'
   }
   const pistaMala = midiendo && problema !== null && MENSAJES[problema].bloquea
 
   const tarjeta: Record<Exclude<Fase, 'midiendo'>, [string, string, string]> = {
-    inicio: ['Medición de 60 segundos', 'Mide tu ritmo cardiaco solo con la cámara, sin sensores. El reloj avanza solo con tu cara bien visible', 'Iniciar medición'],
-    pausa: ['Medición en pausa', `Llevas ${Math.floor(seg)} de ${TOTAL} segundos útiles, vuelve a acomodarte en el óvalo`, 'Continuar'],
-    analizando: ['Analizando', 'Buscando el tramo más limpio de la señal y calculando la variabilidad', ''],
+    inicio: ['60-second reading', 'Measures your heart rate with just the camera, no sensors. The clock only runs while your face is clearly visible', 'Start reading'],
+    pausa: ['Reading paused', `You have ${Math.floor(seg)} of ${TOTAL} usable seconds, get back into the oval`, 'Continue'],
+    analizando: ['Analyzing', 'Finding the cleanest stretch of the signal and computing variability', ''],
     completo: [
-      'Medición completa',
+      'Reading complete',
       hayRitmo
-        ? `Ritmo ${bpm} lpm${bajaConfianza ? ' (baja confianza)' : ''} con ${final?.segundosValidos ?? 0} s útiles`
+        ? `Heart rate ${bpm} bpm${bajaConfianza ? ' (low confidence)' : ''} with ${final?.segundosValidos ?? 0} usable s`
         : (final?.segundosValidos ?? 0) < MINIMO_VALIDOS
-          ? 'No se juntaron suficientes segundos con tu cara bien visible. Revisa la luz y el encuadre'
-          : 'No hubo un tramo con señal clara, centra tu cara y evita lámparas detrás o arriba de ti',
-      'Repetir medición',
+          ? 'Not enough seconds with your face clearly visible. Check the light and framing'
+          : 'No stretch had a clear signal, center your face and avoid lamps behind or above you',
+      'Repeat reading',
     ],
   }
 
   const estadoChip = {
-    inicio: { texto: 'Cámara lista', borde: 'border-line-strong', color: 'text-soft', punto: 'bg-muted' },
+    inicio: { texto: 'Camera ready', borde: 'border-line-strong', color: 'text-soft', punto: 'bg-muted' },
     midiendo: pistaMala
-      ? { texto: 'Esperando', borde: 'border-warn-line', color: 'text-warn-soft', punto: 'bg-warn' }
-      : { texto: 'Midiendo', borde: 'border-crit-line', color: 'text-crit-soft', punto: 'bg-crit animate-blink' },
-    pausa: { texto: 'En pausa', borde: 'border-warn-line', color: 'text-warn-soft', punto: 'bg-warn' },
-    analizando: { texto: 'Analizando', borde: 'border-accent-line', color: 'text-accent-soft', punto: 'bg-accent animate-blink' },
-    completo: { texto: 'Completo', borde: 'border-ok-line', color: 'text-ok-soft', punto: 'bg-ok' },
+      ? { texto: 'Waiting', borde: 'border-warn-line', color: 'text-warn-soft', punto: 'bg-warn' }
+      : { texto: 'Measuring', borde: 'border-crit-line', color: 'text-crit-soft', punto: 'bg-crit animate-blink' },
+    pausa: { texto: 'Paused', borde: 'border-warn-line', color: 'text-warn-soft', punto: 'bg-warn' },
+    analizando: { texto: 'Analyzing', borde: 'border-accent-line', color: 'text-accent-soft', punto: 'bg-accent animate-blink' },
+    completo: { texto: 'Complete', borde: 'border-ok-line', color: 'text-ok-soft', punto: 'bg-ok' },
   }[fase]
 
   // Lista de verificación visible: el astronauta ve exactamente qué falla
   const checks: { k: string; ok: boolean; txt: string }[] = [
-    { k: 'Cara', ok: !['sin_cara', 'fuera_cuadro', 'lejos', 'cerca', 'de_lado', 'tapado'].some((x) => problemas.has(x as Problema)), txt: problemas.has('sin_cara') ? 'No se ve' : problemas.has('lejos') ? 'Lejos' : problemas.has('cerca') ? 'Muy cerca' : problemas.has('de_lado') ? 'De lado' : problemas.has('tapado') ? 'Tapada' : problemas.has('fuera_cuadro') ? 'Fuera' : 'Bien' },
-    { k: 'Luz', ok: !['poca_luz', 'mucha_luz', 'contraluz', 'luz_lateral', 'luz_inestable', 'imagen_negra'].some((x) => problemas.has(x as Problema)), txt: problemas.has('imagen_negra') ? 'Negra' : problemas.has('contraluz') ? 'Contraluz' : problemas.has('poca_luz') ? 'Poca' : problemas.has('mucha_luz') ? 'Excesiva' : problemas.has('luz_lateral') ? 'De lado' : problemas.has('luz_inestable') ? 'Inestable' : 'Buena' },
-    { k: 'Quieto', ok: !problemas.has('movimiento'), txt: problemas.has('movimiento') ? 'Brusco' : movNivel === 'siguiendo' ? 'Siguiendo' : 'Estable' },
-    { k: 'Cámara', ok: !problemas.has('camara_lenta'), txt: problemas.has('camara_lenta') ? 'Lenta' : 'Fluida' },
+    { k: 'Face', ok: !['sin_cara', 'fuera_cuadro', 'lejos', 'cerca', 'de_lado', 'tapado'].some((x) => problemas.has(x as Problema)), txt: problemas.has('sin_cara') ? 'Not visible' : problemas.has('lejos') ? 'Far' : problemas.has('cerca') ? 'Too close' : problemas.has('de_lado') ? 'Turned sideways' : problemas.has('tapado') ? 'Covered' : problemas.has('fuera_cuadro') ? 'Out of frame' : 'Good' },
+    { k: 'Light', ok: !['poca_luz', 'mucha_luz', 'contraluz', 'luz_lateral', 'luz_inestable', 'imagen_negra'].some((x) => problemas.has(x as Problema)), txt: problemas.has('imagen_negra') ? 'Black' : problemas.has('contraluz') ? 'Backlit' : problemas.has('poca_luz') ? 'Low' : problemas.has('mucha_luz') ? 'Too much' : problemas.has('luz_lateral') ? 'Turned sideways' : problemas.has('luz_inestable') ? 'Unsteady' : 'Good' },
+    { k: 'Still', ok: !problemas.has('movimiento'), txt: problemas.has('movimiento') ? 'Sudden' : movNivel === 'siguiendo' ? 'Tracking' : 'Stable' },
+    { k: 'Camera', ok: !problemas.has('camara_lenta'), txt: problemas.has('camara_lenta') ? 'Slow' : 'Smooth' },
   ]
 
   const exprNormal = normalExpr?.linea_base.media ?? null
@@ -335,10 +335,10 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
       <header className="flex flex-col gap-[18px]">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 1 de 5</p>
-            <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Chequeo con cámara</h1>
+            <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Daily check-up · step 1 of 5</p>
+            <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Camera check-up</h1>
           </div>
-          <p className="m-0 text-sm text-soft">Unos <strong className="text-ink">4 minutos</strong> en total</p>
+          <p className="m-0 text-sm text-soft">About <strong className="text-ink">4 minutes</strong> in total</p>
         </div>
         <StepBar actual={0} />
       </header>
@@ -374,7 +374,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             {fase !== 'midiendo' && !(fase === 'completo' && tarjetaCerrada) && (
               <div className="absolute left-1/2 top-1/2 flex w-[min(320px,88%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3.5 rounded-[20px] border border-line-strong bg-[rgba(10,15,27,0.92)] px-[26px] py-[24px] text-center">
                 {fase === 'completo' && (
-                  <button type="button" onClick={() => setTarjetaCerrada(true)} aria-label="Cerrar" title="Cerrar"
+                  <button type="button" onClick={() => setTarjetaCerrada(true)} aria-label="Close" title="Close"
                     className="absolute right-2 top-2 inline-flex h-[60px] w-[60px] items-center justify-center rounded-xl text-soft hover:bg-panel hover:text-ink">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
                   </button>
@@ -393,10 +393,10 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 )}
                 {fase === 'pausa' && (
                   <BotonConfirmar onConfirmar={reiniciarTodo} disabled={!camaraLista}>
-                    Reiniciar desde cero
+                    Restart from scratch
                   </BotonConfirmar>
                 )}
-                {fase === 'completo' && final?.luz && <p className="m-0 text-sm text-warn">Durante la medición: {final.luz.toLowerCase()}</p>}
+                {fase === 'completo' && final?.luz && <p className="m-0 text-sm text-warn">During the reading: {final.luz.toLowerCase()}</p>}
               </div>
             )}
 
@@ -406,13 +406,13 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 {fase === 'completo' && tarjetaCerrada && (
                   <button type="button" onClick={iniciar} disabled={!camaraLista}
                     className="btn sec">
-                    Repetir medición
+                    Repeat reading
                   </button>
                 )}
                 {midiendo && (
                   <>
-                    <BotonConfirmar onConfirmar={reiniciarTodo} title="Empezar la medición otra vez desde 00:00">
-                      Reiniciar
+                    <BotonConfirmar onConfirmar={reiniciarTodo} title="Start the reading again from 00:00">
+                      Restart
                     </BotonConfirmar>
                     <button type="button" onClick={() => setFase('pausa')}
                       className="btn sec">
@@ -428,14 +428,14 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           </CameraView>
           <p className="m-0 text-sm leading-relaxed text-muted">
             La cámara no lee emociones ni mide presión. Mide el cambio de color de tu piel con cada latido (rPPG) y cuánto tiempo pasan cerrados tus ojos.
-            Nada del video sale de este equipo: solo se guardan los números.
+            No video leaves this device: only the numbers are saved.
           </p>
         </div>
 
         <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-4">
           <section aria-labelledby="hr" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-panel p-[22px]">
             <div className="flex items-center justify-between">
-              <h2 id="hr" className="m-0 font-display text-base font-semibold">Ritmo cardiaco</h2>
+              <h2 id="hr" className="m-0 font-display text-base font-semibold">Heart rate</h2>
               <span className="rounded-md bg-accent-bg px-2 py-1 text-[13px] font-semibold tracking-wide text-accent-soft">rPPG · Real</span>
             </div>
             <div className="flex items-center gap-3.5">
@@ -444,39 +444,39 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 <path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill={hayRitmo && !bajaConfianza ? 'var(--color-crit)' : C.line3} />
               </svg>
               <p className={`m-0 font-mono text-[44px] font-bold tracking-tight transition-colors ${bajaConfianza ? 'text-muted' : 'text-ink'}`}>{hayRitmo ? bpm : '--'}</p>
-              <span className="text-sm text-soft">lpm</span>
-              {bajaConfianza && <span className="ml-auto rounded-md bg-warn-bg px-2 py-1 text-[13px] font-semibold text-warn">Baja confianza</span>}
+              <span className="text-sm text-soft">bpm</span>
+              {bajaConfianza && <span className="ml-auto rounded-md bg-warn-bg px-2 py-1 text-[13px] font-semibold text-warn">Low confidence</span>}
             </div>
             <PulseWave valores={onda} />
             {terminado && hayRitmo && (
               <p className="m-0 text-sm">
                 {verif?.estado === 'verificado' && verif.umbral !== null
                   ? final.confianzaMotor >= verif.umbral
-                    ? <span className="text-ok-soft">✓ Lectura verificada: con esta confianza la cámara acierta ±{verif.tolerancia_lpm} lpm el {Math.round((verif.sobre_umbral?.exito_5 ?? 0) * 100)}% de las veces</span>
-                    : <span className="text-warn">Confianza {final.confianzaMotor.toFixed(2)}, debajo del umbral verificado ({verif.umbral.toFixed(1)}): tómala con cautela</span>
-                  : <span className="text-muted">Cámara aún sin validar con aparato de referencia.</span>}
+                    ? <span className="text-ok-soft">✓ Verified reading: at this confidence the camera is accurate to ±{verif.tolerancia_lpm} bpm {Math.round((verif.sobre_umbral?.exito_5 ?? 0) * 100)}% of the time</span>
+                    : <span className="text-warn">Confianza {final.confianzaMotor.toFixed(2)}, below the verified threshold ({verif.umbral.toFixed(1)}): treat it with caution</span>
+                  : <span className="text-muted">Camera not yet validated against a reference device.</span>}
               </p>
             )}
             <p className="m-0 text-[13px] text-soft">
               {hayRitmo
-                ? terminado ? 'Calculado con el tramo más limpio de 20 s de la medición' : 'Calculado con el color de frente y mejillas en los últimos 20 segundos'
-                : senalDebil ? 'Señal débil, no se muestra un ritmo poco confiable' : 'Se necesitan unos segundos de señal estable'}
+                ? terminado ? 'Computed from the cleanest 20 s stretch of the reading' : 'Computed from forehead and cheek color over the last 20 seconds'
+                : senalDebil ? 'Weak signal, an unreliable heart rate is not shown' : 'A few seconds of stable signal are needed'}
             </p>
           </section>
 
           <section aria-labelledby="calidad" className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]">
             <div className="flex items-baseline justify-between">
-              <h2 id="calidad" className="m-0 font-display text-base font-semibold">Calidad de la señal</h2>
-              <span className="font-mono text-[13px] text-soft">{onda.length > 0 || terminado ? `confianza ${confianzaMostrada.toFixed(2)}` : 'sin señal'}</span>
+              <h2 id="calidad" className="m-0 font-display text-base font-semibold">Signal quality</h2>
+              <span className="font-mono text-[13px] text-soft">{onda.length > 0 || terminado ? `confianza ${confianzaMostrada.toFixed(2)}` : 'no signal'}</span>
             </div>
-            <div role="img" aria-label={`Calidad ${barrasCalidad} de 5`} className="grid grid-cols-5 gap-[5px]">
+            <div role="img" aria-label={`Quality ${barrasCalidad} of 5`} className="grid grid-cols-5 gap-[5px]">
               {[0, 1, 2, 3, 4].map((i) => (
                 <span key={i} className={`h-2 rounded-[3px] transition-colors duration-500 ${i < barrasCalidad ? (barrasCalidad <= 2 ? 'bg-warn' : 'bg-ok') : 'bg-line'}`} />
               ))}
             </div>
             <p className="m-0 text-[13px] leading-normal text-soft">
-              Con menos de <span className="font-mono">{CONFIANZA_MINIMA}</span> no se muestra el ritmo y hasta <span className="font-mono">{CONFIANZA_BUENA}</span> sale en gris.
-              Solo las lecturas buenas entran a tu normal.
+              Con menos de <span className="font-mono">{CONFIANZA_MINIMA}</span> the heart rate is not shown, and up to <span className="font-mono">{CONFIANZA_BUENA}</span> sale en gris.
+              Only good readings go into your normal.
             </p>
           </section>
 
@@ -484,47 +484,47 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           {terminado && (
             <section aria-labelledby="exp" className="flex flex-col gap-3 rounded-2xl border border-dashed border-line-strong bg-panel p-[22px]">
               <div className="flex items-center justify-between">
-                <h2 id="exp" className="m-0 font-display text-base font-semibold">Señales experimentales</h2>
-                <span className="rounded-md bg-warn-bg px-2 py-1 text-[13px] font-semibold text-warn">No alertan</span>
+                <h2 id="exp" className="m-0 font-display text-base font-semibold">Experimental signals</h2>
+                <span className="rounded-md bg-warn-bg px-2 py-1 text-[13px] font-semibold text-warn">No alerts</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Estrés (VFC)</p>
+                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Stress (HRV)</p>
                   <p className="mt-1 font-mono text-[22px] font-bold">{final.hrv ?? '--'}<span className="text-sm text-soft"> ms</span></p>
                 </div>
                 <div>
-                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Respiración</p>
+                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Breathing</p>
                   <p className="mt-1 font-mono text-[22px] font-bold">{final.resp ?? '--'}<span className="text-sm text-soft"> /min</span></p>
                 </div>
                 <div>
-                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Expresividad</p>
+                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Expressiveness</p>
                   <p className="mt-1 font-mono text-[22px] font-bold">{exprHoy !== null ? exprHoy.toFixed(2) : '--'}</p>
                 </div>
               </div>
               <p className="m-0 text-sm leading-relaxed text-muted">
                 VFC (RMSSD) más baja suele ir con más estrés. {exprHoy !== null && exprNormal !== null && (normalExpr?.linea_base.n ?? 0) >= 3
-                  ? `Tu expresividad de hoy es ${exprHoy > exprNormal * 1.15 ? 'más alta' : exprHoy < exprNormal * 0.85 ? 'más baja' : 'parecida a'} ${exprHoy > exprNormal * 1.15 || exprHoy < exprNormal * 0.85 ? 'que' : ''} tu normal (${exprNormal.toFixed(2)}).`
-                  : 'La expresividad se compara contra tu normal cuando haya al menos 3 chequeos.'}
-                {final.hrv === null && ' La VFC no salió: la señal no fue lo bastante limpia.'}
+                  ? `Your expressiveness today is ${exprHoy > exprNormal * 1.15 ? 'higher' : exprHoy < exprNormal * 0.85 ? 'lower' : 'similar to'} ${exprHoy > exprNormal * 1.15 || exprHoy < exprNormal * 0.85 ? 'than' : ''} your normal (${exprNormal.toFixed(2)}).`
+                  : 'Expressiveness is compared against your normal once there are at least 3 check-ups.'}
+                {final.hrv === null && ' HRV not available: the signal was not clean enough.'}
               </p>
             </section>
           )}
 
           {terminado && (
             <p className={`m-0 text-sm ${envio === 'enviado' ? 'text-ok-soft' : envio === 'pendiente' ? 'text-warn' : 'text-muted'}`} role="status">
-              {envio === 'enviado' ? '✓ Guardado en tu historial y analizado por el motor'
-                : envio === 'pendiente' ? 'Sin conexión con la base: se guardó en este equipo y se enviará al reconectar'
-                  : !server ? 'Sin back: el resultado queda solo en este equipo' : 'Enviando…'}
+              {envio === 'enviado' ? '✓ Saved to your history and analyzed by the engine'
+                : envio === 'pendiente' ? 'No database connection: saved on this device, it will be sent when reconnected'
+                  : !server ? 'No server: the result stays on this device only' : 'Sending…'}
             </p>
           )}
 
           <div className="flex flex-wrap justify-end gap-2.5">
             <button type="button" onClick={onCancelar} className="btn sec">
-              Salir
+              Exit
             </button>
             <button type="button" onClick={onSiguiente} disabled={midiendo || fase === 'analizando'}
               className={`btn ${fase === 'completo' ? 'pri' : 'sec'}`}>
-              {fase === 'completo' ? 'Siguiente: prueba cognitiva' : 'Saltar este paso'}
+              {fase === 'completo' ? 'Next: cognitive test' : 'Skip this step'}
             </button>
           </div>
         </div>

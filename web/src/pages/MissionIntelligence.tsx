@@ -10,7 +10,7 @@ import { ambienteApi, type ContextoMision, type Observacion } from '../features/
 import { idNumerico, NOMBRE_EJERCICIO } from '../features/movimiento/movimientoApi'
 import { C } from '../lib/paleta'
 
-const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+const hora = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
 function Funcional({ ctx }: { ctx: ContextoMision | null }) {
   const s = ctx?.funcional
@@ -20,26 +20,26 @@ function Funcional({ ctx }: { ctx: ContextoMision | null }) {
   return (
     <section className="card flex flex-col gap-4" aria-labelledby="fun" style={{ borderWidth: 2, borderColor: s ? color : undefined }}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="fun" className="h2">Desempeño funcional</h2>
-        {s && (s.dato_demo ? <span className="tag simt">DATO DE DEMO</span> : <span className="tag real">WEBCAM · REAL</span>)}
+        <h2 id="fun" className="h2">Functional performance</h2>
+        {s && (s.dato_demo ? <span className="tag simt">DEMO DATA</span> : <span className="tag real">WEBCAM · REAL</span>)}
       </div>
       {s ? (
         <>
           <div className="flex flex-wrap items-baseline gap-4">
             <p className="num m-0 text-[64px] font-bold leading-none" style={{ color }}>{s.repeticiones}</p>
-            <p className="m-0 text-lg text-muted">repeticiones · {NOMBRE_EJERCICIO[s.ejercicio]}</p>
+            <p className="m-0 text-lg text-muted">reps · {NOMBRE_EJERCICIO[s.ejercicio]}</p>
           </div>
           <p className="m-0 text-xl font-semibold" style={{ color }}>{s.comparacion.texto}</p>
           <div className="grid grid-cols-3 gap-3">
-            <div><p className="k">Contra tu normal</p><p className="big" style={{ fontSize: 24, color }}>{pct === null || pct === undefined ? '--' : `${pct > 0 ? '+' : ''}${pct}%`}</p></div>
-            <div><p className="k">Calidad de detección</p><p className="big" style={{ fontSize: 24 }}>{Math.round(s.calidad * 100)}%</p></div>
-            <div><p className="k">Registrada</p><p className="big" style={{ fontSize: 24 }}>{hora(s.fecha)}</p></div>
+            <div><p className="k">Against your normal</p><p className="big" style={{ fontSize: 24, color }}>{pct === null || pct === undefined ? '--' : `${pct > 0 ? '+' : ''}${pct}%`}</p></div>
+            <div><p className="k">Detection quality</p><p className="big" style={{ fontSize: 24 }}>{Math.round(s.calidad * 100)}%</p></div>
+            <div><p className="k">Registered</p><p className="big" style={{ fontSize: 24 }}>{hora(s.fecha)}</p></div>
           </div>
         </>
       ) : (
-        <p className="m-0 text-lg text-muted">Todavía no hay evaluaciones de movimiento.</p>
+        <p className="m-0 text-lg text-muted">No movement assessments yet.</p>
       )}
-      <Link to="/movement" className="btn pri">{s ? 'Nueva evaluación ASTRA-MOVE' : 'Hacer evaluación ASTRA-MOVE'}</Link>
+      <Link to="/movement" className="btn pri">{s ? 'New ASTRA-MOVE assessment' : 'Do an ASTRA-MOVE assessment'}</Link>
     </section>
   )
 }
@@ -50,8 +50,8 @@ function Hallazgo({ o }: { o: Observacion }) {
       className="card flex flex-col gap-5" style={{ borderWidth: 2, borderColor: C.accent }} aria-labelledby={`obs-${o.id}`}>
       <div className="flex flex-wrap items-center gap-3">
         <Info size={30} color={C.accent} />
-        <h2 id={`obs-${o.id}`} className="m-0 font-[family-name:var(--font-display)] text-[24px] font-bold">Observación contextual</h2>
-        <span className="tag real">INFORMATIVA · NO ES DIAGNÓSTICO</span>
+        <h2 id={`obs-${o.id}`} className="m-0 font-[family-name:var(--font-display)] text-[24px] font-bold">Contextual observation</h2>
+        <span className="tag real">INFORMATIONAL · NOT A DIAGNOSIS</span>
         <span className="ml-auto text-base text-muted">{hora(o.desde)}–{hora(o.hasta)}</span>
       </div>
       <p className="m-0 text-xl leading-relaxed">{o.texto}</p>
@@ -59,25 +59,25 @@ function Hallazgo({ o }: { o: Observacion }) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <p className="k">Qué cambió</p>
+          <p className="k">What changed</p>
           <p className="m-0 text-lg">{o.que_cambio_funcional}</p>
           {o.que_cambio_ambiente.map((v) => (
             <p key={v.variable} className="m-0 text-lg">
               <strong>{v.nombre}</strong>: hasta <span className="num">{v.maximo_registrado}</span> {v.unidad}
-              {' '}({v.rango[0] !== null && v.rango[1] !== null ? `rango ${v.rango[0]}–${v.rango[1]}` : v.rango[1] !== null ? `límite ${v.rango[1]}` : `mínimo ${v.rango[0]}`} {v.unidad}) · {v.lecturas_fuera} lecturas fuera <span className="tag simt">SIM</span>
+              {' '}({v.rango[0] !== null && v.rango[1] !== null ? `range ${v.rango[0]}–${v.rango[1]}` : v.rango[1] !== null ? `limit ${v.rango[1]}` : `minimum ${v.rango[0]}`} {v.unidad}) · {v.lecturas_fuera} readings outside <span className="tag simt">SIM</span>
             </p>
           ))}
         </div>
         <div className="flex flex-col gap-2">
-          <p className="k">Qué datos se usaron</p>
+          <p className="k">What data was used</p>
           {o.datos_usados.map((d) => <p key={d} className="m-0 text-base text-subtle">• {d}</p>)}
-          <p className="k mt-3">Qué tan confiables son</p>
+          <p className="k mt-3">How reliable it is</p>
           {o.confiabilidad.map((d) => <p key={d} className="m-0 text-base text-subtle">• {d}</p>)}
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        <p className="k">Acción preventiva recomendada</p>
+        <p className="k">Recommended preventive action</p>
         {o.acciones.map((a) => (
           <label key={a} className="task"><input type="checkbox" /><span>{a}</span></label>
         ))}
@@ -105,18 +105,18 @@ export default function MissionIntelligence() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        kicker={`Día ${ctx?.dia_mision ?? 1} de misión · ${ctx?.entorno ?? ''} · ${user?.nombre ?? ''}`}
-        title="Inteligencia de misión" />
-      {cargado && !ctx && <p role="alert" className="m-0 rounded-xl border border-warn-line bg-warn-bg px-5 py-4 text-base text-warn-soft">No hay conexión con la API: arráncala para ver el contexto de la misión</p>}
+        kicker={`Mission day ${ctx?.dia_mision ?? 1} · ${ctx?.entorno ?? ''} · ${user?.nombre ?? ''}`}
+        title="Mission intelligence" />
+      {cargado && !ctx && <p role="alert" className="m-0 rounded-xl border border-warn-line bg-warn-bg px-5 py-4 text-base text-warn-soft">No connection to the API: start it to see the mission context</p>}
 
       <section className="card flex flex-wrap items-center gap-4" style={{ borderWidth: 2, borderColor: obs.length ? C.accent : fueraAhora ? C.warn : C.okLine }}>
         {obs.length ? <Info size={40} color={C.accent} /> : fueraAhora ? <AlertTriangle size={40} color={C.warn} /> : <CheckCircle2 size={40} color={C.ok} />}
         <p className="m-0 flex-1 font-[family-name:var(--font-display)] text-[26px] font-semibold leading-snug">
           {obs.length
-            ? 'Hay cambios que coinciden en el tiempo y merecen una revisión preventiva'
+            ? 'There are changes that coincide in time and deserve a preventive review'
             : fueraAhora
-              ? 'El ambiente cambió; todavía no coincide con un cambio en tu desempeño'
-              : 'Sin cambios concurrentes: desempeño y ambiente dentro de lo esperado'}
+              ? 'The environment changed; it doesn’t yet coincide with a change in your performance'
+              : 'No concurrent changes: performance and environment as expected'}
         </p>
       </section>
 
@@ -129,7 +129,7 @@ export default function MissionIntelligence() {
 
       {obs.length > 1 && (
         <section className="card flex flex-col gap-2">
-          <h2 className="h2">Observaciones anteriores</h2>
+          <h2 className="h2">Previous observations</h2>
           {obs.slice(1).map((o) => <p key={o.id} className="m-0 text-base text-subtle">{hora(o.creada)} · {o.que_cambio_funcional}</p>)}
         </section>
       )}

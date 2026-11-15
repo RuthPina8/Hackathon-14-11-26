@@ -27,7 +27,7 @@ RANGOS_CLINICOS: dict[str, tuple[float, float]] = {
 
 
 def clasificar_rango(tipo: str, valor: float) -> str | None:
-    """'roja' si sale del rango clínico, 'amarilla' si sale del de atención, None si está dentro.
+    """'roja' if it leaves the clinical range, 'amarilla' si sale del de atención, None si está dentro.
 
     Back 1 lo usa para mandar detector="rango_clinico" con nivel_sugerido=clasificar_rango(...).
     """

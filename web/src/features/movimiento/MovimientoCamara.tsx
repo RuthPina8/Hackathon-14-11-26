@@ -14,8 +14,8 @@ type Fase = 'preparando' | 'midiendo'
 const MS_ENTRE_CUADROS = 1000 / 15 - 4
 
 const GUIA: Record<Ejercicio, string> = {
-  brazos: 'Siéntate o párate de frente. Que se vean tus hombros, brazos y cadera. Extiende los dos brazos al frente hasta la altura de los hombros, con los codos rectos, y bájalos',
-  sentadilla: 'Aléjate unos 2 metros para que se vea todo tu cuerpo, de la cabeza a los tobillos. Puedes ir de frente o ligeramente de lado. Baja despacio doblando las rodillas y sube',
+  brazos: 'Sit or stand facing the camera. Your shoulders, arms and hips should be visible. Extend both arms forward to shoulder height with your elbows straight, then lower them',
+  sentadilla: 'Step back about 2 meters so your whole body is visible, head to ankles. You can face the camera or turn slightly sideways. Lower slowly by bending your knees, then come back up',
 }
 
 interface Props {
@@ -124,8 +124,8 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
     if (!contador.incompletas || contador.ultimoIncompleto === null) return
     const meta = FONDO[ejercicio]
     setAviso(ejercicio === 'sentadilla'
-      ? `Baja un poco más: llegaste a ${contador.ultimoIncompleto}° de rodilla y hace falta bajar de ${meta}°. Esa no se contó`
-      : `Sube más los brazos: llegaste a ${contador.ultimoIncompleto}° y hace falta pasar de ${meta}°. Esa no se contó`)
+      ? `Go a bit lower: you reached ${contador.ultimoIncompleto}° at the knee and need to get below ${meta}°. That one didn’t count`
+      : `Raise your arms higher: you reached ${contador.ultimoIncompleto}° and need to pass ${meta}°. That one didn’t count`)
     const id = setTimeout(() => setAviso(null), 4000)
     return () => clearTimeout(id)
   }, [contador.incompletas, contador.ultimoIncompleto, ejercicio])
@@ -167,12 +167,12 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
   const listo = estado === 'listo' && camara === 'lista'
 
   let pista = GUIA[ejercicio]
-  if (estado === 'cargando') pista = 'Cargando el modelo de pose corporal…'
-  else if (fallo) pista = camara === 'error' ? 'No pude usar la cámara. Permite el acceso o usa la sesión de respaldo' : 'No se pudo cargar el modelo de pose. Usa la sesión de respaldo'
-  else if (!visible) pista = ejercicio === 'sentadilla' ? 'No veo todo tu cuerpo: aléjate hasta que se vean tus tobillos' : 'No veo tus brazos y cadera: aléjate un poco de la cámara'
+  if (estado === 'cargando') pista = 'Loading the body pose model…'
+  else if (fallo) pista = camara === 'error' ? 'I couldn’t use the camera. Allow access or use the backup session' : 'Couldn’t load the pose model. Use the backup session'
+  else if (!visible) pista = ejercicio === 'sentadilla' ? 'I can’t see your whole body: step back until your ankles are visible' : 'I can’t see your arms and hips: step back a little from the camera'
   else if (aviso) pista = aviso
-  else if (fase === 'midiendo') pista = 'Bien, sigue a tu ritmo. Toca TERMINAR cuando acabes'
-  else pista = 'Te veo completo. Toca EMPEZAR'
+  else if (fase === 'midiendo') pista = 'Good, keep going at your own pace. Tap FINISH when you’re done'
+  else pista = 'I can see all of you. Tap START'
 
   return (
     <div className="flex flex-col gap-5">
@@ -182,7 +182,7 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
           <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover -scale-x-100" />
           <div className="absolute left-4 top-4 flex flex-wrap gap-2">
             <span className={`rounded-xl px-4 py-2 text-base font-bold ${visible ? 'bg-[#0F2E22] text-ok-soft' : 'bg-warn-bg text-warn-soft'}`}>
-              {visible ? 'Cuerpo detectado' : 'Cuerpo no visible'}
+              {visible ? 'Body detected' : 'Body not visible'}
             </span>
             <span className="tag real" style={{ fontSize: 14, padding: '8px 12px' }}>Webcam · real</span>
           </div>
@@ -190,32 +190,32 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
         </div>
 
         <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-4">
-          <section className="card flex flex-col gap-2" style={{ padding: 12 }} aria-label="Cómo se hace">
-            <p className="k" style={{ paddingLeft: 6 }}>Así se hace</p>
+          <section className="card flex flex-col gap-2" style={{ padding: 12 }} aria-label="How to do it">
+            <p className="k" style={{ paddingLeft: 6 }}>This is how</p>
             <div className="h-[190px] overflow-hidden rounded-xl bg-holo-bg"><Demo3D ejercicio={ejercicio} mini /></div>
           </section>
           <section className="card flex flex-col items-center gap-1 text-center">
-            <p className="k">Repeticiones</p>
+            <p className="k">Reps</p>
             <p className="num m-0 text-[96px] font-bold leading-none text-accent">{contador.repeticiones}</p>
-            <p className="m-0 text-base text-muted">{fase === 'midiendo' ? `Fase: ${contador.fase}` : 'Se cuentan solo los ciclos completos'}</p>
-            {angulo !== null && <p className="num m-0 text-sm text-faint">{ejercicio === 'sentadilla' ? 'Rodilla' : 'Hombro'}: {angulo}° · meta {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
+            <p className="m-0 text-base text-muted">{fase === 'midiendo' ? `Phase: ${contador.fase}` : 'Only complete cycles are counted'}</p>
+            {angulo !== null && <p className="num m-0 text-sm text-faint">{ejercicio === 'sentadilla' ? 'Knee' : 'Shoulder'}: {angulo}° · meta {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
           </section>
           <div className="grid grid-cols-2 gap-4">
-            <section className="card"><p className="k">Tiempo</p><p className="big">{seg}<span className="text-lg text-muted"> s</span></p></section>
-            <section className="card"><p className="k">Calidad de detección</p><p className="big" style={{ color: calidadVivo !== null && calidadVivo < 0.6 ? C.warn : undefined }}>{calidadVivo === null ? '--' : `${Math.round(calidadVivo * 100)}%`}</p></section>
+            <section className="card"><p className="k">Time</p><p className="big">{seg}<span className="text-lg text-muted"> s</span></p></section>
+            <section className="card"><p className="k">Detection quality</p><p className="big" style={{ color: calidadVivo !== null && calidadVivo < 0.6 ? C.warn : undefined }}>{calidadVivo === null ? '--' : `${Math.round(calidadVivo * 100)}%`}</p></section>
           </div>
-          {origen === 'remoto' && <p className="m-0 text-sm text-warn-soft">Modelo de pose cargado de internet; para usarlo sin conexión hay que copiarlo a web/public/models</p>}
+          {origen === 'remoto' && <p className="m-0 text-sm text-warn-soft">Pose model loaded from the internet; to use it offline, copy it to web/public/models</p>}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-4">
         {fase === 'preparando' ? (
-          <button type="button" className="btn pri flex-1" style={{ minHeight: 76, fontSize: 22 }} onClick={empezar} disabled={!listo || !visible}>EMPEZAR</button>
+          <button type="button" className="btn pri flex-1" style={{ minHeight: 76, fontSize: 22 }} onClick={empezar} disabled={!listo || !visible}>START</button>
         ) : (
-          <button type="button" className="btn pri flex-1" style={{ minHeight: 76, fontSize: 22 }} onClick={terminar}>TERMINAR Y GUARDAR</button>
+          <button type="button" className="btn pri flex-1" style={{ minHeight: 76, fontSize: 22 }} onClick={terminar}>FINISH AND SAVE</button>
         )}
-        <button type="button" className="btn sec" style={{ minHeight: 76 }} onClick={onCancelar}>Cancelar</button>
-        {fallo && <button type="button" className="btn sec" style={{ minHeight: 76 }} onClick={onFallo}>Usar sesión de respaldo</button>}
+        <button type="button" className="btn sec" style={{ minHeight: 76 }} onClick={onCancelar}>Cancel</button>
+        {fallo && <button type="button" className="btn sec" style={{ minHeight: 76 }} onClick={onFallo}>Use backup session</button>}
       </div>
     </div>
   )

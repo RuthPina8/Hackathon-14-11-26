@@ -9,18 +9,18 @@ import { C } from '../../lib/paleta'
 interface Item { to: string; label: string; icon: typeof Home; badge?: boolean; end?: boolean }
 
 const main: Item[] = [
-  { to: '/', label: 'Inicio', icon: Home, end: true },
-  { to: '/mission-intelligence', label: 'Inteligencia de misión', icon: Radar },
-  { to: '/camera', label: 'Chequeo diario', icon: ScanFace },
-  { to: '/movement', label: 'Movimiento', icon: PersonStanding },
-  { to: '/indicators', label: 'Indicadores', icon: LineChart },
-  { to: '/alerts', label: 'Alertas', icon: Bell, badge: true },
-  { to: '/progress', label: 'Mi evolución', icon: TrendingUp },
-  { to: '/training', label: 'Entrenamiento', icon: GraduationCap },
+  { to: '/', label: 'Home', icon: Home, end: true },
+  { to: '/mission-intelligence', label: 'Mission intelligence', icon: Radar },
+  { to: '/camera', label: 'Daily check-up', icon: ScanFace },
+  { to: '/movement', label: 'Movement', icon: PersonStanding },
+  { to: '/indicators', label: 'Indicators', icon: LineChart },
+  { to: '/alerts', label: 'Alerts', icon: Bell, badge: true },
+  { to: '/progress', label: 'My progress', icon: TrendingUp },
+  { to: '/training', label: 'Training', icon: GraduationCap },
 ]
 const sim: Item[] = [
-  { to: '/simulation', label: 'Misión', icon: Orbit },
-  { to: '/crew', label: 'Tripulación', icon: Users },
+  { to: '/simulation', label: 'Mission', icon: Orbit },
+  { to: '/crew', label: 'Crew', icon: Users },
 ]
 
 function Link({ item, count, crit }: { item: Item; count: number; crit?: boolean }) {
@@ -49,7 +49,7 @@ export default function Sidebar() {
 
   return (
     <nav
-      aria-label="Navegación principal"
+      aria-label="Main navigation"
       className="shrink-0 w-[300px] h-full overflow-y-auto bg-deep border-r border-line px-3.5 py-5 flex flex-col gap-2"
     >
       <div className="flex items-center gap-2.5 px-2.5 pb-5">
@@ -61,7 +61,7 @@ export default function Sidebar() {
       </div>
 
       {main.map((i) => <Link key={i.to} item={i} count={activeAlerts} crit={hasCrit} />)}
-      <p className="k" style={{ margin: '18px 12px 8px' }}>Simulación</p>
+      <p className="k" style={{ margin: '18px 12px 8px' }}>Simulation</p>
       {sim.map((i) => <Link key={i.to} item={i} count={0} />)}
 
       <div className="mt-auto pt-4 px-3 border-t border-line flex flex-col gap-2.5">
@@ -72,7 +72,7 @@ export default function Sidebar() {
               <span className="text-sm font-semibold truncate">{user.nombre}</span>
               <span className="text-[13px] text-faint truncate">{user.cargo}</span>
             </span>
-            <button type="button" onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="w-14 h-14 grid place-items-center rounded-xl border-2 border-line2 bg-raised text-subtle hover:bg-[#18243B] hover:text-text cursor-pointer shrink-0">
+            <button type="button" onClick={logout} aria-label="Log out" title="Log out" className="w-14 h-14 grid place-items-center rounded-xl border-2 border-line2 bg-raised text-subtle hover:bg-[#18243B] hover:text-text cursor-pointer shrink-0">
               <LogOut size={24} />
             </button>
           </div>
@@ -88,14 +88,14 @@ export default function Sidebar() {
             <span className="absolute top-1 w-6 h-6 rounded-full bg-white transition-all" style={{ left: demo ? 28 : 4 }} />
           </span>
           <span className="flex flex-col">
-            <span className="text-base font-semibold" style={{ color: demo ? C.demo : C.text }}>Modo demo</span>
-            <span className="text-[13px] text-faint">{demo ? 'Controles para presentar' : 'Viendo la app real'}</span>
+            <span className="text-base font-semibold" style={{ color: demo ? C.demo : C.text }}>Demo mode</span>
+            <span className="text-[13px] text-faint">{demo ? 'Presentation controls' : 'Viewing the real app'}</span>
           </span>
         </button>
-        <p className="k">Capas de datos</p>
-        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-accent" />Real, medido en vivo</span>
+        <p className="k">Data layers</p>
+        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-accent" />Real, measured live</span>
         <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-self" />Autorreportado</span>
-        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] border-[1.5px] border-dashed border-faint" />Simulado</span>
+        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] border-[1.5px] border-dashed border-faint" />Simulated</span>
         <div className="pt-2"><ConnectionStatus /></div>
       </div>
     </nav>

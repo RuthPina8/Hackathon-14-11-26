@@ -11,14 +11,14 @@ import type { Evolucion as EvolucionT, ItemEvolucion } from '../lib/back1'
 import { C } from '../lib/paleta'
 
 const COLOR = { mejora: C.ok, estable: C.accent, empeora: C.warn, sin_datos: C.faint } as const
-const TXT = { mejora: 'Mejora', estable: 'Estable', empeora: 'Se aleja', sin_datos: 'Sin datos' } as const
+const TXT = { mejora: 'Improving', estable: 'Stable', empeora: 'Drifting', sin_datos: 'No data' } as const
 const RUTA: Record<string, string> = { hr_reposo: '/indicators/hr', presion_sis: '/indicators/bp', reaccion_ms: '/indicators/rt', perclos: '/indicators/perclos', sueno_horas: '/indicators/sleep', animo: '/indicators/mood', estres: '/indicators/stress' }
 
 const fmt = (v: number | null, unidad: string) => (v === null ? '—' : `${Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2)}${unidad ? ` ${unidad}` : ''}`)
 
 function Mini({ item }: { item: ItemEvolucion }) {
   const s = item.serie
-  if (s.length < 2) return <div className="h-[46px] grid place-items-center text-[13px] text-faint">{s.length ? '1 día' : 'sin datos'}</div>
+  if (s.length < 2) return <div className="h-[46px] grid place-items-center text-[13px] text-faint">{s.length ? '1 day' : 'no data'}</div>
   const vals = s.map((p) => p.valor)
   const ref = item.referencia === 'ficha' ? item.ficha : item.inicio
   const lo = Math.min(...vals, ref ?? Infinity)
@@ -54,14 +54,14 @@ export default function Evolucion() {
 
   return (
     <>
-      {cargado && !ev && <SimBanner tag="SIN BACK">La evolución la calcula el motor; arranca la API para verla</SimBanner>}
-      {ev && datoDemo && <SimBanner tag="DATO DE DEMO">Incluye datos del simulador de la misión</SimBanner>}
-      <PageHeader kicker={`${user?.nombre ?? ''} · cómo vas en la misión`} title="Mi evolución" />
+      {cargado && !ev && <SimBanner tag="NO SERVER">Progress is computed by the engine; start the API to see it</SimBanner>}
+      {ev && datoDemo && <SimBanner tag="DEMO DATA">Includes mission simulator data</SimBanner>}
+      <PageHeader kicker={`${user?.nombre ?? ''} · how your mission is going`} title="My progress" />
 
       {ev && (
-        <section className="card flex flex-wrap items-center gap-5" aria-label="Resumen de tu evolución">
+        <section className="card flex flex-wrap items-center gap-5" aria-label="Your progress summary">
           <div className="flex-1 min-w-[260px]">
-            <p className="k">{ev.dias_con_datos} días con datos · referencia: {ev.tiene_ficha ? 'tu ficha médica pre-vuelo' : 'tu primera semana'}</p>
+            <p className="k">{ev.dias_con_datos} days with data · referencia: {ev.tiene_ficha ? 'your pre-flight medical record' : 'your first week'}</p>
             <p className="m-0 mt-1.5 font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">{ev.resumen}</p>
           </div>
           <div className="flex gap-4">
@@ -74,7 +74,7 @@ export default function Evolucion() {
           </div>
           {!ev.tiene_ficha && (
             <p className="m-0 w-full text-[13px] text-muted">
-              Sin ficha médica se compara contra tu primera semana y solo desde los 10 días con datos.
+              Without a medical record it compares against your first week, and only after 10 days of data.
             </p>
           )}
         </section>
@@ -95,16 +95,16 @@ export default function Evolucion() {
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div><p className="k">{it.referencia === 'ficha' ? 'Ficha' : 'Inicio'}</p><p className="num m-0 mt-1 text-[15px] font-bold">{fmt(ref, '')}</p></div>
-                  <div><p className="k">Últimos 7 días</p><p className="num m-0 mt-1 text-[15px] font-bold" style={{ color: COLOR[it.estado] }}>{fmt(it.reciente, '')}</p></div>
-                  <div><p className="k">Cambio</p><p className="num m-0 mt-1 text-[15px] font-bold">{it.cambio === null ? '—' : `${it.cambio > 0 ? '+' : ''}${fmt(it.cambio, '')}`}{it.cambio_pct !== null && <span className="text-[13px] text-faint"> {it.cambio_pct > 0 ? '+' : ''}{it.cambio_pct}%</span>}</p></div>
+                  <div><p className="k">{it.referencia === 'ficha' ? 'Record' : 'Home'}</p><p className="num m-0 mt-1 text-[15px] font-bold">{fmt(ref, '')}</p></div>
+                  <div><p className="k">Last 7 days</p><p className="num m-0 mt-1 text-[15px] font-bold" style={{ color: COLOR[it.estado] }}>{fmt(it.reciente, '')}</p></div>
+                  <div><p className="k">Change</p><p className="num m-0 mt-1 text-[15px] font-bold">{it.cambio === null ? '—' : `${it.cambio > 0 ? '+' : ''}${fmt(it.cambio, '')}`}{it.cambio_pct !== null && <span className="text-[13px] text-faint"> {it.cambio_pct > 0 ? '+' : ''}{it.cambio_pct}%</span>}</p></div>
                 </div>
                 <Mini item={it} />
                 <p className="m-0 text-[13px] text-muted leading-snug">
                   {it.explicacion}{it.unidad && it.cambio !== null ? '' : ''}
-                  {it.tendencia_semana !== null && Math.abs(it.tendencia_semana) > 0 && ` · tendencia ${it.tendencia_semana > 0 ? '+' : ''}${fmt(it.tendencia_semana, it.unidad)} por semana`}
+                  {it.tendencia_semana !== null && Math.abs(it.tendencia_semana) > 0 && ` · trend ${it.tendencia_semana > 0 ? '+' : ''}${fmt(it.tendencia_semana, it.unidad)} per week`}
                 </p>
-                {RUTA[it.tipo] && <Link to={RUTA[it.tipo]} className="text-[13px] font-semibold mt-auto">Ver detalle</Link>}
+                {RUTA[it.tipo] && <Link to={RUTA[it.tipo]} className="text-[13px] font-semibold mt-auto">See details</Link>}
               </motion.section>
             )
           })}
@@ -113,11 +113,11 @@ export default function Evolucion() {
 
       {ev && sinDatos.length > 0 && (
         <p className="m-0 text-[13px] text-faint">
-          Sin datos todavía: {sinDatos.map((i) => i.nombre.toLowerCase()).join(', ')}. <Link to="/camera">Haz tu chequeo diario</Link>.
+          No data yet: {sinDatos.map((i) => i.nombre.toLowerCase()).join(', ')}. <Link to="/camera">Do your daily check-up</Link>.
         </p>
       )}
       <p className="m-0 text-sm text-faint leading-relaxed">
-        "Se aleja" significa que tu promedio de la última semana se movió en la dirección desfavorable más de medio desvío de tu propia variación. No es un diagnóstico: es una señal para revisar con el equipo médico.
+        "Drifting" significa que tu promedio de la última semana se movió en la dirección desfavorable más de medio desvío de tu propia variación. No es un diagnóstico: es una señal para revisar con el equipo médico.
       </p>
     </>
   )

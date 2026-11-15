@@ -37,10 +37,10 @@ from app.triage import queue as cola
 log = logging.getLogger("astrohealth.persistencia")
 
 TRIPULACION = [
-    (1, "Astronauta 1", "Especialista de misión"),
-    (2, "Astronauta 2", "Ingeniería"),
-    (3, "Astronauta 3", "Ciencia"),
-    (4, "Astronauta 4", "Comandante"),
+    (1, "Astronaut 1", "Mission specialist"),
+    (2, "Astronaut 2", "Ingeniería"),
+    (3, "Astronaut 3", "Ciencia"),
+    (4, "Astronaut 4", "Comandante"),
 ]
 SEGUNDOS_FOTO = 5.0
 
@@ -73,7 +73,7 @@ def iniciar(engine: Engine | None = None) -> bool:
             with engine.connect():
                 pass
         except Exception as e:  # la API no se cae si Postgres no está: sigue en memoria
-            log.warning("No se pudo conectar a PostgreSQL, sigo en memoria: %s", e)
+            log.warning("Couldn’t connect to PostgreSQL, staying in memory: %s", e)
             return False
     _engine = engine
     Base.metadata.create_all(engine)
@@ -85,7 +85,7 @@ def iniciar(engine: Engine | None = None) -> bool:
     clinico.al_guardar_par.append(guardar_par)
     clinico.al_borrar_pares.append(borrar_pares)
     congelamiento.registrar_persistor(guardar_congelada)
-    log.info("PostgreSQL activo: %d mediciones cargadas", len(almacen.mediciones))
+    log.info("PostgreSQL active: %d measurements loaded", len(almacen.mediciones))
     return True
 
 
@@ -132,7 +132,7 @@ def _restaurar() -> None:
         try:
             clinico.guardar_ficha(FichaMedica.model_validate(f.datos), persistir=False)
         except Exception:
-            log.warning("Ficha de %s inválida en la base, se ignora", f.astronauta_id)
+            log.warning("Invalid record for %s in the database, ignored", f.astronauta_id)
     for p in pares:
         clinico.agregar_par(persistir=False, id=p.id, camara=p.camara, referencia=p.referencia, confianza=p.confianza,
                             origen=p.origen, astronauta_id=p.astronauta_id, fuente_referencia=p.fuente_referencia,
@@ -181,7 +181,7 @@ def guardar_medicion(m: Medicion) -> None:
             ))
             s.commit()
     except Exception as e:
-        log.warning("No se guardó la medición %s en la base: %s", m.id, e)
+        log.warning("Measurement %s wasn’t saved to the database: %s", m.id, e)
 
 
 def guardar_ficha(f: FichaMedica) -> None:
@@ -192,7 +192,7 @@ def guardar_ficha(f: FichaMedica) -> None:
             s.merge(FichaDB(astronauta_id=f.astronauta_id, datos=f.model_dump(mode="json"), actualizada=f.actualizada))
             s.commit()
     except Exception as e:
-        log.warning("No se guardó la ficha de %s: %s", f.astronauta_id, e)
+        log.warning("Record for %s wasn’t saved: %s", f.astronauta_id, e)
 
 
 def guardar_par(p: ParGuardado) -> None:
@@ -203,7 +203,7 @@ def guardar_par(p: ParGuardado) -> None:
             s.add(ParValidacionDB(**p.__dict__))
             s.commit()
     except Exception as e:
-        log.warning("No se guardó el par de validación %s: %s", p.id, e)
+        log.warning("Validation pair %s wasn’t saved: %s", p.id, e)
 
 
 def borrar_pares(origen: str | None) -> None:
@@ -241,7 +241,7 @@ def guardar_congelada(astronauta_id: int, tipo: str, congelada: bool) -> None:
             fila.congelada = congelada
             s.commit()
     except Exception as e:
-        log.warning("No se guardó congelada=%s de %s/%s: %s", congelada, astronauta_id, tipo, e)
+        log.warning("frozen=%s for %s/%s wasn’t saved: %s", congelada, astronauta_id, tipo, e)
 
 
 def foto() -> None:
@@ -284,4 +284,4 @@ async def correr_fotos() -> None:
         try:
             await asyncio.to_thread(foto)
         except Exception as e:
-            log.warning("Foto de la base falló: %s", e)
+            log.warning("Database snapshot failed: %s", e)

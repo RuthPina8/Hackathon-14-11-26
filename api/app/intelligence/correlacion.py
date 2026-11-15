@@ -49,13 +49,13 @@ def evaluar(sesion: Sesion, lecturas: list[Lectura], rangos: dict[str, tuple[flo
             d = variables.setdefault(var, {"max": v, "min": v, "rango": rangos.get(var), "n_fuera": 0})
             d["max"], d["min"], d["n_fuera"] = max(d["max"], v), min(d["min"], v), d["n_fuera"] + 1
 
-    acciones = ["Repite la evaluación funcional en condiciones controladas, cuando el ambiente vuelva a su rango"]
+    acciones = ["Repeat the functional assessment under controlled conditions once the environment is back in range"]
     if "co2_ppm" in variables or "o2_pct" in variables:
-        acciones.append("Revisa ventilación y soporte vital del módulo; descansa en un área bien ventilada")
+        acciones.append("Check the module’s ventilation and life support; rest in a well-ventilated area")
     if "temp_c" in variables or "humedad_pct" in variables:
-        acciones.append("Hidrátate y evita esfuerzo intenso hasta que temperatura y humedad se normalicen")
+        acciones.append("Hydrate and avoid intense effort until temperature and humidity return to normal")
     if "radiacion_msv_dia" in variables:
-        acciones.append("Sigue el protocolo de refugio ante evento solar y registra tu dosis")
+        acciones.append("Follow the solar event shelter protocol and log your dose")
 
     escenarios = [x.escenario for x in fuera if x.escenario]
     return Hallazgo(

@@ -13,8 +13,8 @@ from app.mision.movimiento import movimiento
 from app.mision.telemetria import RANGOS, rangos, telemetria
 from app.schemas.mission import Observacion, VariableObservada
 
-NOMBRE_EJERCICIO = {"brazos": "elevación de brazos", "sentadilla": "sentadilla controlada"}
-CAUSALIDAD = "No se establece causa: el cambio funcional y el ambiental solo coinciden en el tiempo."
+NOMBRE_EJERCICIO = {"brazos": "arm raise", "sentadilla": "controlled squat"}
+CAUSALIDAD = "No cause is established: the functional and environmental changes only coincide in time."
 
 
 class Contexto:
@@ -48,25 +48,25 @@ def _construir(sesion, h: correlacion.Hallazgo) -> Observacion:
     nombres = ", ".join(v.nombre for v in vars_obs)
     ejercicio = NOMBRE_EJERCICIO.get(sesion.ejercicio, sesion.ejercicio)
     confiab = [
-        f"Detección del cuerpo en la sesión: {sesion.calidad:.0%}",
-        f"Referencia personal: {sesion.comparacion.n_referencia} sesiones anteriores",
-        "Telemetría ambiental SIMULADA (escenario de demostración), no proviene de un sensor físico",
+        f"Body detection in the session: {sesion.calidad:.0%}",
+        f"Personal reference: {sesion.comparacion.n_referencia} previous sessions",
+        "SIMULATED environmental telemetry (demo scenario), not from a physical sensor",
     ]
     if sesion.dato_demo:
-        confiab.insert(0, "La sesión de movimiento es un dato de demo preparado (plan B), no una medición en vivo")
+        confiab.insert(0, "The movement session is prepared demo data (plan B), not a live measurement")
     return Observacion(
         id=contexto._sig, astronauta_id=sesion.astronauta_id,
-        titulo="Cambios concurrentes en desempeño funcional y ambiente",
-        texto=("Se detectaron cambios concurrentes en el desempeño funcional y en las condiciones ambientales "
-               "durante una ventana temporal similar. Se recomienda revisar las mediciones y repetir la evaluación "
-               "en condiciones controladas."),
+        titulo="Concurrent changes in functional performance and environment",
+        texto=("Concurrent changes were detected in functional performance and environmental conditions "
+               "during a similar time window. Reviewing the measurements and repeating the assessment "
+               "under controlled conditions is recommended."),
         causalidad=CAUSALIDAD,
         que_cambio_funcional=f"{ejercicio.capitalize()}: {sesion.comparacion.texto}",
         que_cambio_ambiente=vars_obs, desde=min(h.desde, sesion.fecha), hasta=max(h.hasta, sesion.fecha),
         datos_usados=[
-            f"Sesión de movimiento #{sesion.id} ({ejercicio}, {sesion.fuente})",
-            f"{h.lecturas_usadas} lecturas ambientales en la ventana de ±{int(correlacion.VENTANA.total_seconds() // 3600)} h, {h.lecturas_fuera} fuera de rango ({nombres})",
-            f"Tu línea base de {sesion.comparacion.referencia_reps} repeticiones",
+            f"Movement session #{sesion.id} ({ejercicio}, {sesion.fuente})",
+            f"{h.lecturas_usadas} environmental readings in the ±{int(correlacion.VENTANA.total_seconds() // 3600)} h window, {h.lecturas_fuera} out of range ({nombres})",
+            f"Your baseline of {sesion.comparacion.referencia_reps} reps",
         ],
         confiabilidad=confiab, acciones=h.acciones, sesion_id=sesion.id, creada=datetime.now(timezone.utc),
     )

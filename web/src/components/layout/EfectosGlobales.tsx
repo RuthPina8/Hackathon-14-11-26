@@ -57,11 +57,11 @@ export function AlertaRoja() {
             className="fixed right-6 top-6 z-[71] flex w-[min(440px,calc(100vw-48px))] flex-col gap-3 rounded-2xl border-2 border-crit bg-crit-bg p-5 shadow-[0_18px_50px_rgba(0,0,0,.6)]">
             <div className="flex items-center gap-3">
               <EstadoIcono estado="crit" size={30} />
-              <span className="font-display text-[20px] font-bold text-crit-soft">Alerta roja · {ORGANOS[organoDeAlerta(actual)].nombre}</span>
+              <span className="font-display text-[20px] font-bold text-crit-soft">Red alert · {ORGANOS[organoDeAlerta(actual)].nombre}</span>
             </div>
             <p className="m-0 text-[17px] font-semibold text-text">{actual.titulo}</p>
             <p className="m-0 text-[15px] text-subtle">{actual.queCambio}</p>
-            <Link to={`/alerts?id=${actual.id}`} className="btn pri" onClick={() => setActual(null)}>Ver qué hacer <ArrowRight size={18} /></Link>
+            <Link to={`/alerts?id=${actual.id}`} className="btn pri" onClick={() => setActual(null)}>See what to do <ArrowRight size={18} /></Link>
           </motion.div>
         </>
       )}
@@ -105,10 +105,10 @@ export function Encendido() {
               <ScanFace size={72} className="text-accent" />
             </motion.div>
             <motion.p className="m-0 font-mono text-[18px] font-bold tracking-[0.2em] text-accent-soft" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-              IDENTIDAD VERIFICADA
+              IDENTITY VERIFIED
             </motion.p>
             <motion.p className="m-0 font-mono text-[14px] tracking-[0.15em] text-faint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-              INICIANDO CABINA · CARGANDO SIGNOS
+              STARTING CABIN · LOADING VITALS
             </motion.p>
           </div>
         </motion.div>

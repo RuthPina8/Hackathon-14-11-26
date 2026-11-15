@@ -68,14 +68,14 @@ function Reposo() {
 
 function AlturaCorazon() {
   const f = useFase(4500, 0.9)
-  const bajo = 1 - tramo(f, 0.25, 0.55) // primero abajo (mal), luego sube a la altura del corazón
+  const bajo = 1 - tramo(f, 0.25, 0.55) // primero abajo (mal), luego sube a la heart level
   const brazoY = 72 + bajo * 36
   const alineado = bajo < 0.05
   return (
     <svg viewBox={V} className="h-full w-full" aria-hidden>
       <Sentado brazoY={brazoY} conBrazalete />
       <line x1={100} y1={80} x2={300} y2={80} stroke={alineado ? C.ok : C.warn} strokeWidth={3} strokeDasharray="8 6" />
-      <text x={300} y={72} textAnchor="end" fill={alineado ? C.ok : C.warn} fontSize={15} fontWeight={700}>altura del corazón</text>
+      <text x={300} y={72} textAnchor="end" fill={alineado ? C.ok : C.warn} fontSize={15} fontWeight={700}>heart level</text>
       {!alineado && <path d={`M210 ${brazoY + 4} v-16 m-7 7 l7 -7 l7 7`} stroke={C.warn} strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" />}
       <Ok x={290} y={130} on={alineado} />
       <Mal x={290} y={130} on={!alineado} />
@@ -98,7 +98,7 @@ function BrazoCerca({ children }: { children?: React.ReactNode }) {
 
 function Colocar() {
   const f = useFase(4500, 0.9)
-  const x = 20 + tramo(f, 0.1, 0.5) * 120 // el brazalete se desliza hasta 2–3 cm arriba del codo
+  const x = 20 + tramo(f, 0.1, 0.5) * 120 // el brazalete se desliza hasta 2–3 cm above the elbow
   const listo = f > 0.5
   return (
     <svg viewBox={V} className="h-full w-full" aria-hidden>
@@ -112,7 +112,7 @@ function Colocar() {
           </g>
         )}
       </BrazoCerca>
-      <text x={20} y={40} fill={C.text} fontSize={15} fontWeight={600}>sobre la piel, sin manga</text>
+      <text x={20} y={40} fill={C.text} fontSize={15} fontWeight={600}>on bare skin, no sleeve</text>
       <Ok x={290} y={40} on={listo} />
     </svg>
   )
@@ -131,7 +131,7 @@ function Tubo() {
         <path d="M168 108 l-8 -10 h16z" fill={C.ok} />
         <path d="M168 148 C168 172 196 178 236 182" stroke={C.muted} strokeWidth={5} fill="none" strokeLinecap="round" />
       </BrazoCerca>
-      <text x={20} y={40} fill={C.text} fontSize={15} fontWeight={600}>marca ▼ sobre la arteria</text>
+      <text x={20} y={40} fill={C.text} fontSize={15} fontWeight={600}>▼ mark over the artery</text>
       <circle cx={30} cy={170} r={6} fill={C.crit} opacity={pulso} />
       <text x={42} y={175} fill={C.critSoft} fontSize={14} fontWeight={600}>arteria</text>
     </svg>
@@ -150,8 +150,8 @@ function DosDedos() {
       {[0, 1].map((k) => (
         <rect key={k} x={232 - entra * 52} y={92 + k * 18} width={64} height={14} rx={7} fill={C.subtle} stroke={C.line3} strokeWidth={2} />
       ))}
-      <text x={210} y={56} fill={C.text} fontSize={16} fontWeight={700}>caben 2 dedos</text>
-      <text x={210} y={164} fill={C.muted} fontSize={14}>ni apretado ni flojo</text>
+      <text x={210} y={56} fill={C.text} fontSize={16} fontWeight={700}>2 fingers fit</text>
+      <text x={210} y={164} fill={C.muted} fontSize={14}>not too tight, not too loose</text>
       <Ok x={290} y={190 - 16} on={f > 0.55} />
     </svg>
   )
@@ -173,7 +173,7 @@ function DosMediciones() {
             <text x={50} y={44} textAnchor="middle" fill={k >= 1 ? C.text : C.faint} fontSize={k >= 1 ? 22 : 15} fontWeight={700} fontFamily="JetBrains Mono">
               {k >= 1 ? lectura(1, n === 0 ? 118 : 116, n === 0 ? 76 : 75) : k > 0 ? `midiendo${'.'.repeat(1 + Math.floor(k * 9) % 3)}` : '--/--'}
             </text>
-            <text x={50} y={66} textAnchor="middle" fill={C.faint} fontSize={13}>{n === 0 ? '1.ª medición' : '2.ª medición'}</text>
+            <text x={50} y={66} textAnchor="middle" fill={C.faint} fontSize={13}>{n === 0 ? '1st reading' : '2nd reading'}</text>
           </g>
         )
       })}
@@ -181,16 +181,16 @@ function DosMediciones() {
       <circle cx={160} cy={77} r={22} fill="none" stroke={C.line2} strokeWidth={5} />
       <circle cx={160} cy={77} r={22} fill="none" stroke={C.accent} strokeWidth={5} strokeDasharray={`${espera * 138} 138`} transform="rotate(-90 160 77)" strokeLinecap="round" />
       <text x={160} y={82} textAnchor="middle" fill={C.text} fontSize={13} fontWeight={700}>1 min</text>
-      <text x={160} y={160} textAnchor="middle" fill={b >= 1 ? C.ok : C.faint} fontSize={18} fontWeight={700}>{b >= 1 ? 'Anota el promedio: 117/76' : 'sin hablar ni moverte'}</text>
+      <text x={160} y={160} textAnchor="middle" fill={b >= 1 ? C.ok : C.faint} fontSize={18} fontWeight={700}>{b >= 1 ? 'Log the average: 117/76' : 'don’t talk or move'}</text>
     </svg>
   )
 }
 
 export const PASOS_BRAZALETE: PasoGuia[] = [
-  { titulo: 'Descansa 5 minutos', detalle: 'Espalda apoyada, pies en el piso, sin hablar', escena: <Reposo /> },
-  { titulo: 'Brazo a la altura del corazón', detalle: 'Apoyado en la mesa, relajado', escena: <AlturaCorazon /> },
-  { titulo: 'Brazalete arriba del codo', detalle: 'Sobre la piel, 2–3 cm arriba del pliegue', escena: <Colocar /> },
-  { titulo: 'Marca sobre la arteria', detalle: 'El tubo queda por dentro del brazo', escena: <Tubo /> },
-  { titulo: 'Ajusta: caben 2 dedos', escena: <DosDedos /> },
-  { titulo: 'Mide 2 veces', detalle: 'Con 1 minuto entre cada una', escena: <DosMediciones />, ms: 7000 },
+  { titulo: 'Rest 5 minutes', detalle: 'Back supported, feet flat, no talking', escena: <Reposo /> },
+  { titulo: 'Arm at heart level', detalle: 'Resting on the table, relaxed', escena: <AlturaCorazon /> },
+  { titulo: 'Cuff above the elbow', detalle: 'On bare skin, 2–3 cm above the crease', escena: <Colocar /> },
+  { titulo: 'Mark over the artery', detalle: 'The tube runs along the inner arm', escena: <Tubo /> },
+  { titulo: 'Tighten: 2 fingers fit', escena: <DosDedos /> },
+  { titulo: 'Measure twice', detalle: '1 minute between readings', escena: <DosMediciones />, ms: 7000 },
 ]

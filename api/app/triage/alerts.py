@@ -71,7 +71,7 @@ store = _Store()
 
 def obtener(alerta_id: int) -> Alert:
     if alerta_id not in store.alertas:
-        raise AlertError(404, f"No existe la alerta {alerta_id}")
+        raise AlertError(404, f"Alert {alerta_id} doesn’t exist")
     return store.alertas[alerta_id]
 
 
@@ -156,7 +156,7 @@ def _descongelar(alerta: Alert) -> None:
 async def ack(alerta_id: int, nota: str | None = None) -> Alert:
     alerta = obtener(alerta_id)
     if alerta.estado == "resuelta":
-        raise AlertError(409, "La alerta ya está resuelta")
+        raise AlertError(409, "The alert is already resolved")
     if alerta.estado == "atendida":
         return alerta
     ahora = _ahora()
@@ -170,7 +170,7 @@ async def ack(alerta_id: int, nota: str | None = None) -> Alert:
 async def escalate(alerta_id: int, nota: str | None = None) -> Alert:
     alerta = obtener(alerta_id)
     if alerta.estado == "resuelta":
-        raise AlertError(409, "La alerta ya está resuelta")
+        raise AlertError(409, "The alert is already resolved")
     if alerta.mensaje_cola_id is not None:
         return alerta  # idempotente: ya va hacia Tierra
     mensaje = queue_engine.encolar(

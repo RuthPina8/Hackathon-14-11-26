@@ -31,10 +31,10 @@ export default function Alertas() {
   if (!cur) {
     return (
       <>
-        <PageHeader kicker="0 activas" title="Alertas y triage" />
+        <PageHeader kicker="0 active" title="Alerts and triage" />
         <section className="card flex flex-col gap-2" style={{ padding: 26 }}>
-          <h2 className="h2">Todo en orden</h2>
-          <p className="m-0 text-sm text-muted">No hay alertas por ahora. Cuando una señal se salga de tu normal, aparece aquí con qué hacer.</p>
+          <h2 className="h2">All clear</h2>
+          <p className="m-0 text-sm text-muted">No alerts for now. When a signal moves outside your normal, it shows up here with what to do.</p>
         </section>
       </>
     )
@@ -42,17 +42,17 @@ export default function Alertas() {
   const open = alerts.filter((a) => a.estado === 'activa').length
   const done = cur.estado === 'resuelta'
   const crit = cur.nivel === 'crit'
-  const lvl = (n: string) => (n === 'crit' ? { name: 'Roja', c: C.crit, bg: C.critBg, sub: C.critSoft } : { name: 'Amarilla', c: C.warn, bg: C.warnBg, sub: C.warnSoft })
+  const lvl = (n: string) => (n === 'crit' ? { name: 'Red', c: C.crit, bg: C.critBg, sub: C.critSoft } : { name: 'Yellow', c: C.warn, bg: C.warnBg, sub: C.warnSoft })
 
   return (
     <>
-      {!server && <SimBanner tag="DATOS DE EJEMPLO">Estas alertas son de ejemplo, las reales llegan cuando el sistema de triage está conectado</SimBanner>}
+      {!server && <SimBanner tag="SAMPLE DATA">These are sample alerts, real ones arrive when the triage system is connected</SimBanner>}
       <PageHeader
-        kicker={`${open} activas · ${alerts.length - open} resueltas`}
-        title="Alertas y triage"
+        kicker={`${open} active · ${alerts.length - open} resolved`}
+        title="Alerts and triage"
         right={
-          <div role="img" aria-label="Escala de niveles" className="flex gap-1.5 p-1.5 rounded-xl bg-deep border border-line">
-            {([['ok', 'Todo bien'], ['warn', 'Resolver a bordo'], ['crit', 'Escalar a Tierra']] as const).map(([e, l]) => (
+          <div role="img" aria-label="Level scale" className="flex gap-1.5 p-1.5 rounded-xl bg-deep border border-line">
+            {([['ok', 'All good'], ['warn', 'Resolve on board'], ['crit', 'Escalate to Earth']] as const).map(([e, l]) => (
               <span key={l} className="inline-flex items-center gap-2 px-2.5 py-1.5 text-sm text-muted"><EstadoIcono estado={e} size={16} />{l}</span>
             ))}
           </div>
@@ -60,7 +60,7 @@ export default function Alertas() {
       />
 
       <div className="flex flex-wrap gap-5 items-start">
-        <section aria-label="Lista de alertas" className="flex flex-col gap-2.5" style={{ flex: '1 1 300px', minWidth: 0 }}>
+        <section aria-label="Alert list" className="flex flex-col gap-2.5" style={{ flex: '1 1 300px', minWidth: 0 }}>
           <AnimatePresence initial={false}>
             {alerts.map((a) => {
               const on = a.id === cur.id
@@ -81,7 +81,7 @@ export default function Alertas() {
                   <span className="mt-0.5"><EstadoIcono estado={res ? 'ok' : a.nivel === 'crit' ? 'crit' : 'warn'} size={20} /></span>
                   <span className="flex-1 min-w-0 flex flex-col gap-1">
                     <strong className="text-[15px]">{a.titulo}</strong>
-                    <span className="text-[13px]" style={{ color: on && !res ? L.sub : C.faint }}>{res ? `Resuelta ${a.cuando}` : `${L.name} · ${a.cuando}`}</span>
+                    <span className="text-[13px]" style={{ color: on && !res ? L.sub : C.faint }}>{res ? `Resolved ${a.cuando}` : `${L.name} · ${a.cuando}`}</span>
                   </span>
                 </motion.button>
               )
@@ -93,18 +93,18 @@ export default function Alertas() {
           <div className="flex flex-wrap justify-between items-center gap-2.5">
             <h2 id="det" className="m-0 font-[family-name:var(--font-display)] text-2xl font-semibold">{cur.titulo}</h2>
             <span className="tag" style={{ background: done ? C.okBg : crit ? C.critBg : C.warnBg, color: done ? C.okSoft : crit ? C.crit : C.warn, fontSize: 14, padding: '6px 10px' }}>
-              {done ? 'RESUELTA' : crit ? 'ROJA · ESCALAR A TIERRA' : 'AMARILLA · RESOLVER A BORDO'}
+              {done ? 'RESOLVED' : crit ? 'RED · ESCALATE TO EARTH' : 'YELLOW · RESOLVE ON BOARD'}
             </span>
           </div>
 
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))' }}>
-            {[['Qué cambió', cur.queCambio], ['Cuánto', cur.cuanto], ['Desde cuándo', cur.desde]].map(([k, v]) => (
+            {[['What changed', cur.queCambio], ['How much', cur.cuanto], ['Since when', cur.desde]].map(([k, v]) => (
               <div key={k} className="p-4 rounded-xl bg-deep border border-line"><p className="k">{k}</p><p className="mt-1.5 mb-0 text-[15px] font-semibold leading-snug">{v}</p></div>
             ))}
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="k">Qué la causó</p>
+            <p className="k">What caused it</p>
             {cur.factores.map((f, i) => (
               <div key={f.name} className="flex items-center gap-3.5 text-sm">
                 <span className="w-[170px] shrink-0">{f.name}</span>
@@ -117,7 +117,7 @@ export default function Alertas() {
           </div>
 
           <div data-tour="alerta-que-hacer" className="flex flex-col gap-2.5">
-            <p className="k">Qué hacer ahora</p>
+            <p className="k">What to do now</p>
             {cur.tareas.map((t) => (
               <label key={cur.id + t} className="task"><input type="checkbox" />{t}</label>
             ))}
@@ -125,25 +125,25 @@ export default function Alertas() {
 
           <div className="flex flex-wrap justify-between items-center gap-3 pt-[18px] border-t border-line">
             <p className="m-0 inline-flex items-center gap-2 text-[13px] text-muted">
-              <Lock size={16} />{done ? 'Tu línea base vuelve a aprender' : 'Tu línea base está congelada mientras siga activa'}
+              <Lock size={16} />{done ? 'Your baseline is learning again' : 'Your baseline is frozen while it stays active'}
             </p>
             {done ? (
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-ok-soft"><Check size={18} strokeWidth={2.6} />Atendida</span>
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-ok-soft"><Check size={18} strokeWidth={2.6} />Handled</span>
             ) : (
               <div className="flex flex-wrap gap-2.5">
                 {escalated[cur.id] || cur.escalada
-                  ? <span className="btn sec" aria-disabled="true">Enviada a Tierra</span>
+                  ? <span className="btn sec" aria-disabled="true">Sent to Earth</span>
                   : <button type="button" data-tour="alerta-escalar" className="btn sec" disabled={!!pendiente}
-                      onClick={() => { const id = cur.id; programar('Escalando a Tierra…', () => { escalateAlert(id); setEscalated((e) => ({ ...e, [id]: true })); useEntrenamiento.getState().completar('alerta') }) }}>Escalar a Tierra</button>}
+                      onClick={() => { const id = cur.id; programar('Escalating to Earth…', () => { escalateAlert(id); setEscalated((e) => ({ ...e, [id]: true })); useEntrenamiento.getState().completar('alerta') }) }}>Escalate to Earth</button>}
                 <button type="button" className="btn pri" disabled={!!pendiente}
-                  onClick={() => { const id = cur.id; programar('Marcando como atendida…', () => resolveAlert(id)) }}>Marcar como atendida</button>
+                  onClick={() => { const id = cur.id; programar('Marking as handled…', () => resolveAlert(id)) }}>Mark as handled</button>
               </div>
             )}
           </div>
         </motion.section>
       </div>
       <BarraDeshacer pendiente={pendiente} onDeshacer={deshacer} />
-      <p className="m-0 text-sm text-faint">AstroHealth es una herramienta de apoyo, no sustituye el criterio del flight surgeon ni de un médico</p>
+      <p className="m-0 text-sm text-faint">AstroHealth is a support tool, it does not replace the judgment of the flight surgeon or a doctor</p>
     </>
   )
 }

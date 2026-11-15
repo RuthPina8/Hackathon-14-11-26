@@ -14,9 +14,9 @@ PESOS: dict[str, float] = {
 PESO_CONGESTION_ADAPTACION = 0.5  # en adaptación puede ser redistribución de líquidos
 
 NOMBRES = {
-    "erupcion_piel": "erupción en la piel", "congestion": "congestión", "fuego_labial": "fuego labial",
-    "infeccion_piel": "herida infectada", "garganta": "dolor de garganta", "oido": "dolor de oído",
-    "urinario": "ardor al orinar", "fiebre": "fiebre",
+    "erupcion_piel": "skin rash", "congestion": "congestion", "fuego_labial": "cold sore",
+    "infeccion_piel": "infected wound", "garganta": "sore throat", "oido": "earache",
+    "urinario": "burning when urinating", "fiebre": "fever",
 }
 
 
@@ -58,7 +58,7 @@ def _racha(dias: list[int], presentes: set[int]) -> int:
 def evaluar(por_dia: dict[int, dict[str, int]], fase: str = "personal", contexto_riesgo: bool = False) -> EstadoInmune:
     """por_dia: día de misión -> {clave: intensidad}. Se evalúa el último día registrado."""
     if not por_dia:
-        return EstadoInmune("sin_datos", 0.0, "Sin registros de síntomas")
+        return EstadoInmune("sin_datos", 0.0, "No symptom logs")
     dias = sorted(por_dia)
     hoy = dias[-1]
 
@@ -80,23 +80,23 @@ def evaluar(por_dia: dict[int, dict[str, int]], fase: str = "personal", contexto
     racha_fiebre = rachas.get("fiebre", 0)
     otro_hoy = bool(inmunes_hoy - {"fiebre"})
 
-    estado, motivo = "verde", "Sin señales inmunes"
+    estado, motivo = "verde", "No immune signals"
     peor = max(rachas.items(), key=lambda kv: kv[1], default=(None, 0))
     if racha_fiebre >= 2 and otro_hoy:
-        estado, motivo = "rojo", f"Fiebre {racha_fiebre} días seguidos junto con {', '.join(NOMBRES[c] for c in sorted(inmunes_hoy - {'fiebre'}))}"
+        estado, motivo = "rojo", f"Fever for {racha_fiebre} days in a row along with {', '.join(NOMBRES[c] for c in sorted(inmunes_hoy - {'fiebre'}))}"
     elif peor[1] >= 7:
-        estado, motivo = "rojo", f"{NOMBRES[peor[0]].capitalize()} {peor[1]} días seguidos (prolongado)"
+        estado, motivo = "rojo", f"{NOMBRES[peor[0]].capitalize()} for {peor[1]} days in a row (prolonged)"
     elif "fiebre" in inmunes_hoy:
-        estado, motivo = "amarillo", "Fiebre reportada hoy"
+        estado, motivo = "amarillo", "Fever reported today"
     elif len(inmunes_hoy) >= 2:
-        estado, motivo = "amarillo", f"Dos síntomas inmunes el mismo día: {', '.join(NOMBRES[c] for c in sorted(inmunes_hoy))}"
+        estado, motivo = "amarillo", f"Two immune symptoms on the same day: {', '.join(NOMBRES[c] for c in sorted(inmunes_hoy))}"
     elif peor[1] >= 3:
-        estado, motivo = "amarillo", f"{NOMBRES[peor[0]].capitalize()} {peor[1]} días seguidos"
+        estado, motivo = "amarillo", f"{NOMBRES[peor[0]].capitalize()} for {peor[1]} days in a row"
     elif inmunes_hoy:
-        motivo = f"{NOMBRES[sorted(inmunes_hoy)[0]].capitalize()} reportado; aún sin patrón"
+        motivo = f"{NOMBRES[sorted(inmunes_hoy)[0]].capitalize()} reported; no pattern yet"
 
     if estado != "verde" and contexto_riesgo:
-        motivo += ". Tu sueño y estrés de esta semana aumentan el riesgo; vigila síntomas"
+        motivo += ". Your sleep and stress this week raise the risk; watch for symptoms"
 
     desde = None
     if estado != "verde":

@@ -33,7 +33,7 @@ export default function ReadinessGauge({ value: valor, ayer }: { value: number |
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <svg width="240" height="140" viewBox="0 0 220 128" role="img" aria-label={valor === null ? 'Disposición para la misión sin datos' : `Disposición para la misión ${value} de 100${ayer !== null ? `, lectura anterior ${ayer}` : ''}`}>
+      <svg width="240" height="140" viewBox="0 0 220 128" role="img" aria-label={valor === null ? 'Mission readiness, no data' : `Mission readiness ${value} out of 100${ayer !== null ? `, lectura anterior ${ayer}` : ''}`}>
         <path d="M20 112 A90 90 0 0 1 200 112" fill="none" stroke={C.line} strokeWidth="14" strokeLinecap="round" />
         <motion.path
           d="M20 112 A90 90 0 0 1 200 112"
@@ -45,12 +45,12 @@ export default function ReadinessGauge({ value: valor, ayer }: { value: number |
         />
         {ayer !== null && valor !== null && <line x1={mx1} y1={my1} x2={mx2} y2={my2} stroke={C.text} strokeWidth="2.5" strokeLinecap="round" />}
         <text x="110" y="100" textAnchor="middle" fill={C.text} fontFamily="JetBrains Mono, monospace" fontSize="48" fontWeight="700">{valor === null ? '--' : shown}</text>
-        <text x="110" y="122" textAnchor="middle" fill={C.faint} fontFamily="Inter, sans-serif" fontSize="11">de 100</text>
+        <text x="110" y="122" textAnchor="middle" fill={C.faint} fontFamily="Inter, sans-serif" fontSize="11">out of 100</text>
       </svg>
       <p className="m-0 text-[13px] text-muted">
-        {valor === null ? 'Sin mediciones todavía'
-          : ayer === null ? 'Primera lectura del motor' : delta === 0 ? 'Igual que tu lectura anterior'
-            : <><strong className="num" style={{ color: delta < 0 ? C.warn : C.ok }}>{delta > 0 ? '+' : ''}{delta}</strong> vs tu lectura anterior, la marca blanca es {ayer}</>}
+        {valor === null ? 'No measurements yet'
+          : ayer === null ? 'First engine reading' : delta === 0 ? 'Same as your previous reading'
+            : <><strong className="num" style={{ color: delta < 0 ? C.warn : C.ok }}>{delta > 0 ? '+' : ''}{delta}</strong> vs your previous reading, the white mark is {ayer}</>}
       </p>
     </div>
   )

@@ -20,22 +20,22 @@ const vacia = (id: number, nombre: string): FichaMedica => ({
 })
 
 const BASALES: { k: keyof Basales; label: string; unidad: string; min: number; max: number }[] = [
-  { k: 'hr_reposo', label: 'Ritmo en reposo', unidad: 'lpm', min: 25, max: 200 },
-  { k: 'presion_sis', label: 'Presión sistólica', unidad: 'mmHg', min: 60, max: 260 },
-  { k: 'presion_dia', label: 'Presión diastólica', unidad: 'mmHg', min: 30, max: 160 },
+  { k: 'hr_reposo', label: 'Resting heart rate', unidad: 'bpm', min: 25, max: 200 },
+  { k: 'presion_sis', label: 'Systolic pressure', unidad: 'mmHg', min: 60, max: 260 },
+  { k: 'presion_dia', label: 'Diastolic pressure', unidad: 'mmHg', min: 30, max: 160 },
   { k: 'hrv_rmssd', label: 'VFC (RMSSD)', unidad: 'ms', min: 1, max: 300 },
-  { k: 'reaccion_ms', label: 'Tiempo de reacción', unidad: 'ms', min: 100, max: 1500 },
-  { k: 'sueno_horas', label: 'Sueño habitual', unidad: 'h', min: 0, max: 16 },
-  { k: 'peso_kg', label: 'Peso', unidad: 'kg', min: 20, max: 250 },
-  { k: 'spo2_pct', label: 'Saturación de oxígeno', unidad: '%', min: 50, max: 100 },
+  { k: 'reaccion_ms', label: 'Reaction time', unidad: 'ms', min: 100, max: 1500 },
+  { k: 'sueno_horas', label: 'Usual sleep', unidad: 'h', min: 0, max: 16 },
+  { k: 'peso_kg', label: 'Weight', unidad: 'kg', min: 20, max: 250 },
+  { k: 'spo2_pct', label: 'Oxygen saturation', unidad: '%', min: 50, max: 100 },
 ]
 
 const LISTAS: { k: 'alergias' | 'medicamentos' | 'condiciones' | 'cirugias' | 'vacunas'; label: string; ej: string }[] = [
-  { k: 'alergias', label: 'Alergias', ej: 'penicilina' },
-  { k: 'medicamentos', label: 'Medicamentos actuales', ej: 'melatonina 3 mg' },
-  { k: 'condiciones', label: 'Antecedentes y condiciones', ej: 'asma leve en la infancia' },
-  { k: 'cirugias', label: 'Cirugías', ej: 'apendicectomía 2018' },
-  { k: 'vacunas', label: 'Vacunas', ej: 'influenza 2026' },
+  { k: 'alergias', label: 'Allergies', ej: 'penicilina' },
+  { k: 'medicamentos', label: 'Current medications', ej: 'melatonina 3 mg' },
+  { k: 'condiciones', label: 'History and conditions', ej: 'mild childhood asthma' },
+  { k: 'cirugias', label: 'Surgeries', ej: 'appendectomy 2018' },
+  { k: 'vacunas', label: 'Vaccines', ej: 'influenza 2026' },
 ]
 
 function Lista({ valor, onChange, ej }: { valor: string[]; onChange: (v: string[]) => void; ej: string }) {
@@ -44,17 +44,17 @@ function Lista({ valor, onChange, ej }: { valor: string[]; onChange: (v: string[
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-1.5">
-        {valor.length === 0 && <span className="text-sm text-faint">Ninguna registrada</span>}
+        {valor.length === 0 && <span className="text-sm text-faint">None recorded</span>}
         {valor.map((v) => (
           <span key={v} className="inline-flex items-center gap-1.5 rounded-lg bg-sel px-2.5 py-1 text-[13px]">
-            {v}<button type="button" aria-label={`Quitar ${v}`} onClick={() => onChange(valor.filter((x) => x !== v))} className="border-0 bg-transparent p-0 text-muted cursor-pointer"><X size={13} /></button>
+            {v}<button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(valor.filter((x) => x !== v))} className="border-0 bg-transparent p-0 text-muted cursor-pointer"><X size={13} /></button>
           </span>
         ))}
       </div>
       <div className="flex gap-2">
         <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }} placeholder={`Ej. ${ej}`}
           className="min-h-14 flex-1 rounded-xl border border-line2 bg-input px-3 text-base text-text outline-none focus:border-accent" />
-        <button type="button" className="btn sec sm" onClick={agregar}>Agregar</button>
+        <button type="button" className="btn sec sm" onClick={agregar}>Add</button>
       </div>
     </div>
   )
@@ -103,14 +103,14 @@ export default function Ficha() {
       const r = await fetch(`${BASE}/ficha/${yo}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...f, astronauta_id: yo }) })
       if (!r.ok) {
         const e = await r.json().catch(() => null)
-        setMsg(Array.isArray(e?.detail) ? e.detail.map((d: { loc: string[]; msg: string }) => `${d.loc.slice(-1)[0]}: ${d.msg}`).join(' · ') : 'El back rechazó la ficha')
+        setMsg(Array.isArray(e?.detail) ? e.detail.map((d: { loc: string[]; msg: string }) => `${d.loc.slice(-1)[0]}: ${d.msg}`).join(' · ') : 'The server rejected the record')
         setEstado('error')
         return
       }
       setF(await r.json())
       setEstado('guardado')
     } catch {
-      setMsg('No hay conexión con el back')
+      setMsg('No server connection')
       setEstado('error')
     }
   }
@@ -129,10 +129,10 @@ export default function Ficha() {
       const d = JSON.parse(await file.text()) as Partial<FichaMedica>
       if (typeof d !== 'object' || d === null) throw new Error()
       setF({ ...vacia(yo, user?.nombre ?? ''), ...d, astronauta_id: yo, basales: { ...vacia(yo, '').basales, ...(d.basales ?? {}) } })
-      setMsg('Ficha importada. Revísala y pulsa Guardar')
+      setMsg('Record imported. Review it and press Save')
       setEstado('listo')
     } catch {
-      setMsg('El archivo no es una ficha válida (JSON)')
+      setMsg('The file isn’t a valid record (JSON)')
     } finally {
       if (archivo.current) archivo.current.value = ''
     }
@@ -143,50 +143,50 @@ export default function Ficha() {
 
   return (
     <>
-      {!apiEnabled || (!statusReal && estado !== 'cargando') ? <SimBanner tag="SIN BACK">La ficha se guarda en la base de datos; sin el back solo puedes importarla y exportarla</SimBanner> : null}
+      {!apiEnabled || (!statusReal && estado !== 'cargando') ? <SimBanner tag="NO SERVER">The record is saved to the database; without the server you can only import and export it</SimBanner> : null}
       <PageHeader
-        kicker={`${user?.nombre ?? ''} · evaluación médica previa al vuelo`}
-        title="Ficha médica"
+        kicker={`${user?.nombre ?? ''} · pre-flight medical evaluation`}
+        title="Medical record"
         right={
           <div className="flex flex-wrap gap-2">
             <input ref={archivo} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; if (x) void importar(x) }} />
-            <button type="button" className="btn sec sm" onClick={() => archivo.current?.click()}><Upload size={15} />Importar</button>
-            <button type="button" className="btn sec sm" onClick={exportar}><Download size={15} />Exportar</button>
-            <button type="button" className="btn pri sm" onClick={() => void guardar()} disabled={estado === 'guardando'}><Save size={15} />{estado === 'guardando' ? 'Guardando…' : 'Guardar'}</button>
+            <button type="button" className="btn sec sm" onClick={() => archivo.current?.click()}><Upload size={15} />Import</button>
+            <button type="button" className="btn sec sm" onClick={exportar}><Download size={15} />Export</button>
+            <button type="button" className="btn pri sm" onClick={() => void guardar()} disabled={estado === 'guardando'}><Save size={15} />{estado === 'guardando' ? 'Saving…' : 'Save'}</button>
           </div>
         }
       />
       {(msg || estado === 'guardado') && (
         <p role="status" className="m-0 text-sm" style={{ color: estado === 'guardado' ? C.okSoft : C.warn }}>
-          {estado === 'guardado' ? <>✓ Ficha guardada. <Link to="/progress">Ver tu evolución contra ella</Link></> : msg}
+          {estado === 'guardado' ? <>✓ Record saved. <Link to="/progress">See your progress against it</Link></> : msg}
         </p>
       )}
 
       <div className="flex flex-wrap gap-5">
         <section className="card flex flex-col gap-4" style={{ flex: '1 1 360px', minWidth: 0 }} aria-labelledby="gen">
-          <h2 id="gen" className="h2">Datos generales</h2>
+          <h2 id="gen" className="h2">General information</h2>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-            <Campo label="Nombre"><input className={input} value={f.nombre} onChange={(e) => set('nombre', e.target.value)} /></Campo>
-            <Campo label={`Fecha de nacimiento${edad !== null ? ` (${edad} años)` : ''}`}><input type="date" className={input} value={f.fecha_nacimiento ?? ''} onChange={(e) => set('fecha_nacimiento', e.target.value || null)} /></Campo>
-            <Campo label="Sexo">
+            <Campo label="Name"><input className={input} value={f.nombre} onChange={(e) => set('nombre', e.target.value)} /></Campo>
+            <Campo label={`Date of birth${edad !== null ? ` (${edad} años)` : ''}`}><input type="date" className={input} value={f.fecha_nacimiento ?? ''} onChange={(e) => set('fecha_nacimiento', e.target.value || null)} /></Campo>
+            <Campo label="Sex">
               <select className={input} value={f.sexo} onChange={(e) => set('sexo', e.target.value as FichaMedica['sexo'])}>
-                <option value="">Sin dato</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="otro">Otro</option>
+                <option value="">No data</option><option value="F">Female</option><option value="M">Male</option><option value="otro">Other</option>
               </select>
             </Campo>
-            <Campo label="Tipo de sangre">
+            <Campo label="Blood type">
               <select className={input} value={f.tipo_sangre} onChange={(e) => set('tipo_sangre', e.target.value as FichaMedica['tipo_sangre'])}>
-                {['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((t) => <option key={t} value={t}>{t || 'Sin dato'}</option>)}
+                {['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((t) => <option key={t} value={t}>{t || 'No data'}</option>)}
               </select>
             </Campo>
-            <Campo label={`Estatura (cm)${imc ? ` · IMC ${imc.toFixed(1)}` : ''}`}><input type="number" className={input} value={f.estatura_cm ?? ''} onChange={(e) => set('estatura_cm', e.target.value === '' ? null : Number(e.target.value))} /></Campo>
-            <Campo label="Fecha de la evaluación"><input type="date" className={input} value={f.fecha_evaluacion ?? ''} onChange={(e) => set('fecha_evaluacion', e.target.value || null)} /></Campo>
-            <Campo label="Médico (flight surgeon)"><input className={input} value={f.medico} onChange={(e) => set('medico', e.target.value)} /></Campo>
+            <Campo label={`Height (cm)${imc ? ` · IMC ${imc.toFixed(1)}` : ''}`}><input type="number" className={input} value={f.estatura_cm ?? ''} onChange={(e) => set('estatura_cm', e.target.value === '' ? null : Number(e.target.value))} /></Campo>
+            <Campo label="Evaluation date"><input type="date" className={input} value={f.fecha_evaluacion ?? ''} onChange={(e) => set('fecha_evaluacion', e.target.value || null)} /></Campo>
+            <Campo label="Doctor (flight surgeon)"><input className={input} value={f.medico} onChange={(e) => set('medico', e.target.value)} /></Campo>
           </div>
         </section>
 
         <section className="card flex flex-col gap-4" style={{ flex: '1 1 360px', minWidth: 0 }} aria-labelledby="bas">
-          <h2 id="bas" className="h2">Valores basales en Tierra</h2>
-          <p className="m-0 text-[13px] text-muted leading-relaxed">Tu referencia antes del vuelo. "Mi evolución" compara tus mediciones de la misión contra estos valores.</p>
+          <h2 id="bas" className="h2">Baseline values on Earth</h2>
+          <p className="m-0 text-[13px] text-muted leading-relaxed">Your reference before flight. "My progress" compares your mission measurements against these values.</p>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
             {BASALES.map((b) => {
               const v = f.basales[b.k]
@@ -201,7 +201,7 @@ export default function Ficha() {
         </section>
       </div>
 
-      <section className="card grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))' }} aria-label="Antecedentes">
+      <section className="card grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))' }} aria-label="Medical history">
         {LISTAS.map((l) => (
           <div key={l.k} className="flex flex-col gap-2">
             <h3 className="m-0 text-[15px] font-semibold">{l.label}</h3>
@@ -209,13 +209,13 @@ export default function Ficha() {
           </div>
         ))}
         <div className="flex flex-col gap-2">
-          <h3 className="m-0 text-[15px] font-semibold">Notas del equipo médico</h3>
+          <h3 className="m-0 text-[15px] font-semibold">Medical team notes</h3>
           <textarea value={f.notas} maxLength={2000} onChange={(e) => set('notas', e.target.value)} rows={4} className={`${input} py-2`} />
         </div>
       </section>
       <p className="m-0 text-sm text-faint">
-        Datos médicos sensibles: se guardan en la base de la misión y no viajan a Tierra salvo en un reporte que tú escales.
-        {f.actualizada && ` Última actualización: ${new Date(f.actualizada).toLocaleString('es-MX')}.`}
+        Sensitive medical data: saved in the mission database and not sent to Earth unless in a report you escalate.
+        {f.actualizada && ` Last updated: ${new Date(f.actualizada).toLocaleString('en-US')}.`}
       </p>
     </>
   )

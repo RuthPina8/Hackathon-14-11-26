@@ -144,12 +144,12 @@ const bs = (b: Blend, n: string) => b?.categories.find((c) => c.categoryName ===
 export type ChallengeId = 'blink' | 'smile' | 'brows' | 'left' | 'right'
 
 export const CHALLENGES: Record<ChallengeId, { label: string; check: (lm: NormalizedLandmark[], b: Blend) => boolean }> = {
-  blink: { label: 'Parpadea', check: (_l, b) => (bs(b, 'eyeBlinkLeft') + bs(b, 'eyeBlinkRight')) / 2 > 0.55 },
-  smile: { label: 'Sonríe', check: (_l, b) => (bs(b, 'mouthSmileLeft') + bs(b, 'mouthSmileRight')) / 2 > 0.55 },
-  brows: { label: 'Levanta las cejas', check: (_l, b) => Math.max(bs(b, 'browInnerUp'), (bs(b, 'browOuterUpLeft') + bs(b, 'browOuterUpRight')) / 2) > 0.5 },
+  blink: { label: 'Blink', check: (_l, b) => (bs(b, 'eyeBlinkLeft') + bs(b, 'eyeBlinkRight')) / 2 > 0.55 },
+  smile: { label: 'Smile', check: (_l, b) => (bs(b, 'mouthSmileLeft') + bs(b, 'mouthSmileRight')) / 2 > 0.55 },
+  brows: { label: 'Raise your eyebrows', check: (_l, b) => Math.max(bs(b, 'browInnerUp'), (bs(b, 'browOuterUpLeft') + bs(b, 'browOuterUpRight')) / 2) > 0.5 },
   // la imagen de la cámara no está en espejo: girar a TU izquierda mueve la nariz hacia la derecha del cuadro
-  left: { label: 'Gira la cabeza a tu izquierda', check: (lm) => headYaw(lm) > 0.22 },
-  right: { label: 'Gira la cabeza a tu derecha', check: (lm) => headYaw(lm) < -0.22 },
+  left: { label: 'Turn your head to your left', check: (lm) => headYaw(lm) > 0.22 },
+  right: { label: 'Turn your head to your right', check: (lm) => headYaw(lm) < -0.22 },
 }
 
 export function headYaw(lm: NormalizedLandmark[]): number {

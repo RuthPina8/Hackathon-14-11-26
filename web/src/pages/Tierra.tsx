@@ -6,10 +6,10 @@ import type { QueueMessage } from '../store/mockData'
 import { C } from '../lib/paleta'
 
 const PRI: Record<number, [string, string, string]> = {
-  4: ['Crítica', C.crit, '#1A0508'],
-  3: ['Alta', C.critBg, C.critSoft],
-  2: ['Media', C.warnBg, C.warnSoft],
-  1: ['Baja', C.sel, C.muted],
+  4: ['Critical', C.crit, '#1A0508'],
+  3: ['High', C.critBg, C.critSoft],
+  2: ['Medium', C.warnBg, C.warnSoft],
+  1: ['Low', C.sel, C.muted],
 }
 
 const tiempo = (s: number) => (s < 90 ? `${Math.max(1, Math.ceil(s))} s` : `${Math.ceil(s / 60)} min`)
@@ -33,26 +33,26 @@ function Nave({ color }: { color: string }) {
 function rowStateServer(x: QueueMessage, link: { retraso_s: number } | null) {
   const sv = x.server!
   const base = { bar: false, done: false, travel: false, waiting: false, pct: 0 }
-  if (sv.estado === 'entregado') return { ...base, st: 'Tierra recibió', c: C.okSoft, pct: 100, done: true }
+  if (sv.estado === 'entregado') return { ...base, st: 'Earth received', c: C.okSoft, pct: 100, done: true }
   if (sv.estado === 'en_transito') {
     const falta = Math.max(0, (sv.eta_s ?? 0) - (Date.now() - sv.recibidoMs) / 1000)
     const total = Math.max(link?.retraso_s ?? 0, sv.eta_s ?? 0, 1)
-    return { ...base, st: falta > 0 ? `En camino, llega en ${tiempo(falta)}` : 'Llegando a Tierra', c: C.accentSoft, pct: Math.round(((total - falta) / total) * 100), bar: true, travel: true }
+    return { ...base, st: falta > 0 ? `On the way, arrives in ${tiempo(falta)}` : 'Arriving at Earth', c: C.accentSoft, pct: Math.round(((total - falta) / total) * 100), bar: true, travel: true }
   }
-  if (sv.estado === 'transmitiendo') return { ...base, st: 'Enviando', c: C.accentSoft, pct: 100, bar: true }
-  return { ...base, st: 'En cola', c: C.muted, waiting: true }
+  if (sv.estado === 'transmitiendo') return { ...base, st: 'Sending', c: C.accentSoft, pct: 100, bar: true }
+  return { ...base, st: 'Queued', c: C.muted, waiting: true }
 }
 
 function rowState(x: QueueMessage, t: number, link: { retraso_s: number } | null) {
   if (x.server) return rowStateServer(x, link)
-  if (x.arrive !== null && t >= x.arrive) return { st: 'Tierra recibió', c: C.okSoft, pct: 100, bar: false, done: true, travel: false, waiting: false }
+  if (x.arrive !== null && t >= x.arrive) return { st: 'Earth received', c: C.okSoft, pct: 100, bar: false, done: true, travel: false, waiting: false }
   if (x.arrive !== null) {
     const left = Math.max(1, Math.ceil(x.arrive - t))
-    return { st: `En camino, llega en ${left} min`, c: C.accentSoft, pct: Math.round(((LINK.DELAY_MIN - (x.arrive - t)) / LINK.DELAY_MIN) * 100), bar: true, done: false, travel: true, waiting: false }
+    return { st: `On the way, arrives in ${left} min`, c: C.accentSoft, pct: Math.round(((LINK.DELAY_MIN - (x.arrive - t)) / LINK.DELAY_MIN) * 100), bar: true, done: false, travel: true, waiting: false }
   }
-  if (x.sent > 0) { const pct = Math.round((x.sent / x.kb) * 100); return { st: `Enviando ${pct}%`, c: C.accentSoft, pct, bar: true, done: false, travel: false, waiting: false } }
-  if (x.big && t < LINK.WINDOW_MIN) return { st: 'Espera ventana', c: C.muted, pct: 0, bar: false, done: false, travel: false, waiting: true }
-  return { st: 'En cola', c: C.muted, pct: 0, bar: false, done: false, travel: false, waiting: true }
+  if (x.sent > 0) { const pct = Math.round((x.sent / x.kb) * 100); return { st: `Sending ${pct}%`, c: C.accentSoft, pct, bar: true, done: false, travel: false, waiting: false } }
+  if (x.big && t < LINK.WINDOW_MIN) return { st: 'Waiting for window', c: C.muted, pct: 0, bar: false, done: false, travel: false, waiting: true }
+  return { st: 'Queued', c: C.muted, pct: 0, bar: false, done: false, travel: false, waiting: true }
 }
 
 export default function Tierra() {
@@ -75,18 +75,18 @@ export default function Tierra() {
 
   return (
     <>
-      {demo && <SimBanner>Retraso y ancho de banda simulados para una nave rumbo a Marte, el tiempo corre a la velocidad de la barra de demo</SimBanner>}
+      {demo && <SimBanner>Simulated delay and bandwidth for a spacecraft headed to Mars, time runs at the demo bar speed</SimBanner>}
       <PageHeader
-        kicker="Enlace de comunicaciones"
-        title="Comunicación con Tierra"
-        right={<span className="num text-[13px] text-muted">Reloj de misión T+{Math.floor(t)} min</span>}
+        kicker="Communications link"
+        title="Communication with Earth"
+        right={<span className="num text-[13px] text-muted">Mission clock T+{Math.floor(t)} min</span>}
       />
 
-      <section className={`${sim} flex flex-col gap-[22px]`} style={{ padding: 26 }} aria-label="Enlace nave a Tierra">
+      <section className={`${sim} flex flex-col gap-[22px]`} style={{ padding: 26 }} aria-label="Spacecraft-to-Earth link">
         <div className="flex items-center gap-[18px]">
           <div className="flex flex-col items-center gap-2 shrink-0">
             <span className="w-14 h-14 rounded-2xl bg-sel border border-line2 grid place-items-center"><Rocket size={26} color={C.accentSoft} strokeWidth={1.8} /></span>
-            <span className="text-[13px] font-semibold">Nave</span>
+            <span className="text-[13px] font-semibold">Spacecraft</span>
           </div>
           <div className="flex-1 relative h-14">
             <div className="absolute left-0 right-0 top-[27px] border-t-2 border-dashed border-line2" />
@@ -104,13 +104,13 @@ export default function Tierra() {
           </div>
           <div className="flex flex-col items-center gap-2 shrink-0">
             <span className="w-14 h-14 rounded-full bg-accent-bg border border-accent-line grid place-items-center"><Globe size={26} color={C.accentSoft} strokeWidth={1.8} /></span>
-            <span className="text-[13px] font-semibold">Tierra</span>
+            <span className="text-[13px] font-semibold">Earth</span>
           </div>
         </div>
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(160px, 100%), 1fr))' }}>
           {(server && link
-            ? [['Ida y vuelta', tiempo(link.retraso_s * 2)], ['Ancho de banda', `${link.ancho_banda_kbps} kbps`], ['En camino', String(travelling)], ['Pendientes', String(pending)]]
-            : [['Ida y vuelta', '26:40'], ['Próxima ventana', win > 0 ? `${win} min` : 'Abierta'], ['Ancho de banda', t >= LINK.WINDOW_MIN ? '8 kbps' : '2 kbps'], ['Pendientes', String(pending)]]
+            ? [['Round trip', tiempo(link.retraso_s * 2)], ['Bandwidth', `${link.ancho_banda_kbps} kbps`], ['On the way', String(travelling)], ['Pending', String(pending)]]
+            : [['Round trip', '26:40'], ['Next window', win > 0 ? `${win} min` : 'Open'], ['Bandwidth', t >= LINK.WINDOW_MIN ? '8 kbps' : '2 kbps'], ['Pending', String(pending)]]
           ).map(([k, v]) => (
             <div key={k} className="p-4 rounded-xl bg-deep border border-line"><p className="k">{k}</p><p className="big" style={{ marginTop: 6, fontSize: 24 }}>{v}</p></div>
           ))}
@@ -120,12 +120,12 @@ export default function Tierra() {
       <div className="flex flex-wrap gap-5">
         <section className={sim} style={{ flex: '3 1 520px', minWidth: 0, padding: 0, overflow: 'hidden' }} aria-labelledby="cola">
           <div className="px-[18px] pt-5 pb-3">
-            <h2 id="cola" className="h2">Cola con prioridad</h2>
-            <p className="mt-1 mb-0 text-[13px] text-muted">Lo crítico sale primero y lo rutinario espera la ventana. Si algo te urge, usa "Enviar primero"</p>
+            <h2 id="cola" className="h2">Priority queue</h2>
+            <p className="mt-1 mb-0 text-[13px] text-muted">Critical items go first and routine ones wait for the window. If something is urgent, use "Send first"</p>
           </div>
           <div className="overflow-x-auto"><div className="min-w-[580px]">
-            <div className="trow" style={{ ...cols, minHeight: 38 }}><span className="k">Prioridad</span><span className="k">Paquete</span><span className="k">Tamaño</span><span className="k">Estado</span></div>
-            {rows.length === 0 && <p className="m-0 px-[18px] py-6 text-sm text-muted">No hay paquetes en la cola. Cuando escales una alerta o se genere un reporte, aparece aquí.</p>}
+            <div className="trow" style={{ ...cols, minHeight: 38 }}><span className="k">Priority</span><span className="k">Packet</span><span className="k">Size</span><span className="k">Status</span></div>
+            {rows.length === 0 && <p className="m-0 px-[18px] py-6 text-sm text-muted">No packets in the queue. When you escalate an alert or a report is generated, it shows up here.</p>}
             <AnimatePresence initial={false}>
               {rows.map(({ x, s }) => {
                 const p = PRI[x.pri]
@@ -134,7 +134,7 @@ export default function Tierra() {
                     <span><span className="tag" style={{ background: p[1], color: p[2] }}>{p[0]}</span></span>
                     <span className="flex flex-col gap-0.5">
                       {x.name}
-                      {x.boost && !s.done && <span className="text-[13px] font-semibold text-accent-soft">Pediste enviarlo primero</span>}
+                      {x.boost && !s.done && <span className="text-[13px] font-semibold text-accent-soft">You asked to send it first</span>}
                     </span>
                     <span className="num">{x.kb} KB</span>
                     <span className="flex flex-col gap-1.5 items-start">
@@ -142,7 +142,7 @@ export default function Tierra() {
                       {s.bar && <span className="h-1 w-full rounded bg-line"><motion.span className="block h-full rounded bg-accent" animate={{ width: `${s.pct}%` }} /></span>}
                       {s.waiting && !x.boost && !x.server && (
                         <button type="button" onClick={() => prioritize(x.id)} className="inline-flex items-center gap-1 min-h-[30px] px-2 -ml-2 rounded-md border-0 bg-transparent text-sm font-semibold text-accent hover:bg-hover cursor-pointer">
-                          <ArrowUp size={13} strokeWidth={2.4} />Enviar primero
+                          <ArrowUp size={13} strokeWidth={2.4} />Send first
                         </button>
                       )}
                     </span>
@@ -154,9 +154,9 @@ export default function Tierra() {
         </section>
 
         {demo && <section className={`${sim} flex flex-col gap-3`} style={{ flex: '2 1 320px', minWidth: 0 }} aria-labelledby="paq">
-          <div className="flex justify-between items-baseline gap-2"><h2 id="paq" className="h2">Paquete médico</h2><span className="num text-sm text-muted">{muestra ? `${muestra.kb} KB` : '2.1 KB comprimido'}</span></div>
+          <div className="flex justify-between items-baseline gap-2"><h2 id="paq" className="h2">Medical packet</h2><span className="num text-sm text-muted">{muestra ? `${muestra.kb} KB` : '2.1 KB compressed'}</span></div>
           <pre className="code">{JSON.stringify(muestra?.server?.payload ?? { astronauta: 'A1', ts: 'D9T09:12', nivel: 'amarilla', senal: 'perclos', valor: 0.19, base: 0.09, desde_h: 14, accion: 'descanso' }, null, 2)}</pre>
-          <p className="m-0 text-[13px] text-muted leading-relaxed">Solo viaja lo necesario para decidir, el detalle completo se queda a bordo hasta que haya ancho de banda</p>
+          <p className="m-0 text-[13px] text-muted leading-relaxed">Only what’s needed to decide is sent, the full detail stays on board until there’s bandwidth</p>
         </section>}
       </div>
     </>

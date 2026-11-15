@@ -37,7 +37,7 @@ export function useWebSocket() {
           // Otras pantallas (ASTRA-MOVE, ambiente, Mission Intelligence) escuchan con useWsEvent
           window.dispatchEvent(new CustomEvent('astro-ws', { detail: parsed }))
         } catch (err) {
-          console.warn('[ws] mensaje no reconocido', err)
+          console.warn('[ws] unrecognized message', err)
         }
       }
 

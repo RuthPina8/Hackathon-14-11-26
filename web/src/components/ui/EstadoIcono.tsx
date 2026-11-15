@@ -9,7 +9,7 @@ import { C } from '../../lib/paleta'
 export type EstadoForma = 'ok' | 'warn' | 'crit' | 'none'
 
 export const COLOR_ESTADO: Record<EstadoForma, string> = { ok: C.ok, warn: C.warn, crit: C.crit, none: C.none }
-export const TEXTO_ESTADO: Record<EstadoForma, string> = { ok: 'Normal', warn: 'Atención', crit: 'Crítico', none: 'Sin datos' }
+export const TEXTO_ESTADO: Record<EstadoForma, string> = { ok: 'Normal', warn: 'Attention', crit: 'Critical', none: 'No data' }
 
 export default function EstadoIcono({ estado, size = 14, titulo }: { estado: EstadoForma; size?: number; titulo?: string }) {
   const c = COLOR_ESTADO[estado]

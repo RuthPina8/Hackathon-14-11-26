@@ -7,7 +7,7 @@ from app.mision.telemetria import NOTA, rangos, telemetria
 from app.schemas.mission import ContextoMision
 from app.triage.demo import engine as demo_engine
 
-router = APIRouter(prefix="/mission", tags=["inteligencia contextual"])
+router = APIRouter(prefix="/mission", tags=["contextual intelligence"])
 
 
 @router.get("/context", response_model=ContextoMision)

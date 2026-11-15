@@ -10,16 +10,16 @@ router = APIRouter(prefix="/rppg", tags=["rppg"])
 
 class RppgIn(BaseModel):
     fps: float | None = None
-    t_ms: list[float] = Field(description="tiempo de cada cuadro en ms")
-    rgb: list[list[float]] = Field(description="[r, g, b] promedio de mejillas y frente por cuadro")
+    t_ms: list[float] = Field(description="time of each frame in ms")
+    rgb: list[list[float]] = Field(description="[r, g, b] average of cheeks and forehead per frame")
 
 
 class RppgOut(BaseModel):
     hr_lpm: float | None
     confianza: float
     snr_db: float | None
-    hrv_rmssd: float | None = Field(default=None, description="experimental; null si la calidad es baja")
-    resp_rpm: float | None = Field(default=None, description="experimental; null si no hay pico claro")
+    hrv_rmssd: float | None = Field(default=None, description="experimental; null if quality is low")
+    resp_rpm: float | None = Field(default=None, description="experimental; null if there’s no clear peak")
 
 
 @router.post("/estimate", response_model=RppgOut)

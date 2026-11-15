@@ -65,21 +65,21 @@ export default function Coach() {
       {/* Panel del coach */}
       <AnimatePresence>
         {(enAccion || enResultadoFuera) && mod && (
-          <motion.aside key="coach" role="dialog" aria-label={`Entrenamiento: ${mod.titulo}`}
+          <motion.aside key="coach" role="dialog" aria-label={`Training: ${mod.titulo}`}
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }}
             className="fixed bottom-6 left-1/2 z-[66] flex w-[min(640px,calc(100vw-32px))] -translate-x-1/2 flex-col gap-3 rounded-2xl border-2 border-accent-line bg-raised p-5 shadow-[0_18px_50px_rgba(0,0,0,.6)]">
             <div className="flex items-center gap-3">
               {enResultadoFuera ? <Trophy size={28} className="text-ok" /> : <GraduationCap size={28} className="text-accent" />}
               <p className="m-0 flex-1 font-display text-[19px] font-bold">
-                {enResultadoFuera ? `¡Módulo completado! ${mod.titulo}` : `Entrenamiento · ${mod.titulo}`}
+                {enResultadoFuera ? `Module complete! ${mod.titulo}` : `Training · ${mod.titulo}`}
               </p>
-              <span className="tag simt">PRÁCTICA</span>
-              <button type="button" onClick={salir} aria-label="Salir del entrenamiento" title="Salir del entrenamiento"
+              <span className="tag simt">PRACTICE</span>
+              <button type="button" onClick={salir} aria-label="Exit training" title="Exit training"
                 className="grid h-[52px] w-[52px] place-items-center rounded-xl border-2 border-line2 text-subtle hover:bg-hover"><X size={22} /></button>
             </div>
 
             {enResultadoFuera ? (
-              <button type="button" className="btn pri" onClick={() => navigate('/training')}>Ver tu resultado <ArrowRight size={18} /></button>
+              <button type="button" className="btn pri" onClick={() => navigate('/training')}>See your result <ArrowRight size={18} /></button>
             ) : (
               <>
                 <div className="flex items-start gap-3">
@@ -87,9 +87,9 @@ export default function Coach() {
                   <p className="m-0 text-[17px] leading-snug text-text">{pistaActual!.texto}</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  {!enSuPantalla && <button type="button" className="btn pri" onClick={() => navigate(mod.ruta)}>Ir a la pantalla <ArrowRight size={18} /></button>}
-                  {enSuPantalla && pista < mod.pistas.length - 1 && <button type="button" className="btn sec" onClick={siguientePista}>Siguiente pista <ArrowRight size={18} /></button>}
-                  <span className="self-center text-[14px] text-faint">Los datos de práctica no cuentan para tu normal ni generan alertas.</span>
+                  {!enSuPantalla && <button type="button" className="btn pri" onClick={() => navigate(mod.ruta)}>Go to the screen <ArrowRight size={18} /></button>}
+                  {enSuPantalla && pista < mod.pistas.length - 1 && <button type="button" className="btn sec" onClick={siguientePista}>Next hint <ArrowRight size={18} /></button>}
+                  <span className="self-center text-[14px] text-faint">Practice data doesn’t count toward your normal and doesn’t raise alerts.</span>
                 </div>
               </>
             )}

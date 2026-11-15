@@ -30,8 +30,8 @@ function readJSON<T>(storage: Storage, key: string, fallback: T): T {
 export const crewForLogin = mockCrew.map((c: CrewMember): SessionUser => ({
   id: c.id,
   nombre: c.nombre,
-  rol: c.rol === 'Comandante' ? 'comandante' : 'astronauta',
-  cargo: c.rol === 'Tú' ? 'Especialista de misión' : c.rol,
+  rol: c.rol === 'Commander' ? 'comandante' : 'astronauta',
+  cargo: c.rol === 'You' ? 'Mission specialist' : c.rol,
 }))
 
 interface SessionState {

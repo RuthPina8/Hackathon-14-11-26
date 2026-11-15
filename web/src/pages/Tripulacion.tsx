@@ -7,9 +7,9 @@ import SemaphoreDot from '../components/ui/SemaphoreDot'
 import { useSession } from '../store/useSession'
 import { C } from '../lib/paleta'
 
-const estadoTxt = { ok: 'Todo bien', warn: 'Atención a bordo', crit: 'Escalar a Tierra', none: 'Sin chequeo hoy' }
+const estadoTxt = { ok: 'All good', warn: 'Attention on board', crit: 'Escalate to Earth', none: 'No check-up today' }
 const estadoBg = { ok: [C.okBg, C.okSoft], warn: [C.warnBg, C.warnSoft], crit: [C.critBg, C.critSoft], none: [C.sel, C.subtle] }
-const earthTxt = { ok: 'Verde', warn: 'Amarilla', crit: 'Roja', none: 'Sin datos hoy' }
+const earthTxt = { ok: 'Green', warn: 'Yellow', crit: 'Red', none: 'No data today' }
 
 export default function Tripulacion() {
   const crew = useAppStore((s) => s.crew)
@@ -27,12 +27,12 @@ export default function Tripulacion() {
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Sin conexión con el motor: tripulación de ejemplo para mostrar la privacidad por rol</SimBanner>}
-      {statusReal && conDemo && <SimBanner tag="DATO DE DEMO">Parte de los datos de la tripulación viene del simulador de la misión</SimBanner>}
+      {!statusReal && <SimBanner tag="SAMPLE DATA">No engine connection: sample crew to show role-based privacy</SimBanner>}
+      {statusReal && conDemo && <SimBanner tag="DEMO DATA">Part of the crew data comes from the mission simulator</SimBanner>}
       <PageHeader
-        kicker={vista === 'cmd' ? 'Vista del comandante a bordo' : 'Vista de los flight surgeons en Tierra'}
-        title="Panel de tripulación"
-        right={<Segmented label="Vista" value={vista} onChange={setVista} options={[{ value: 'cmd', label: 'Vista comandante' }, { value: 'earth', label: 'Vista Tierra' }]} />}
+        kicker={vista === 'cmd' ? 'On-board commander view' : 'Flight surgeons view on Earth'}
+        title="Crew panel"
+        right={<Segmented label="View" value={vista} onChange={setVista} options={[{ value: 'cmd', label: 'Commander view' }, { value: 'earth', label: 'Earth view' }]} />}
       />
 
       {vista === 'cmd' ? (
@@ -46,35 +46,35 @@ export default function Tripulacion() {
                   style={{ borderColor: c.estado === 'crit' ? C.critLine : c.estado === 'warn' ? C.warnLine : c.demo ? C.line3 : C.line }} aria-label={c.nombre}>
                   <div className="flex items-center gap-3">
                     <span className="w-12 h-12 rounded-[14px] grid place-items-center font-[family-name:var(--font-display)] font-bold" style={{ background: c.estado === 'warn' ? C.warnBg : C.sel, color: c.estado === 'warn' ? C.warnSoft : C.text }}>{c.id}</span>
-                    <div><h2 className="h2">{c.nombre}</h2><p className="mt-0.5 mb-0 text-sm text-faint">{c.id === me ? 'Tú' : c.rol === 'Tú' ? 'Especialista de misión' : c.rol}</p></div>
+                    <div><h2 className="h2">{c.nombre}</h2><p className="mt-0.5 mb-0 text-sm text-faint">{c.id === me ? 'You' : c.rol === 'You' ? 'Mission specialist' : c.rol}</p></div>
                   </div>
                   <span className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-sm font-semibold" style={{ background: bg, color: fg }}>
                     <SemaphoreDot estado={c.estado} size={12} />{estadoTxt[c.estado]}
                   </span>
-                  <p className="m-0 text-[13px] text-muted">Último dato {c.ultimo}{c.alertas ? ` · ${c.alertas} alerta${c.alertas > 1 ? 's' : ''} abierta${c.alertas > 1 ? 's' : ''}` : ''}</p>
+                  <p className="m-0 text-[13px] text-muted">Latest data {c.ultimo}{c.alertas ? ` · ${c.alertas} open alert${c.alertas > 1 ? 's' : ''}` : ''}</p>
                   {c.estado === 'none' && (pinged[c.id]
-                    ? <span className="flex items-center justify-center gap-2 min-h-[40px] rounded-xl bg-accent-bg text-[13px] font-semibold text-accent-soft"><Check size={16} strokeWidth={2.4} />Marcado: se lo recordaste</span>
-                    : <button type="button" className="btn sec sm w-full" onClick={() => setPinged((p) => ({ ...p, [c.id]: true }))}>Marcar que se lo recordé</button>)}
+                    ? <span className="flex items-center justify-center gap-2 min-h-[40px] rounded-xl bg-accent-bg text-[13px] font-semibold text-accent-soft"><Check size={16} strokeWidth={2.4} />Marked: you reminded them</span>
+                    : <button type="button" className="btn sec sm w-full" onClick={() => setPinged((p) => ({ ...p, [c.id]: true }))}>Mark that I reminded them</button>)}
                 </motion.section>
               )
             })}
           </div>
           <div className="card flex gap-3.5 items-start">
             <Lock size={22} color={C.accent} className="shrink-0 mt-px" />
-            <p className="m-0 text-sm text-subtle leading-relaxed">El comandante solo ve el semáforo de cada compañero, nunca su detalle clínico. Así se protege la privacidad médica sin perder la seguridad del equipo</p>
+            <p className="m-0 text-sm text-subtle leading-relaxed">The commander only sees each crewmate’s traffic light, never their clinical details. This protects medical privacy without compromising crew safety</p>
           </div>
         </motion.div>
       ) : (
         <motion.div key="earth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-[22px]">
           <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-accent-bg border border-accent-line text-sm text-[#C9EDFB]">
             <Clock size={20} className="shrink-0" />
-            <span>{retrasoMin > 0 || (link && link.retraso_s >= 1) ? <>Lo que ven los flight surgeons ya pasó hace <strong className="num">{retrasoTxt}</strong> (retraso de ida del entorno activo), siempre está visible</> : <>En este entorno Tierra ve los datos casi en tiempo real</>}</span>
+            <span>{retrasoMin > 0 || (link && link.retraso_s >= 1) ? <>What the flight surgeons see already happened <strong className="num">{retrasoTxt}</strong> ago (one-way delay of the active environment), always visible</> : <>In this environment Earth sees the data almost in real time</>}</span>
           </div>
           <section className={conDemo || !statusReal ? 'card sim' : 'card'} style={{ padding: 0, overflow: 'hidden' }}>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
-                  <tr>{['Astronauta', 'Estado', 'Ritmo en reposo', 'Presión', 'Ánimo', 'Dato recibido'].map((h) => <th key={h} className="k text-left px-3.5 py-3.5 border-b border-line">{h}</th>)}</tr>
+                  <tr>{['Astronaut', 'Status', 'Resting heart rate', 'Blood pressure', 'Mood', 'Data received'].map((h) => <th key={h} className="k text-left px-3.5 py-3.5 border-b border-line">{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {crew.map((c) => {
@@ -86,7 +86,7 @@ export default function Tripulacion() {
                         <td className="num px-3.5 py-3.5 border-b border-line" style={{ color: warn ? C.warn : undefined }}>{c.ritmo}</td>
                         <td className="num px-3.5 py-3.5 border-b border-line">{c.presion}</td>
                         <td className="num px-3.5 py-3.5 border-b border-line">{c.animo}</td>
-                        <td className="num px-3.5 py-3.5 border-b border-line text-muted">{c.estado === 'none' ? c.ultimo : `${c.ultimo} + ${retrasoTxt} de viaje`}</td>
+                        <td className="num px-3.5 py-3.5 border-b border-line text-muted">{c.estado === 'none' ? c.ultimo : `${c.ultimo} + ${retrasoTxt} in transit`}</td>
                       </tr>
                     )
                   })}

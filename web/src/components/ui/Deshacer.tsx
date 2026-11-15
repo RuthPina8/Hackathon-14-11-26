@@ -46,7 +46,7 @@ export function BarraDeshacer({ pendiente, onDeshacer }: { pendiente: Pendiente 
           className="fixed bottom-24 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 rounded-2xl border-2 border-line2 bg-raised px-5 py-3 shadow-[0_12px_40px_rgba(0,0,0,.55)]">
           <span className="num grid h-11 w-11 place-items-center rounded-full border-2 border-accent text-lg font-bold text-accent">{restan}</span>
           <span className="text-base font-semibold">{pendiente.texto}</span>
-          <button type="button" className="btn pri" onClick={onDeshacer}><Undo2 size={20} />Deshacer</button>
+          <button type="button" className="btn pri" onClick={onDeshacer}><Undo2 size={20} />Undo</button>
         </motion.div>
       )}
     </AnimatePresence>
@@ -54,7 +54,7 @@ export function BarraDeshacer({ pendiente, onDeshacer }: { pendiente: Pendiente 
 }
 
 // Botón que pide un segundo toque para confirmar (para "Reiniciar").
-export function BotonConfirmar({ onConfirmar, children, confirmar = '¿Seguro? Toca otra vez', className = 'btn sec', disabled, title }: {
+export function BotonConfirmar({ onConfirmar, children, confirmar = 'Sure? Tap again', className = 'btn sec', disabled, title }: {
   onConfirmar: () => void; children: ReactNode; confirmar?: string; className?: string; disabled?: boolean; title?: string
 }) {
   const [armado, setArmado] = useState(false)

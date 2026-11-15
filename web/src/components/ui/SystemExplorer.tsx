@@ -11,12 +11,12 @@ import { C } from '../../lib/paleta'
 
 const COL: Record<Semaforo, string> = { ok: C.ok, warn: C.warn, crit: C.crit, none: C.none }
 const BG: Record<Semaforo, string> = { ok: C.okBg, warn: C.warnBg, crit: C.critBg, none: C.sel }
-const TXT: Record<Semaforo, string> = { ok: 'Dentro de tu normal', warn: 'Atención a bordo', crit: 'Escalar a Tierra', none: 'Proyección simulada' }
+const TXT: Record<Semaforo, string> = { ok: 'Within your normal', warn: 'Attention on board', crit: 'Escalate to Earth', none: 'Simulated projection' }
 // Un sistema medido hoy pero sin línea base todavía no está "simulado", está aprendiendo tu normal
 // Un sistema sin mediciones todavía no es "simulado": solo el óseo es proyección
 const etiqueta = (s?: { estado: Semaforo; real?: Record<string, string>; sim?: boolean }) =>
-  !s ? TXT.none : s.estado !== 'none' ? TXT[s.estado] : s.sim ? TXT.none : s.real ? 'Aprendiendo tu normal' : 'Sin datos todavía'
-const capaTag = { real: ['real', 'Real'], self: ['self', 'Autorreportado'], sim: ['simt', 'Simulado'] } as const
+  !s ? TXT.none : s.estado !== 'none' ? TXT[s.estado] : s.sim ? TXT.none : s.real ? 'Learning your normal' : 'No data yet'
+const capaTag = { real: ['real', 'Real'], self: ['self', 'Autorreportado'], sim: ['simt', 'Simulated'] } as const
 
 // contorno del cuerpo (simétrico, generado a partir de la mitad derecha)
 const BODY = 'M110 8 C125 8 137 20 137 40 C137 56 132 68 124 76 C120 80 119 84 119 90 C119 96 120 100 123 103 C130 107 142 109 152 113 C163 117 168 126 168 140 C169 158 171 176 173 192 C175 210 178 226 180 242 C181 252 183 262 181 272 C179 282 172 286 169 280 C166 272 168 262 167 252 C164 232 161 212 159 194 C157 176 156 160 154 146 C150 150 148 170 147 192 C146 208 150 224 152 240 C153 264 148 300 143 330 C140 352 141 374 139 396 C138 408 141 416 146 422 C150 428 140 432 125 430 C120 429 120 420 121 410 C122 380 123 350 121 322 C119 292 117 266 113 252 C112 248 110 247 110 247 C110 247 108 248 107 252 C103 266 101 292 99 322 C97 350 98 380 99 410 C100 420 100 429 95 430 C80 432 70 428 74 422 C79 416 82 408 81 396 C79 374 80 352 77 330 C72 300 67 264 68 240 C70 224 74 208 73 192 C72 170 70 150 66 146 C64 160 63 176 61 194 C59 212 56 232 53 252 C52 262 54 272 51 280 C48 286 41 282 39 272 C37 262 39 252 40 242 C42 226 45 210 47 192 C49 176 51 158 52 140 C52 126 57 117 68 113 C78 109 90 107 97 103 C100 100 101 96 101 90 C101 84 100 80 96 76 C88 68 83 56 83 40 C83 20 95 8 110 8 Z'
@@ -82,8 +82,8 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
   return (
     <section className="card" aria-labelledby="cuerpo" style={{ padding: 0, overflow: 'hidden' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2 px-[22px] pt-5">
-        <h2 id="cuerpo" className="h2">Estado por sistema</h2>
-        <span className="text-[13px] text-faint">Toca un órgano o un sistema para ver el detalle</span>
+        <h2 id="cuerpo" className="h2">Status by system</h2>
+        <span className="text-[13px] text-faint">Tap an organ or a system to see details</span>
       </div>
 
       <div className="flex flex-wrap items-stretch gap-2 p-[22px] pt-4">
@@ -118,7 +118,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
 
         {/* ---------- figura ---------- */}
         <div className="relative flex justify-center shrink-0" style={{ flex: '0 0 240px' }}>
-          <svg width="230" height="460" viewBox="0 0 220 440" role="group" aria-label="Figura del cuerpo, cada órgano es un botón">
+          <svg width="230" height="460" viewBox="0 0 220 440" role="group" aria-label="Body figure, each organ is a button">
             <defs>
               <linearGradient id="bodyFill" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0" stopColor="#1A2844" />
@@ -163,7 +163,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </g>
 
             {/* huesos (simulado) */}
-            <Organ label="Huesos y músculos, proyección simulada" {...organProps('oseo')}>
+            <Organ label="Bones and muscles, simulated projection" {...organProps('oseo')}>
               <rect x="30" y="250" width="160" height="180" fill="transparent" />
               <g stroke={col('oseo')} strokeWidth="4.5" strokeLinecap="round" strokeDasharray="7 6" fill="none" opacity="0.75">
                 <line x1="87" y1="258" x2="87" y2="316" /><line x1="133" y1="258" x2="133" y2="316" />
@@ -175,7 +175,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </Organ>
 
             {/* sistema inmune: ganglios y bazo */}
-            <Organ label={`Sistema inmune, ${etiqueta(by.inmune)}`} {...organProps('inmune')}>
+            <Organ label={`Immune system, ${etiqueta(by.inmune)}`} {...organProps('inmune')}>
               <g stroke={col('inmune')} strokeOpacity="0.35" strokeWidth="1.2" fill="none">
                 <path d="M103 96 L74 150 M117 96 L146 150 M74 150 L88 206 M146 150 L124 238 M88 206 L96 238" />
               </g>
@@ -188,7 +188,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </Organ>
 
             {/* corazón */}
-            <Organ label={`Corazón, ${etiqueta(by.cardio)}`} {...organProps('cardio')}>
+            <Organ label={`Heart, ${etiqueta(by.cardio)}`} {...organProps('cardio')}>
               <circle cx="122" cy="162" r="18" fill="transparent" />
               <motion.path
                 d="M122 178 C104 166 104 148 114 146 C119 145 122 149 122 153 C122 149 125 145 130 146 C140 148 140 166 122 178 Z"
@@ -200,13 +200,13 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </Organ>
 
             {/* cerebro */}
-            <Organ label={`Cerebro, ${etiqueta(by.mental)}`} {...organProps('mental')}>
+            <Organ label={`Brain, ${etiqueta(by.mental)}`} {...organProps('mental')}>
               <path d="M110 16 C96 13 87 21 88 31 C84 37 87 45 94 46 L126 46 C133 45 136 37 132 31 C133 21 124 13 110 16 Z" fill={col('mental')} fillOpacity="0.22" stroke={col('mental')} strokeWidth="1.6" />
               <path d="M110 18 L110 45 M98 25 C102 29 102 35 97 40 M122 25 C118 29 118 35 123 40" stroke={col('mental')} strokeWidth="1.3" fill="none" strokeLinecap="round" />
             </Organ>
 
             {/* ojos */}
-            <Organ label={`Ojos y sueño, ${etiqueta(by.sueno)}`} {...organProps('sueno')}>
+            <Organ label={`Eyes and sleep, ${etiqueta(by.sueno)}`} {...organProps('sueno')}>
               <rect x="88" y="48" width="44" height="16" fill="transparent" />
               <ellipse cx="99" cy="56" rx="6.5" ry="3.6" fill={col('sueno')} />
               <ellipse cx="121" cy="56" rx="6.5" ry="3.6" fill={col('sueno')} />
@@ -259,9 +259,9 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
 
             <div className="flex flex-col gap-2">
               {(sel.metricas ?? det.metricas).map((m) => {
-                const mst = st === 'crit' && m.label === 'Presión' ? 'crit' : m.estado
+                const mst = st === 'crit' && m.label === 'Blood pressure' ? 'crit' : m.estado
                 const real = sel.real?.[m.label]
-                const val = st === 'crit' && m.label === 'Presión' ? sel.valor : real ?? m.value
+                const val = st === 'crit' && m.label === 'Blood pressure' ? sel.valor : real ?? m.value
                 return (
                   <div key={m.label} className="flex items-center gap-3 py-2 border-b border-line last:border-b-0">
                     <div className="flex-1 min-w-0">
@@ -269,10 +269,10 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                       <p className="m-0 mt-0.5 flex items-baseline gap-2">
                         <strong className="num text-lg" style={{ color: mst === 'ok' ? C.text : COL[mst] }}>{val}</strong>
                         <span className="num text-sm text-faint">tu normal {m.base}</span>
-                        {real && <span className="tag real">Medido hoy</span>}
+                        {real && <span className="tag real">Measured today</span>}
                       </p>
                     </div>
-                    {m.serie.length > 1 ? <Spark serie={m.serie} color={COL[mst]} /> : <span className="w-[120px] text-right text-[13px] text-faint">{m.serie.length ? '1 dato' : 'sin datos'}</span>}
+                    {m.serie.length > 1 ? <Spark serie={m.serie} color={COL[mst]} /> : <span className="w-[120px] text-right text-[13px] text-faint">{m.serie.length ? '1 data point' : 'no data'}</span>}
                   </div>
                 )
               })}
@@ -280,18 +280,18 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
 
             <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))' }}>
               <div className="p-3 rounded-[10px] bg-panel border border-line">
-                <p className="k flex items-center gap-1.5"><ShieldAlert size={13} />Riesgo NASA</p>
+                <p className="k flex items-center gap-1.5"><ShieldAlert size={13} />NASA risk</p>
                 <p className="m-0 mt-1.5 text-[13px] leading-snug">{det.riesgo}</p>
               </div>
               <div className="p-3 rounded-[10px] bg-panel border border-line">
-                <p className="k">Por qué importa</p>
+                <p className="k">Why it matters</p>
                 <p className="m-0 mt-1.5 text-[13px] leading-snug text-subtle">{det.funcion}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 mt-auto">
-              <p className="m-0 text-[13px] text-muted flex-1 min-w-[200px]"><strong className="text-text">Qué hacer:</strong> {st === 'crit' ? 'Siéntate, repite la medición en 5 minutos y sigue la alerta roja' : det.hacer}</p>
-              <Link to={st === 'crit' ? '/alerts' : det.link.to} className="btn sec sm">{st === 'crit' ? 'Ver alerta' : det.link.label}<ArrowRight size={15} /></Link>
+              <p className="m-0 text-[13px] text-muted flex-1 min-w-[200px]"><strong className="text-text">What to do:</strong> {st === 'crit' ? 'Sit down, repeat the reading in 5 minutes and follow the red alert' : det.hacer}</p>
+              <Link to={st === 'crit' ? '/alerts' : det.link.to} className="btn sec sm">{st === 'crit' ? 'View alert' : det.link.label}<ArrowRight size={15} /></Link>
             </div>
           </motion.div>
         </AnimatePresence>

@@ -3,10 +3,10 @@ import { C } from '../../lib/paleta'
 
 // Indicador pequeño del estado de conexión con el back (va abajo del menú lateral).
 const label: Record<string, { text: string; color: string }> = {
-  mock: { text: 'Datos de ejemplo', color: C.faint },
-  connecting: { text: 'Conectando al back…', color: C.warn },
-  connected: { text: 'Conectado en vivo', color: C.ok },
-  disconnected: { text: 'Sin back, usando ejemplos', color: C.faint },
+  mock: { text: 'Sample data', color: C.faint },
+  connecting: { text: 'Connecting to the server…', color: C.warn },
+  connected: { text: 'Connected live', color: C.ok },
+  disconnected: { text: 'No server, using samples', color: C.faint },
 }
 
 export default function ConnectionStatus() {

@@ -19,10 +19,10 @@ DE_CAMARA = {"hr_reposo", "hrv_rmssd", "resp_rpm", "perclos", "parpadeo_min", "e
              "ceno_medio", "movimiento_cabeza"}
 
 FRASE = {
-    "hr_reposo": "ritmo en reposo", "hrv_rmssd": "variabilidad del ritmo", "resp_rpm": "respiración",
-    "perclos": "fatiga visual", "parpadeo_min": "parpadeo", "expresividad": "expresividad",
-    "sonrisa_media": "sonrisa", "ceno_medio": "ceño", "movimiento_cabeza": "movimiento de cabeza",
-    "reaccion_ms": "tiempo de reacción", "sueno_horas": "sueño",
+    "hr_reposo": "resting heart rate", "hrv_rmssd": "heart rate variability", "resp_rpm": "breathing",
+    "perclos": "visual fatigue", "parpadeo_min": "blinking", "expresividad": "expressiveness",
+    "sonrisa_media": "smiling", "ceno_medio": "frowning", "movimiento_cabeza": "head movement",
+    "reaccion_ms": "reaction time", "sueno_horas": "sleep",
 }
 
 
@@ -69,8 +69,8 @@ def entrenar(dias: list[dict[str, float]], etiquetas: list[float], hoy: dict[str
     coef = dict(zip(cols, (float(c) for c in modelo.coef_)))
     top = sorted(coef.items(), key=lambda kv: -abs(kv[1]))[:3]
     # coef > 0: más de esa señal → mejor ánimo, así que los días bajos vienen con MENOS de ella
-    partes = [f"{'menos' if c > 0 else 'más'} {FRASE.get(s, s)}" for s, c in top if abs(c) >= 0.05]
-    explicacion = f"Tus días bajos suelen venir con {', '.join(partes)}" if partes else None
+    partes = [f"{'lower' if c > 0 else 'higher'} {FRASE.get(s, s)}" for s, c in top if abs(c) >= 0.05]
+    explicacion = f"Your low days usually come with {', '.join(partes)}" if partes else None
 
     estimado = None
     if hoy:

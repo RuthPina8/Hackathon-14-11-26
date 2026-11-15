@@ -67,18 +67,18 @@ export default function GuiaAnimada({ titulo, pasos, alTerminar, escena3D }: { t
       <div className="h-1.5 overflow-hidden rounded bg-track"><div className="h-full rounded bg-accent" style={{ width: `${progreso * 100}%` }} /></div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label="Paso anterior" onClick={() => ir(i - 1)}><ChevronLeft size={24} /></button>
-        <div role="tablist" aria-label="Pasos" className="flex flex-1 flex-wrap gap-2">
+        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label="Previous step" onClick={() => ir(i - 1)}><ChevronLeft size={24} /></button>
+        <div role="tablist" aria-label="Steps" className="flex flex-1 flex-wrap gap-2">
           {pasos.map((p, n) => (
-            <button key={p.titulo} type="button" role="tab" aria-selected={n === i} aria-label={`Paso ${n + 1}: ${p.titulo}`} onClick={() => ir(n)}
+            <button key={p.titulo} type="button" role="tab" aria-selected={n === i} aria-label={`Step ${n + 1}: ${p.titulo}`} onClick={() => ir(n)}
               className="num h-[60px] min-w-[60px] flex-1 rounded-xl border-2 text-lg font-bold active:translate-y-[2px]"
               style={{ borderColor: n === i ? 'var(--color-accent)' : 'var(--color-line2)', background: n === i ? 'var(--color-accent-bg)' : 'transparent', color: n < i ? 'var(--color-ok)' : 'var(--color-text)' }}>
               {n + 1}
             </button>
           ))}
         </div>
-        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label="Paso siguiente" onClick={() => ir(i + 1)}><ChevronRight size={24} /></button>
-        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label={play ? 'Pausar' : 'Reproducir'} onClick={() => { setPlay((x) => !x); setInicio(performance.now()) }}>
+        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label="Next step" onClick={() => ir(i + 1)}><ChevronRight size={24} /></button>
+        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label={play ? 'Pausar' : 'Play'} onClick={() => { setPlay((x) => !x); setInicio(performance.now()) }}>
           {play ? <Pause size={22} /> : <Play size={22} />}
         </button>
       </div>

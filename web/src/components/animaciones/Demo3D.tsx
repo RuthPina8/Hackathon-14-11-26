@@ -173,7 +173,7 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
           const dirD = new THREE.Vector3(-lado * 0.1, -Math.cos(th), Math.sin(th) * frente)
           apuntar(huesos.brazoI, huesos.anteI, dirI); apuntar(huesos.anteI, huesos.manoI, dirI)
           apuntar(huesos.brazoD, huesos.anteD, dirD); apuntar(huesos.anteD, huesos.manoD, dirD)
-          return { ang: g, ok: g > 82, texto: g > 82 ? 'Altura de hombros' : 'Hombros' }
+          return { ang: g, ok: g > 82, texto: g > 82 ? 'Shoulder height' : 'Shoulders' }
         }
         // Sentadilla como la hace un cuerpo humano:
         // - abajo, el muslo queda casi paralelo al piso (15° arriba de la horizontal) y la espinilla se inclina
@@ -197,7 +197,7 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
         const adelante = new THREE.Vector3(0, -0.85 + d * 0.85, (0.12 + d * 0.88) * frente)
         apuntar(huesos.brazoI, huesos.anteI, adelante.clone().setX(lado * 0.1)); apuntar(huesos.anteI, huesos.manoI, adelante.clone().setX(lado * 0.1))
         apuntar(huesos.brazoD, huesos.anteD, adelante.clone().setX(-lado * 0.1)); apuntar(huesos.anteD, huesos.manoD, adelante.clone().setX(-lado * 0.1))
-        return { ang: angI, ok: d > 0.9, texto: d > 0.9 ? 'Abajo' : 'Rodilla' }
+        return { ang: angI, ok: d > 0.9, texto: d > 0.9 ? 'Down' : 'Knee' }
       }
 
       const hud = (r: { ang: number; ok: boolean; texto: string }) => {
@@ -248,20 +248,20 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
 
   return (
     <div className="relative h-full w-full" style={{ background: 'radial-gradient(ellipse at 50% 40%, #12304A 0%, #0A1626 55%, #060B16 100%)' }}>
-      <div ref={caja} className="absolute inset-0" role="img" aria-label={ejercicio === 'brazos' ? 'Astronauta en 3D haciendo elevación frontal de brazos' : 'Astronauta en 3D haciendo sentadilla controlada'} />
+      <div ref={caja} className="absolute inset-0" role="img" aria-label={ejercicio === 'brazos' ? '3D astronaut doing front arm raises' : '3D astronaut doing a controlled squat'} />
       {!mini && (
         <>
           <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5">
             <span ref={angRef} className="num rounded-lg bg-[rgba(6,11,22,.8)] px-3 py-1.5 text-[17px] font-bold text-accent-soft">--</span>
             <span ref={okRef} className="rounded-lg bg-ok-bg px-3 py-1.5 text-[15px] font-bold text-ok-soft transition-opacity" style={{ opacity: 0 }}>
-              {ejercicio === 'brazos' ? '✓ Codos rectos, brazos al frente' : '✓ Espalda recta, talones abajo'}
+              {ejercicio === 'brazos' ? '✓ Elbows straight, arms forward' : '✓ Back straight, heels down'}
             </span>
           </div>
           <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-center rounded-xl bg-[rgba(6,11,22,.8)] px-4 py-2">
             <span className="text-[13px] font-semibold uppercase tracking-wider text-faint">Reps</span>
             <span ref={repRef} className="num text-[30px] font-bold leading-none text-accent">0</span>
           </div>
-          <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-[rgba(6,11,22,.75)] px-3 py-1 text-[13px] text-faint">Arrastra para girar</span>
+          <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-[rgba(6,11,22,.75)] px-3 py-1 text-[13px] text-faint">Drag to rotate</span>
         </>
       )}
     </div>

@@ -58,7 +58,7 @@ export const ambienteApi = {
 }
 
 export const NOMBRE_ESCENARIO: Record<Escenario, string> = {
-  estable: 'Ambiente estable',
-  cambio: 'Cambio ambiental',
-  revision: 'Requiere revisión',
+  estable: 'Stable environment',
+  cambio: 'Environmental change',
+  revision: 'Needs review',
 }

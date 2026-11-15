@@ -78,7 +78,7 @@ def test_baja_de_20_por_ciento_es_cambio_funcional():
     sesion(12); sesion(12)
     c = sesion(9).comparacion
     assert c.estado == "bajo" and c.cambio_pct == -25.0
-    assert "25% menos" in c.texto
+    assert "25% fewer" in c.texto
 
 
 def test_baja_calidad_no_se_compara_ni_cuenta():
@@ -104,7 +104,7 @@ def test_cambio_funcional_y_ambiental_en_la_misma_ventana_da_hallazgo():
     h = correlacion.evaluar(baja, telemetria.lecturas, lim())
     assert h is not None and h.lecturas_fuera == 3
     assert {"co2_ppm", "o2_pct"} <= set(h.variables)
-    assert any("ventilación" in a for a in h.acciones)
+    assert any("ventilation" in a for a in h.acciones)
 
 
 def test_ambiente_fuera_de_la_ventana_no_da_hallazgo():
@@ -159,9 +159,9 @@ def test_flujo_completo_de_la_demo(client):
     assert ctx["funcional"]["comparacion"]["estado"] == "bajo"
     obs = ctx["observaciones"]
     assert len(obs) == 1 and obs[0]["nivel"] == "informativa"
-    assert "No se establece causa" in obs[0]["causalidad"]
-    assert any("SIMULADA" in c for c in obs[0]["confiabilidad"])
-    assert any("dato de demo" in c for c in obs[0]["confiabilidad"])
+    assert "No cause is established" in obs[0]["causalidad"]
+    assert any("SIMULATED" in c for c in obs[0]["confiabilidad"])
+    assert any("demo data" in c for c in obs[0]["confiabilidad"])
     # Una sesión genera una sola observación aunque lleguen más lecturas
     client.post("/telemetry/simulate", json={"escenario": "revision"})
     assert len(client.get("/mission/context").json()["observaciones"]) == 1
@@ -176,7 +176,7 @@ def test_endpoints_de_movimiento_y_telemetria(client):
     assert client.post("/movement/sessions", json={"ejercicio": "sentadilla", "repeticiones": 10, "duracion_s": 42, "calidad": 1.5}).status_code == 422
 
     t = client.get("/telemetry/latest").json()
-    assert "SIMULADOS" in t["nota"] and {x["variable"] for x in t["rangos"]} >= {"co2_ppm", "o2_pct", "temp_c", "humedad_pct"}
+    assert "SIMULATED" in t["nota"] and {x["variable"] for x in t["rangos"]} >= {"co2_ppm", "o2_pct", "temp_c", "humedad_pct"}
     assert client.post("/telemetry", json={**ESTABLE}).json()["capa"] == "sim"
     assert len(client.get("/telemetry/history").json()) >= 1
     assert client.post("/telemetry/simulate", json={"escenario": "otro"}).status_code == 422

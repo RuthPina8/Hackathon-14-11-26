@@ -7,9 +7,9 @@ Por qué así (lo que dice la literatura):
   (sesgo y límites de acuerdo, ±1.96 SD) y la tasa de éxito: % de lecturas con error <= 5 lpm.
 - Referencia publicada del método POS: ~1 a 4 lpm de MAE en UBFC-rPPG y PURE (sujetos quietos, buena luz).
 
-El "umbral verificado" es la confianza mínima a partir de la cual, con NUESTROS pares, al menos el
+El "verified threshold" es la confianza mínima a partir de la cual, con NUESTROS pares, al menos el
 90% de las lecturas cae a ±5 lpm del aparato de referencia. Sin pares suficientes no se inventa:
-se dice "sin validar" y se muestra la referencia publicada.
+se dice "not validated" y se muestra la referencia publicada.
 """
 
 from dataclasses import dataclass, field
@@ -25,7 +25,7 @@ REFERENCIA_PUBLICADA = {
     "metodo": "POS (Wang et al. 2017)",
     "mae_lpm": [1.0, 4.0],
     "bases": ["UBFC-rPPG", "PURE"],
-    "nota": "Sujetos quietos y luz controlada; con movimiento, poca luz o piel más oscura el error sube.",
+    "nota": "Still subjects and controlled light; with movement, low light or darker skin the error goes up.",
 }
 
 
@@ -111,20 +111,20 @@ def evaluar(pares: list[Par]) -> Confiabilidad:
 
     if g.n < MIN_PARES:
         estado = "sin_validar" if g.n == 0 else "validando"
-        texto = (f"Aún no hay pares cámara contra aparato de referencia." if g.n == 0 else
-                 f"Van {g.n} de {MIN_PARES} pares para declarar un umbral.")
-        texto += f" Referencia publicada de POS: {REFERENCIA_PUBLICADA['mae_lpm'][0]:g} a {REFERENCIA_PUBLICADA['mae_lpm'][1]:g} lpm de error medio."
+        texto = (f"No camera vs reference device pairs yet." if g.n == 0 else
+                 f"{g.n} of {MIN_PARES} pairs collected to declare a threshold.")
+        texto += f" Published POS reference: {REFERENCIA_PUBLICADA['mae_lpm'][0]:g} to {REFERENCIA_PUBLICADA['mae_lpm'][1]:g} bpm mean error."
         return Confiabilidad(global_=g, por_origen={k: metricas(v) for k, v in por_origen.items()}, tramos=tramos,
                              umbral=None, estado=estado, explicacion=texto)
 
     sobre = metricas([p for p in pares if umbral is not None and p.confianza >= umbral]) if umbral is not None else None
     if umbral is None:
-        texto = (f"Con {g.n} pares, ningún nivel de confianza llega a {EXITO_OBJETIVO:.0%} de lecturas a ±{TOLERANCIA_LPM:g} lpm. "
-                 "Mejora la luz y repite las validaciones.")
+        texto = (f"With {g.n} pairs, no confidence level reaches {EXITO_OBJETIVO:.0%} of readings within ±{TOLERANCIA_LPM:g} bpm. "
+                 "Improve the lighting and repeat the validations.")
         estado = "validando"
     else:
-        texto = (f"Con confianza de {umbral:.1f} o más, {sobre.exito_5:.0%} de las lecturas quedan a ±{TOLERANCIA_LPM:g} lpm "
-                 f"del aparato de referencia (error medio {sobre.mae:g} lpm, {sobre.n} pares).")
+        texto = (f"At a confidence of {umbral:.1f} or more, {sobre.exito_5:.0%} of readings fall within ±{TOLERANCIA_LPM:g} bpm "
+                 f"of the reference device (mean error {sobre.mae:g} bpm, {sobre.n} pairs).")
         estado = "verificado"
     return Confiabilidad(global_=g, por_origen={k: metricas(v) for k, v in por_origen.items()}, tramos=tramos,
                          umbral=umbral, sobre_umbral=sobre, estado=estado, explicacion=texto)
