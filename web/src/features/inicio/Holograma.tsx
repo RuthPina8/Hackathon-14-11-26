@@ -21,16 +21,28 @@ type Props = {
   sexo: 'F' | 'M' | '' // de la ficha médica: ajusta las proporciones del cuerpo
 }
 
-// Proporciones del cuerpo femenino sobre el mismo esqueleto: hombros y pecho más angostos,
-// cadera más ancha. Cada hueso compensa el cambio del anterior para no deformar la cabeza
-const PROPORCIONES_F: Record<string, [number, number, number]> = {
-  Hips: [1.14, 1, 1.08],
-  Spine: [1 / 1.14, 1, 1 / 1.08],
-  Spine2: [0.85, 0.96, 0.93],
-  Neck: [1 / 0.85, 1 / 0.96, 1 / 0.93],
-  LeftShoulder: [0.92, 0.92, 0.92],
-  RightShoulder: [0.92, 0.92, 0.92],
-}
+// Proporciones del cuerpo femenino sobre el mismo esqueleto. Cada hueso hereda la escala del
+// anterior, así que se escribe la escala que debe quedar en cada zona y aquí se convierte a relativa
+// (x = ancho, y = alto, z = profundidad)
+const FORMA_F: [string, string | null, [number, number, number]][] = [
+  ['Hips', null, [1.24, 1, 1.12]], // cadera ancha
+  ['LeftUpLeg', 'Hips', [1.02, 1, 1.02]], // muslos llenos sin engordar toda la pierna
+  ['RightUpLeg', 'Hips', [1.02, 1, 1.02]],
+  ['Spine', 'Hips', [0.8, 0.97, 0.9]], // cintura delgada
+  ['Spine1', 'Spine', [0.86, 0.97, 1.0]],
+  ['Spine2', 'Spine1', [0.8, 0.95, 1.04]], // pecho y hombros angostos
+  ['LeftShoulder', 'Spine2', [0.88, 0.92, 0.92]],
+  ['RightShoulder', 'Spine2', [0.88, 0.92, 0.92]],
+  ['Neck', 'Spine2', [0.9, 0.98, 0.94]], // cuello y cabeza un poco más finos
+]
+const absoluta = Object.fromEntries(FORMA_F.map(([n, , a]) => [n, a]))
+const PROPORCIONES_F: Record<string, [number, number, number]> = Object.fromEntries(
+  FORMA_F.map(([n, padre, a]) => {
+    const p = padre ? absoluta[padre] : [1, 1, 1]
+    return [n, [a[0] / p[0], a[1] / p[1], a[2] / p[2]]]
+  }),
+)
+const ESTATURA_F = 0.95 // un poco más baja
 
 // Modelo humano: Xbot de Mixamo, incluido en los ejemplos oficiales de three.js
 const MODELO = '/models/humano.glb'
@@ -132,6 +144,8 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
     }
     let mixer: THREE.AnimationMixer | null = null
     const huesosForma: { hueso: THREE.Object3D; f: [number, number, number] }[] = []
+    const busto: THREE.Mesh[] = []
+    let estatura = 1
 
     new GLTFLoader().load(
       MODELO,
@@ -233,6 +247,25 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
         organo('inmune', ganglio, 'Spine2', -0.14, 0.026, 0)
         organo('inmune', ganglio, 'Hips', 0.08, -0.06, 0.05)
         organo('inmune', ganglio, 'Hips', -0.08, -0.06, 0.05)
+
+        // Busto: dos volúmenes con el mismo contorno de holograma, solo en el cuerpo femenino
+        const pecho = hueso('Spine2')
+        if (pecho) {
+          const geo = g(new THREE.SphereGeometry(0.05 * f, 24, 18))
+          const base = modelo.worldToLocal(pecho.getWorldPosition(new THREE.Vector3()))
+          for (const lado of [-1, 1]) {
+            for (const mat of [rim, malla]) {
+              const m = new THREE.Mesh(geo, mat)
+              m.position.copy(base).add(new THREE.Vector3(0.058 * lado * f, 0.02 * f, 0.075 * f))
+              m.scale.set(1, 0.9, 0.75)
+              m.visible = false
+              modelo.add(m)
+              m.updateMatrixWorld(true)
+              pecho.attach(m)
+              busto.push(m)
+            }
+          }
+        }
 
         // Esqueleto visible por dentro, como en un escáner
         const esqueleto = new THREE.SkeletonHelper(modelo)
@@ -375,6 +408,11 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
         if (mujer) h.scale.set(f[0], f[1], f[2])
         else h.scale.set(1, 1, 1)
       }
+      for (const b of busto) b.visible = mujer
+      // Estatura: se escala todo el cuerpo con los pies fijos en la plataforma
+      estatura += ((mujer ? ESTATURA_F : 1) - estatura) * 0.15
+      cuerpo.scale.setScalar(estatura)
+      cuerpo.position.y = -2 * (1 - estatura)
       const d = datos.current
 
       // Pedido de girar a frente o espalda
