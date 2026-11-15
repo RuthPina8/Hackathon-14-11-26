@@ -7,6 +7,8 @@ import Alertas from './pages/Alertas'
 import Simulacion from './pages/Simulacion'
 import Tripulacion from './pages/Tripulacion'
 import Evolucion from './pages/Evolucion'
+import MissionIntelligence from './pages/MissionIntelligence'
+import MovimientoFlow from './features/movimiento/MovimientoFlow'
 import { useWebSocket } from './lib/ws'
 import { useMissionClock } from './lib/useMissionClock'
 import DemoBar from './components/layout/DemoBar'
@@ -57,6 +59,8 @@ export default function App() {
         <Route path="/simulation" element={<Simulacion />} />
         <Route path="/crew" element={<Tripulacion />} />
         <Route path="/progress" element={<Evolucion />} />
+        <Route path="/mission-intelligence" element={<MissionIntelligence />} />
+        <Route path="/movement" element={<MovimientoFlow />} />
 
         {/* Chequeo diario (Front 1): los 5 pasos viven en /camera?paso=N; las rutas viejas redirigen */}
         <Route path="/camera" element={<ChequeoRoute />} />

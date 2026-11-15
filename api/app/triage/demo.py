@@ -75,6 +75,14 @@ class DemoEngine:
 
             almacen.reiniciar_demo()
             measurements.reset()
+            # ASTRA-MOVE y ambiente vuelven a cero y al escenario estable
+            from app.mision.contexto import contexto
+            from app.mision.movimiento import movimiento
+            from app.mision.telemetria import telemetria
+
+            contexto.reset()
+            movimiento.reset()
+            telemetria.reset()
         await broadcast("demo_tick", {"dia": 0, "fuente_datos": self.fuente, "reset": True})
         return self.estado()
 

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, ScanFace, LineChart, Bell, Orbit, Users, LogOut, TrendingUp } from 'lucide-react'
+import { Home, ScanFace, LineChart, Bell, Orbit, Users, LogOut, TrendingUp, Radar, PersonStanding } from 'lucide-react'
 import { useSession } from '../../store/useSession'
 import { useMyAlerts } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
@@ -9,7 +9,9 @@ interface Item { to: string; label: string; icon: typeof Home; badge?: boolean; 
 
 const main: Item[] = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
+  { to: '/mission-intelligence', label: 'Inteligencia de misión', icon: Radar },
   { to: '/camera', label: 'Chequeo diario', icon: ScanFace },
+  { to: '/movement', label: 'Movimiento', icon: PersonStanding },
   { to: '/indicators', label: 'Indicadores', icon: LineChart },
   { to: '/alerts', label: 'Alertas', icon: Bell, badge: true },
   { to: '/progress', label: 'Mi evolución', icon: TrendingUp },
