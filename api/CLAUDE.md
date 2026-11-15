@@ -8,6 +8,7 @@ FastAPI + PostgreSQL. Aquí trabajan Back 1 (datos e inteligencia) y Back 2 (API
 
 ```powershell
 cd api
+python -m venv venv                       # solo la primera vez
 venv\Scripts\activate                     # si marca permisos, una vez: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
@@ -17,6 +18,7 @@ alembic upgrade head
 ```
 
 - `api/.env` define `DATABASE_URL=postgresql+psycopg://postgres:...@localhost:5432/astrohealth` y `FRONT_ORIGIN`. Nunca lo subas al repo.
+- La base se crea una sola vez: `psql -U postgres -c "CREATE DATABASE astrohealth;"`.
 - Si Alembic no existe todavía: corre `alembic init alembic` y, en `alembic/env.py`, usa `DATABASE_URL` y `Base.metadata`.
 - Para depurar con breakpoints, usa la configuración "API (uvicorn)" de `.vscode/launch.json`.
 
@@ -64,6 +66,10 @@ api/
 
 Valores de `fuente`: `camara`, `prueba`, `manual`, `apple_watch`, `simulador`, `modelo`.
 
+- `simulador` es válido para **cualquier** `tipo`, aunque la tabla de abajo solo liste las fuentes reales. El dato conserva la `capa` que tendría si fuera real y la UI lo marca como "dato de demo".
+- `measurements` lleva un índice único parcial sobre (`astronauta_id`, `tipo`, `fecha`) donde `fuente = 'apple_watch'`, para que la ingesta no duplique (ver `docs/motor.md`, sección 7).
+- Qué tipos pasan por los detectores estadísticos está en `docs/motor.md`, sección 3.
+
 ### Lista cerrada de `tipo`
 
 | tipo | unidad | capa | fuente | Dirección "mala" | Sistema |
@@ -88,6 +94,8 @@ Valores de `fuente`: `camara`, `prueba`, `manual`, `apple_watch`, `simulador`, `
 
 "Óseo" solo existe en `/simulation` (capa `sim`).
 
+`animo_estimado` se guarda con capa `real` porque sus entradas son mediciones reales, pero **no es una medición**. Quien lo muestre decide por `fuente="modelo"` y pone la etiqueta "estimado", nunca por la capa.
+
 ## Pruebas mínimas (pytest)
 
 - Un seno de 1.2 Hz con ruido → `estimate_hr` da 72 ± 3 lpm.
@@ -100,3 +108,4 @@ Valores de `fuente`: `camara`, `prueba`, `manual`, `apple_watch`, `simulador`, `
   - Fiebre + congestión 1 día → amarillo.
   - Fiebre + congestión 2 días seguidos → rojo.
   - Congestión sola 3 días → amarillo; 7 días → rojo.
+  - Guion de la demo (congestión días 25 a 29, fuego labial 27 a 29, fiebre 28 y 29) → amarillo el 27, rojo el 29.
