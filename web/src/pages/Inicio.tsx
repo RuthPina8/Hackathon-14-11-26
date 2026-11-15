@@ -12,6 +12,7 @@ import { PageHeader, SimBanner } from '../components/ui/Page'
 import { useSession } from '../store/useSession'
 import { useChequeoStore } from '../features/chequeo/chequeoStore'
 import Holograma from '../features/inicio/Holograma'
+import TarjetaMision from '../features/inicio/TarjetaMision'
 import { ORGANOS, useSalud, useSexo, type Estado, type Metrica, type Organo } from '../features/inicio/useSalud'
 
 const COLOR: Record<Estado, string> = { ok: '#3DDC97', warn: '#F5B544', crit: '#FF6B7A', none: '#5C7896' }
@@ -272,6 +273,8 @@ export default function Inicio() {
           <p className="m-0 text-[13px] text-[#A3AEC4] leading-relaxed">{status.fase === 'tierra' ? 'Línea base en Tierra, antes del lanzamiento' : status.fase === 'personal' ? 'Fase personal: las alertas comparan contra tu propio normal' : `Día ${status.diaBase} de ${status.diasBase} de adaptación`}. Cada chequeo hace que las alertas dependan más de tu propio normal</p>
         </section>
       </div>
+
+      <TarjetaMision />
     </>
   )
 }

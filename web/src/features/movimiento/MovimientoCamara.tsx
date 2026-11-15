@@ -7,6 +7,10 @@ import type { SesionIn } from './movimientoApi'
 
 type Fase = 'preparando' | 'midiendo'
 
+// La pose corre en el mismo hilo que los botones: a 30 cuadros por segundo los clics tardaban en responder.
+// 15 cuadros por segundo bastan para contar repeticiones (se probó con movimientos de 1.2 s por ciclo)
+const MS_ENTRE_CUADROS = 1000 / 15 - 4
+
 const GUIA: Record<Ejercicio, string> = {
   brazos: 'Siéntate o párate de frente. Que se vean tus hombros, brazos y cadera. Sube ambos brazos por los lados hasta arriba y bájalos',
   sentadilla: 'Aléjate unos 2 metros para que se vea todo tu cuerpo, de la cabeza a los tobillos. Baja despacio y sube',
@@ -80,11 +84,13 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
     if (!pose || camara !== 'lista') return
     let raf = 0
     let ultimo = -1
+    let ultimaDeteccion = 0
     const paso = () => {
       const v = videoRef.current
-      if (v && v.readyState >= 2 && v.currentTime !== ultimo) {
+      const t = performance.now()
+      if (v && v.readyState >= 2 && v.currentTime !== ultimo && t - ultimaDeteccion >= MS_ENTRE_CUADROS) {
         ultimo = v.currentTime
-        const t = performance.now()
+        ultimaDeteccion = t
         const r = pose.detectForVideo(v, t)
         const lm = r.landmarks[0]
         const ok = Boolean(lm) && cuerpoVisible(lm, ejercicio)

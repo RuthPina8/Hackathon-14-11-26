@@ -134,7 +134,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
         <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-4">
           <section className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]" aria-labelledby="sint">
             <h2 id="sint" className="m-0 font-display text-base font-semibold">Síntomas de hoy</h2>
-            <p className="m-0 text-xs text-muted">Toca la intensidad: 1 leve, 2 moderado, 3 fuerte. Sin marcar = no lo tienes.</p>
+            <p className="m-0 text-xs text-muted">Marca Sí si lo tienes hoy. Si no lo tienes, déjalo en No.</p>
             {GRUPOS.map((g) => (
               <div key={g.sistema} className="flex flex-col gap-1">
                 <p className="m-0 mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{g.sistema}</p>
@@ -143,10 +143,13 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
                   return (
                     <div key={it.clave} className="flex min-h-14 items-center gap-2 text-base">
                       <span className={`flex-1 ${v ? 'text-ink' : 'text-soft'}`}>{it.nombre}</span>
-                      {[1, 2, 3].map((i) => (
-                        <button key={i} type="button" aria-label={`${it.nombre}, intensidad ${i}`} aria-pressed={v === i} onClick={() => cambiar(it.clave, v === i ? 0 : i)}
-                          className={`h-8 w-8 rounded-lg border font-mono text-xs font-bold ${v === i ? (i === 3 ? 'border-crit bg-[#2A1218] text-[#FFB8BF]' : 'border-warn bg-[#241D0D] text-warn') : 'border-line-strong text-muted'}`}>{i}</button>
-                      ))}
+                      {([['No', 0], ['Sí', 1]] as const).map(([texto, valor]) => {
+                        const activo = valor === 0 ? v === 0 : v > 0
+                        return (
+                          <button key={texto} type="button" aria-label={`${it.nombre}: ${texto}`} aria-pressed={activo} onClick={() => cambiar(it.clave, valor)}
+                            className={`h-10 w-14 rounded-lg border text-sm font-bold ${activo ? (valor === 1 ? 'border-warn bg-[#241D0D] text-warn' : 'border-line-strong bg-panel text-ink') : 'border-line-strong text-muted'}`}>{texto}</button>
+                        )
+                      })}
                     </div>
                   )
                 })}
