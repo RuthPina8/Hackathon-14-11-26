@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
+import { crearEstacion } from './estacion'
 import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esqueleto'
 
 // Guía del brazalete en 3D con el astronauta del Inicio, sentado a la mesa.
@@ -67,29 +68,8 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       return o
     }
 
-    // Luces de estudio, como en Movimiento
-    escena.add(new THREE.HemisphereLight('#dbe8ff', '#0b1220', 1.1))
-    const clave = new THREE.DirectionalLight('#ffffff', 2.3)
-    clave.position.set(3, 4.5, 3.5)
-    clave.castShadow = true
-    clave.shadow.mapSize.set(1024, 1024)
-    clave.shadow.camera.near = 0.5
-    clave.shadow.camera.far = 14
-    clave.shadow.radius = 4
-    escena.add(clave)
-    const contorno = new THREE.DirectionalLight(C.accent, 1.8)
-    contorno.position.set(-3, 2.5, -3.5)
-    escena.add(contorno)
-
-    const piso = malla(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: 0.35 }))
-    piso.rotation.x = -Math.PI / 2
-    piso.castShadow = false
-    escena.add(piso)
-    const grid = new THREE.GridHelper(10, 40, C.accentLine, C.holoLine)
-    ;(grid.material as THREE.Material).transparent = true
-    ;(grid.material as THREE.Material).opacity = 0.22
-    escena.add(grid)
-    mats.push(grid.material as THREE.Material); geos.push(grid.geometry)
+    // Entorno: módulo de estación espacial (luces, paredes, ventana y piso), sin plataforma porque hay silla y mesa
+    const estacion = crearEstacion(escena, renderer, { geos, mats, texturas }, { plataforma: 0 })
 
     const ajustar = () => {
       const w = el.clientWidth, h = el.clientHeight
@@ -113,7 +93,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       modelo.scale.setScalar(s)
       modelo.position.y = -bb.min.y * s
       escena.add(modelo)
-      vestir(modelo, C.accent, mats, true)
+      vestir(modelo, C.accent, mats, true, geos)
       modelo.updateMatrixWorld(true)
 
       const h = buscarHueso(modelo)
@@ -501,6 +481,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
         mira.lerp(obj, k)
         camara.lookAt(mira)
         hud(r, extra)
+        estacion.animar(reloj.elapsedTime)
         renderer.render(escena, camara)
       }
 

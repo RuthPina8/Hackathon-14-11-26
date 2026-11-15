@@ -4,6 +4,7 @@ import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
 import { DemoEjercicio } from './Ejercicios'
+import { crearEstacion } from './estacion'
 import { ALTURA, apuntar, buscarHueso, cargarModelo, girarMundo, v, vestir } from './esqueleto'
 
 // El astronauta del Inicio (mismo modelo con esqueleto) haciendo los ejercicios de ASTRA-MOVE en 3D.
@@ -36,7 +37,7 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
       setFallo(true)
       return
     }
-    renderer.setPixelRatio(Math.min(mini ? 1 : 2, window.devicePixelRatio))
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
@@ -55,41 +56,11 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
     else camara.position.set(4.1, 1.25, 2.6)
     camara.lookAt(objetivo)
 
-    // Luces de estudio: clave al frente, relleno del cielo y un contorno cian por detrás
-    escena.add(new THREE.HemisphereLight('#dbe8ff', '#0b1220', 1.1))
-    const clave = new THREE.DirectionalLight('#ffffff', 2.4)
-    clave.position.set(2.5, 4, 4)
-    clave.castShadow = !mini
-    clave.shadow.mapSize.set(1024, 1024)
-    clave.shadow.camera.near = 0.5
-    clave.shadow.camera.far = 14
-    clave.shadow.radius = 4
-    escena.add(clave)
-    const contorno = new THREE.DirectionalLight(C.accent, 2.2)
-    contorno.position.set(-3, 2.5, -3.5)
-    escena.add(contorno)
-
-    // Piso: sombra suave, plataforma con anillos y cuadrícula tenue
+    // Entorno: módulo de estación espacial (luces, paredes, ventana, piso y plataforma)
     const geos: THREE.BufferGeometry[] = []
     const mats: THREE.Material[] = []
-    const piso = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.ShadowMaterial({ opacity: 0.38 }))
-    piso.rotation.x = -Math.PI / 2
-    piso.receiveShadow = true
-    escena.add(piso)
-    geos.push(piso.geometry); mats.push(piso.material as THREE.Material)
-    for (const [r0, r1, op] of [[0.62, 0.64, 0.8], [0.8, 0.81, 0.4]] as const) {
-      const m = new THREE.MeshBasicMaterial({ color: C.accent, transparent: true, opacity: op, side: THREE.DoubleSide })
-      const anillo = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 96), m)
-      anillo.rotation.x = -Math.PI / 2
-      anillo.position.y = 0.002
-      escena.add(anillo)
-      geos.push(anillo.geometry); mats.push(m)
-    }
-    const grid = new THREE.GridHelper(8, 32, C.accentLine, C.holoLine)
-    ;(grid.material as THREE.Material).transparent = true
-    ;(grid.material as THREE.Material).opacity = 0.25
-    escena.add(grid)
-    mats.push(grid.material as THREE.Material); geos.push(grid.geometry)
+    const texturas: THREE.Texture[] = []
+    const estacion = crearEstacion(escena, renderer, { geos, mats, texturas }, { sombras: !mini })
 
     // Tamaño
     const ajustar = () => {
@@ -123,10 +94,10 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
       const bb = new THREE.Box3().setFromObject(modelo)
       const s = ALTURA / (bb.max.y - bb.min.y)
       modelo.scale.setScalar(s)
-      modelo.position.y = -bb.min.y * s
+      modelo.position.y = -bb.min.y * s + estacion.alturaPiso
       grupo.add(modelo)
 
-      vestir(modelo, C.accent, mats, true)
+      vestir(modelo, C.accent, mats, true, geos)
 
       const h = buscarHueso(modelo)
       const huesos = {
@@ -235,6 +206,7 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
         const d = 0.5 - 0.5 * Math.cos(f * Math.PI * 2)
         grupo.rotation.y += (giroY - grupo.rotation.y) * 0.15
         hud(pose(d))
+        estacion.animar(reloj.elapsedTime)
         renderer.render(escena, camara)
       }
       animar()
@@ -249,6 +221,7 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
       renderer.domElement.removeEventListener('pointerup', arriba)
       geos.forEach((g) => g.dispose())
       mats.forEach((m) => m.dispose())
+      texturas.forEach((x) => x.dispose())
       renderer.dispose()
       if (renderer.domElement.parentElement === el) el.removeChild(renderer.domElement)
     }

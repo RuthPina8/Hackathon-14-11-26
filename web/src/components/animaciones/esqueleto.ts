@@ -43,38 +43,61 @@ export const TRAJE = { naranja: '#F0641E', blanco: '#F2F4F7', gris: '#C9D1DC', v
 
 const ZONA_BLANCA = /Head|Neck|Eye|Hand|Foot|Toe/
 
-// Pinta cada vértice según los huesos que lo mueven: casco, guantes y botas en blanco; lo demás en naranja.
-// Se guarda en la geometría (compartida entre copias del modelo), así que se calcula una sola vez.
-export function pintarTraje(malla: THREE.SkinnedMesh) {
+// Guarda en cada vértice cuánto pertenece a la zona blanca (casco, guantes y botas), según los huesos que lo mueven.
+// El color NO se guarda por vértice: se decide píxel por píxel en el sombreador, para que la costura entre
+// naranja y blanco salga nítida y no difuminada.
+export function marcarZonas(malla: THREE.SkinnedMesh) {
   const geo = malla.geometry
-  if (geo.getAttribute('color')) return
+  if (geo.getAttribute('zona')) return
   const idx = geo.getAttribute('skinIndex'), peso = geo.getAttribute('skinWeight')
   const n = geo.getAttribute('position').count
-  const colores = new Float32Array(n * 3)
-  const naranja = new THREE.Color(TRAJE.naranja), blanco = new THREE.Color(TRAJE.blanco)
-  const huesos = malla.skeleton?.bones ?? []
-  const esBlanco = huesos.map((b) => ZONA_BLANCA.test(b.name))
-  const c = new THREE.Color()
+  const zona = new Float32Array(n)
+  const esBlanco = (malla.skeleton?.bones ?? []).map((b) => ZONA_BLANCA.test(b.name))
   for (let i = 0; i < n; i++) {
     let w = 0
     if (idx && peso) for (let k = 0; k < 4; k++) if (esBlanco[idx.getComponent(i, k)]) w += peso.getComponent(i, k)
-    // borde marcado entre zonas, como una costura
-    c.copy(naranja).lerp(blanco, THREE.MathUtils.smoothstep(w, 0.42, 0.58))
-    colores[i * 3] = c.r; colores[i * 3 + 1] = c.g; colores[i * 3 + 2] = c.b
+    zona[i] = w
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(colores, 3))
+  geo.setAttribute('zona', new THREE.BufferAttribute(zona, 1))
+}
+
+function telaTraje() {
+  const tela = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.78, metalness: 0.02 })
+  const u = { uNaranja: { value: new THREE.Color(TRAJE.naranja) }, uBlanco: { value: new THREE.Color(TRAJE.blanco) }, uCostura: { value: new THREE.Color('#3A4252') } }
+  tela.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, u)
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', `#include <common>
+attribute float zona;
+varying float vZona;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+vZona = zona;`)
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform vec3 uNaranja;
+uniform vec3 uBlanco;
+uniform vec3 uCostura;
+varying float vZona;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float anchoZ = max(fwidth(vZona), 1e-4);
+        float z = smoothstep(0.5 - anchoZ, 0.5 + anchoZ, vZona);
+        float costura = 1.0 - smoothstep(anchoZ * 1.2, anchoZ * 2.4, abs(vZona - 0.5));
+        diffuseColor.rgb = mix(mix(uNaranja, uBlanco, z), uCostura, costura * 0.85);`)
+  }
+  tela.customProgramCacheKey = () => 'traje-astronauta'
+  return tela
 }
 
 // Viste el modelo: tela naranja y blanca, anillos de las articulaciones en blanco metálico y visor oscuro en el casco
 export function vestir(modelo: THREE.Object3D, _acento: string, mats: THREE.Material[], sombras: boolean, geos: THREE.BufferGeometry[] = []) {
-  const tela = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.02 })
+  const tela = telaTraje()
   const anillos = new THREE.MeshStandardMaterial({ color: TRAJE.gris, roughness: 0.32, metalness: 0.65 })
   mats.push(tela, anillos)
   modelo.traverse((o) => {
     const m = o as THREE.SkinnedMesh
     if (!m.isMesh) return
     const esJunta = m.name.includes('001') || m.name.toLowerCase().includes('joint')
-    if (!esJunta && m.isSkinnedMesh) pintarTraje(m)
+    if (!esJunta && m.isSkinnedMesh) marcarZonas(m)
     m.material = esJunta ? anillos : tela
     m.castShadow = sombras
     m.frustumCulled = false
@@ -93,8 +116,8 @@ export function vestir(modelo: THREE.Object3D, _acento: string, mats: THREE.Mate
   mats.push(visorMat); geos.push(visorGeo)
   const visor = new THREE.Mesh(visorGeo, visorMat)
   visor.name = 'visor'
-  visor.scale.set(alto * 0.4, alto * 0.2, alto * 0.47)
-  visor.position.copy(a).lerp(b, 0.52).add(new THREE.Vector3(0, 0, alto * 0.3 * frente))
+  visor.scale.set(alto * 0.43, alto * 0.3, alto * 0.45)
+  visor.position.copy(a).lerp(b, 0.52).add(new THREE.Vector3(0, 0, alto * 0.4 * frente))
   visor.rotation.x = (frente * Math.PI) / 2 // la cúpula mira al frente
   visor.castShadow = false
   escalaMundo(modelo, visor)
