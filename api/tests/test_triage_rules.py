@@ -24,12 +24,16 @@ def test_fase_tierra_no_alerta():
 
 def test_adaptacion_solo_rango_clinico_e_inmune():
     assert rules.evaluar([a(detector="cusum")], fase="adaptacion") is None
+    # 110 lpm: fuera del rango de atención (50-100) pero dentro del clínico (40-130) -> amarilla
     d = rules.evaluar([a(detector="rango_clinico", z=None, valor=110)], fase="adaptacion")
+    assert d is not None and d.nivel == "amarilla"
+    d = rules.evaluar([a(detector="rango_clinico", z=None, valor=140)], fase="adaptacion")
     assert d is not None and d.nivel == "roja"
     assert rules.evaluar([a(senal="inmune", detector="inmune", z=None, nivel_sugerido="amarilla")], fase="adaptacion")
 
 
 def test_fase_por_dia():
+    assert rules.fase_de_dia(None) == "adaptacion"
     assert rules.fase_de_dia(0) == "tierra"
     assert rules.fase_de_dia(1) == "adaptacion"
     assert rules.fase_de_dia(14) == "adaptacion"
