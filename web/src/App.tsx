@@ -1,122 +1,53 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import AppShell from './components/layout/AppShell'
+import Inicio from './pages/Inicio'
+import Detalle from './pages/Detalle'
+import Alertas from './pages/Alertas'
+import Perfil from './pages/Perfil'
+import Simulacion from './pages/Simulacion'
+import Tierra from './pages/Tierra'
+import Tripulacion from './pages/Tripulacion'
+import Front1Placeholder from './pages/Front1Placeholder'
+import { useWebSocket } from './lib/ws'
+import { useMissionClock } from './lib/useMissionClock'
+import DemoBar from './components/layout/DemoBar'
+import Login from './pages/Login'
+import { useSession } from './store/useSession'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  // Se conecta una vez; si el back no está, la app sigue con datos de ejemplo.
+  useWebSocket()
+  useMissionClock()
+  const user = useSession((s) => s.user)
+
+  // Sin sesión: solo la pantalla de inicio con la cara
+  if (!user) return <><Login /><DemoBar /></>
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <AppShell>
+      <Routes>
+        {/* Front 2 */}
+        <Route path="/" element={<Inicio />} />
+        <Route path="/indicators" element={<Navigate to="/indicators/hr" replace />} />
+        <Route path="/indicators/:tipo" element={<Detalle />} />
+        <Route path="/alerts" element={<Alertas />} />
+        <Route path="/profile" element={<Perfil />} />
+        <Route path="/simulation" element={<Simulacion />} />
+        <Route path="/earth" element={<Tierra />} />
+        <Route path="/crew" element={<Tripulacion />} />
 
-      <div className="ticks"></div>
+        {/* Front 1: reemplazar el placeholder por su pantalla */}
+        <Route path="/camera" element={<Front1Placeholder titulo="Chequeo con cámara" paso="paso 1 de 5" />} />
+        <Route path="/cognitive" element={<Front1Placeholder titulo="Prueba cognitiva" paso="paso 2 de 5" />} />
+        <Route path="/manual" element={<Front1Placeholder titulo="Presión, ánimo y síntomas" paso="pasos 3 y 4 de 5" />} />
+        <Route path="/summary" element={<Front1Placeholder titulo="Resumen de hoy" paso="paso 5 de 5" />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppShell>
+    {/* fuera del AppShell: la transición de página usa transform y rompería el position: fixed */}
+    <DemoBar />
     </>
   )
 }
-
-export default App

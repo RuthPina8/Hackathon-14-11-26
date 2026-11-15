@@ -1,59 +1,92 @@
 @import "tailwindcss";
 
+/* Paleta del rediseño v2 (mismos valores que el canvas "AstroHealth, pantallas v2") */
 @theme {
-  /* Fondos y bordes */
   --color-bg: #070B14;
-  --color-nav: #0A0F1B;
   --color-panel: #0E1422;
+  --color-deep: #0A0F1B;
   --color-line: #1C2740;
-  --color-line-strong: #2F3F60;
-
-  /* Texto */
-  --color-ink: #E8ECF4;
-  --color-soft: #A3AEC4;
-  --color-muted: #93A0B8;
-
-  /* Capas de datos */
+  --color-line2: #2F3F60;
+  --color-text: #E8ECF4;
+  --color-muted: #A3AEC4;
+  --color-faint: #93A0B8;
   --color-accent: #5CC8F5;
-  --color-self: #B7A4FF;
-
-  /* Semáforo */
   --color-ok: #3DDC97;
   --color-warn: #F5B544;
   --color-crit: #FF6B7A;
+  --color-self: #B7A4FF;
 
-  /* Tipografías */
   --font-sans: Inter, system-ui, sans-serif;
   --font-display: "Space Grotesk", Inter, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
-
-  /* Animaciones */
-  --animate-scan: scan 3.6s ease-in-out infinite;
-  --animate-beat: beat 0.83s infinite;
-  --animate-blink: blink 1.2s infinite;
-
-  @keyframes scan {
-    0%, 100% { top: 14%; }
-    50% { top: 82%; }
-  }
-  @keyframes beat {
-    0%, 100% { transform: scale(1); }
-    15% { transform: scale(1.18); }
-    30% { transform: scale(1); }
-  }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
-  }
 }
 
-body {
-  margin: 0;
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+@layer base {
+  html, body, #root { height: 100%; }
+  body { margin: 0; background: #070B14; color: #E8ECF4; font-family: Inter, system-ui, sans-serif; }
+  a { color: #5CC8F5; }
+  a:hover { color: #9ADEFA; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #1C2740; border-radius: 999px; }
+
+/* ---------- componentes base ---------- */
+@layer components {
+.card { background: #0E1422; border: 1px solid #1C2740; border-radius: 16px; padding: 22px; }
+.card.sim { border-style: dashed; border-color: #3A4866; }
+.k { margin: 0; font: 600 11px Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #93A0B8; }
+.h2 { margin: 0; font: 600 16px "Space Grotesk", sans-serif; color: #E8ECF4; }
+.h1 { margin: 6px 0 0; font: 600 30px "Space Grotesk", sans-serif; letter-spacing: -.01em; }
+.num { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+.big { margin: 0; font: 700 32px "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: -.02em; }
+.mut { color: #A3AEC4; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 12px; font: 600 14px Inter, sans-serif; text-decoration: none; border: 0; cursor: pointer; transition: background .15s; }
+.btn.pri, .btn.pri:hover { background: #5CC8F5; color: #04121C; }
+.btn.pri:hover { background: #8AD9F8; }
+.btn.sec, .btn.sec:hover { background: transparent; color: #E8ECF4; box-shadow: inset 0 0 0 1px #2F3F60; }
+.btn.sec:hover { background: #111A2C; }
+.btn.sm { min-height: 38px; padding: 0 14px; font-size: 13px; }
+
+.tag { display: inline-flex; align-items: center; gap: 6px; font: 600 11px Inter, sans-serif; letter-spacing: .04em; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.tag.real { background: #0B2636; color: #8AD9F8; }
+.tag.self { background: #211A3D; color: #C9BCFF; }
+.tag.simt { color: #A3AEC4; box-shadow: inset 0 0 0 1px #46536F; }
+
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #1C2740; background: #0E1422; color: #A3AEC4; font: 500 13px Inter, sans-serif; cursor: pointer; }
+.chip:hover { border-color: #2F3F60; color: #E8ECF4; }
+.chip[aria-pressed="true"] { border-color: #5CC8F5; color: #fff; background: #15233B; }
+
+.segs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: #0A0F1B; border: 1px solid #1C2740; }
+.seg { min-height: 40px; padding: 0 16px; border-radius: 9px; border: 0; background: transparent; color: #A3AEC4; font: 600 13px Inter, sans-serif; cursor: pointer; }
+.seg[aria-pressed="true"] { background: #22314F; color: #fff; }
+
+.task { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 12px; background: #0A0F1B; border: 1px solid #1C2740; font-size: 14px; line-height: 1.45; cursor: pointer; }
+.task input { width: 18px; height: 18px; accent-color: #5CC8F5; margin-top: 1px; flex: none; }
+.task:has(input:checked) { color: #A3AEC4; text-decoration: line-through; }
+
+.al { display: flex; gap: 12px; width: 100%; padding: 16px; border-radius: 14px; background: #0E1422; border: 1px solid #1C2740; color: #E8ECF4; text-align: left; cursor: pointer; font-family: Inter, sans-serif; }
+.al:hover { border-color: #2F3F60; }
+
+.trow { display: grid; gap: 12px; align-items: center; min-height: 52px; padding: 0 18px; border-bottom: 1px solid #1C2740; font-size: 14px; }
+.trow:last-child { border-bottom: 0; }
+
+input[type=range] { width: 100%; accent-color: #5CC8F5; height: 32px; }
+pre.code { margin: 0; padding: 16px; border-radius: 12px; background: #080C16; border: 1px solid #1C2740; color: #C5CEDF; font: 13px/1.65 "JetBrains Mono", ui-monospace, Menlo, monospace; overflow-x: auto; white-space: pre-wrap; }
+
+:focus-visible { outline: 2px solid #5CC8F5; outline-offset: 2px; }
+
+/* ---------- navegación ---------- */
+.nav { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; color: #A3AEC4; text-decoration: none; font-size: 14px; font-weight: 500; }
+.nav:hover { background: #111A2C; color: #E8ECF4; }
+.nav.active, .nav.active:hover { background: #15233B; color: #fff; }
+.nav.active svg { color: #5CC8F5; }
+
 }
+
+/* ---------- animaciones ---------- */
+@keyframes travel { 0% { left: 0%; opacity: 0 } 8% { opacity: 1 } 92% { opacity: 1 } 100% { left: 100%; opacity: 0 } }
+@keyframes pulseDot { 0%, 100% { opacity: .35 } 50% { opacity: .9 } }
+.halo { animation: pulseDot 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .halo, .mv { animation: none !important; } }
