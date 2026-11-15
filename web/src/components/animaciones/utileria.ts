@@ -49,7 +49,7 @@ export function crearMesa(rec: Recursos, ancho: number, fondo: number, alto: num
   const t = new Taller(rec)
   const g = new THREE.Group()
   const cubierta = t.mat('cubierta', () => new THREE.MeshStandardMaterial({ color: '#31435C', roughness: 0.5, metalness: 0.3 }))
-  const placa = t.mat('placa', () => new THREE.MeshStandardMaterial({ color: '#3C5270', roughness: 0.35, metalness: 0.45 }))
+  const placa = t.mat('placa', () => new THREE.MeshStandardMaterial({ color: '#34496A', roughness: 0.65, metalness: 0.2 }))
   t.pieza(redonda(ancho, 0.03, fondo, 0.012), cubierta, g, 0, alto - 0.015, 0)
   // placa de trabajo hundida, con borde: da relieve a la cubierta
   t.pieza(redonda(ancho - 0.07, 0.006, fondo - 0.07, 0.002), placa, g, 0, alto + 0.001, 0)
@@ -234,10 +234,10 @@ function texturaMota() {
   return c
 }
 
-export function crearHaz(rec: Recursos, opciones: { lados: number; color: string; opacidad?: number; motas?: number; capa?: number }) {
-  const { lados, color, opacidad = 0.5, motas = 220, capa = 0 } = opciones
+export function crearHaz(rec: Recursos, opciones: { lados: number; color: string; opacidad?: number; motas?: number; capa?: number; rayas?: boolean }) {
+  const { lados, color, opacidad = 0.5, motas = 220, capa = 0, rayas = false } = opciones
   const grupo = new THREE.Group()
-  const uniformes = { uColor: { value: new THREE.Color(color) }, uOpacidad: { value: opacidad }, uTiempo: { value: 0 } }
+  const uniformes = { uColor: { value: new THREE.Color(color) }, uOpacidad: { value: opacidad }, uTiempo: { value: 0 }, uRayas: { value: rayas ? 1 : 0 } }
   const mat = new THREE.ShaderMaterial({
     uniforms: uniformes,
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
@@ -250,7 +250,7 @@ export function crearHaz(rec: Recursos, opciones: { lados: number; color: string
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
-      uniform vec3 uColor; uniform float uOpacidad; uniform float uTiempo;
+      uniform vec3 uColor; uniform float uOpacidad; uniform float uTiempo; uniform float uRayas;
       varying vec2 vUv; varying vec3 vN; varying vec3 vV; varying vec3 vP;
       void main() {
         float cerca = pow(vUv.y, 0.9);                       // más denso junto a la fuente
@@ -258,6 +258,12 @@ export function crearHaz(rec: Recursos, opciones: { lados: number; color: string
         float fin = smoothstep(0.0, 0.18, vUv.y);            // el final del haz se disuelve
         float bruma = 0.82 + 0.18 * sin(vP.y * 22.0 - uTiempo * 0.9 + vUv.x * 12.0); // bruma que se mueve despacio
         float a = uOpacidad * (0.22 + 0.78 * cerca) * (0.35 + 0.65 * borde) * fin * bruma;
+        if (uRayas > 0.5) {
+          // rayos de sol: densidad pareja a lo largo y franjas que cambian despacio alrededor del haz
+          float ang = atan(vP.z, vP.x);
+          float franja = 0.5 + 0.5 * sin(ang * 9.0 + 1.5 * sin(ang * 4.0 + uTiempo * 0.12));
+          a = uOpacidad * (0.3 + 0.7 * borde) * fin * bruma * (0.35 + 0.65 * franja) * smoothstep(1.0, 0.7, vUv.y);
+        }
         gl_FragColor = vec4(uColor, a);
       }`,
   })

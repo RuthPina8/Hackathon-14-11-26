@@ -412,7 +412,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
         }
 
         // --- dibujo: escena completa y, encima, el recuadro con lo que ve la webcam ---
-        estacion.animar(reloj.elapsedTime)
+        estacion.animar(reloj.elapsedTime, 1 - 0.85 * oscuro)
         renderer.setScissorTest(false)
         renderer.setViewport(0, 0, ancho, alto)
         renderer.clear()

@@ -181,7 +181,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       escena.add(mesa)
 
       // --- Luz de trabajo sobre la mesa: foco cenital con haz volumétrico y polvo ---
-      const foco = new THREE.SpotLight('#FFF3DE', 5, 6, 0.42, 0.7, 1.2)
+      const foco = new THREE.SpotLight('#FFF3DE', 2.6, 6, 0.42, 0.7, 1.2)
       foco.position.set(xm + lado * 0.25, 3.3, zm + 0.1 * frente)
       foco.target.position.set(xm, mesaY, zm - 0.1 * frente)
       foco.castShadow = true
@@ -189,7 +189,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       foco.shadow.bias = -0.0005
       foco.shadow.radius = 6
       escena.add(foco, foco.target)
-      const hazMesa = crearHaz(rec, { lados: 40, color: '#FFEBC8', opacidad: 0.1, motas: 160 })
+      const hazMesa = crearHaz(rec, { lados: 40, color: '#FFEBC8', opacidad: 0.035, motas: 160 })
       const radioHaz = Math.tan(0.42) * foco.position.distanceTo(foco.target.position)
       hazMesa.colocar(foco.position, foco.target.position, radioHaz, radioHaz)
       escena.add(hazMesa.grupo)
