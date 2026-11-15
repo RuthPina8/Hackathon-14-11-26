@@ -365,3 +365,67 @@ export function crearPunteria(rec: Recursos, color: string, capa = 0) {
     },
   }
 }
+
+// ---------- Silla: asiento y respaldo acolchados, estructura tubular y regatones ----------
+// El origen queda en el piso, bajo el centro del asiento. El respaldo está del lado -z·frente.
+export function crearSilla(rec: Recursos, altoAsiento: number, frente: number) {
+  const t = new Taller(rec)
+  const g = new THREE.Group()
+  const tapiz = t.mat('tapiz', () => new THREE.MeshStandardMaterial({ color: '#2B3D57', roughness: 0.85 }))
+  // el respaldo lleva su propio material: la guía lo ilumina en el paso de "espalda apoyada"
+  const respaldoMat = new THREE.MeshStandardMaterial({ color: '#2B3D57', roughness: 0.85 })
+  rec.mats.push(respaldoMat)
+  const W = 0.48, D = 0.44
+  // asiento: base rígida y cojín con costura central
+  t.pieza(redonda(W, 0.02, D, 0.008), t.oscuro(), g, 0, altoAsiento - 0.05, 0)
+  t.pieza(redonda(W - 0.02, 0.05, D - 0.02, 0.022), tapiz, g, 0, altoAsiento - 0.022, 0)
+  t.pieza(new THREE.BoxGeometry(W - 0.08, 0.003, 0.004), t.oscuro(), g, 0, altoAsiento + 0.003, 0, false)
+  // respaldo: marco tubular y cojín
+  const zr = -(D / 2 + 0.01) * frente
+  const altoR = 0.5
+  for (const k of [-1, 1]) t.pieza(new THREE.CylinderGeometry(0.014, 0.014, altoR + 0.08, 14), t.metal(), g, k * (W / 2 - 0.03), altoAsiento + altoR / 2 - 0.02, zr - 0.02 * frente)
+  const travesano = t.pieza(new THREE.CylinderGeometry(0.014, 0.014, W - 0.06, 14), t.metal(), g, 0, altoAsiento + altoR + 0.02, zr - 0.02 * frente)
+  travesano.rotation.z = Math.PI / 2
+  t.pieza(redonda(W - 0.04, altoR - 0.06, 0.045, 0.02), respaldoMat, g, 0, altoAsiento + altoR / 2 + 0.03, zr)
+  for (const k of [-1, 0, 1]) t.pieza(new THREE.BoxGeometry(W - 0.1, 0.003, 0.004), t.oscuro(), g, 0, altoAsiento + altoR / 2 + 0.03 + k * 0.12, zr + 0.0235 * frente, false)
+  // patas con regatón y travesaños
+  const px = W / 2 - 0.035, pz = D / 2 - 0.035, largo = altoAsiento - 0.06
+  for (const kx of [-1, 1]) for (const kz of [-1, 1]) {
+    t.pieza(new THREE.CylinderGeometry(0.015, 0.013, largo, 14), t.metal(), g, kx * px, largo / 2, kz * pz)
+    t.pieza(new THREE.CylinderGeometry(0.02, 0.023, 0.016, 14), t.goma(), g, kx * px, 0.008, kz * pz)
+  }
+  for (const k of [-1, 1]) {
+    const lat = t.pieza(new THREE.CylinderGeometry(0.008, 0.008, pz * 2, 10), t.metal(), g, k * px, 0.14, 0)
+    lat.rotation.x = Math.PI / 2
+  }
+  return { grupo: g, respaldoMat }
+}
+
+// ---------- Monitor de presión: cuerpo, pantalla inclinada, botones, puerto del tubo y patas ----------
+// `textura` es la pantalla (la dibuja la escena). La pantalla se lee desde el lado +z del monitor.
+export function crearMonitorPresion(rec: Recursos, textura: THREE.Texture, acento: string) {
+  const t = new Taller(rec)
+  const g = new THREE.Group()
+  const carcasa = t.mat('carcasaMon', () => new THREE.MeshStandardMaterial({ color: '#E3E8EF', roughness: 0.4, metalness: 0.05 }))
+  t.pieza(redonda(0.17, 0.04, 0.125, 0.012), carcasa, g, 0, 0.022, 0)
+  // visera inclinada con la pantalla
+  const visera = new THREE.Group()
+  visera.position.set(0, 0.05, -0.012)
+  visera.rotation.x = -Math.PI / 2 + 0.6
+  g.add(visera)
+  t.pieza(redonda(0.158, 0.1, 0.018, 0.006), carcasa, visera, 0, 0, -0.009)
+  t.pieza(new THREE.PlaneGeometry(0.146, 0.088), t.mat('biselMon', () => new THREE.MeshStandardMaterial({ color: '#0A0D12', roughness: 0.2 })), visera, 0, 0, 0.0006, false)
+  const pantallaMat = new THREE.MeshBasicMaterial({ map: textura, toneMapped: false })
+  rec.mats.push(pantallaMat)
+  t.pieza(new THREE.PlaneGeometry(0.132, 0.078), pantallaMat, visera, 0, 0, 0.0012, false)
+  // botones al frente: inicio (acento) y dos de memoria
+  const verde = t.mat('botonMon' + acento, () => new THREE.MeshStandardMaterial({ color: acento, roughness: 0.4, emissive: acento, emissiveIntensity: 0.25 }))
+  const gris = t.mat('botonGris', () => new THREE.MeshStandardMaterial({ color: '#9AA6B6', roughness: 0.5 }))
+  t.pieza(new THREE.CylinderGeometry(0.013, 0.013, 0.008, 20), verde, g, 0.045, 0.045, 0.04)
+  for (const k of [0, 1]) t.pieza(new THREE.CylinderGeometry(0.008, 0.008, 0.006, 16), gris, g, -0.02 - k * 0.028, 0.044, 0.042)
+  // puerto del tubo y patas de goma
+  const puerto = t.pieza(new THREE.CylinderGeometry(0.009, 0.009, 0.014, 14), t.metal(), g, -0.088, 0.024, 0.02)
+  puerto.rotation.z = Math.PI / 2
+  for (const kx of [-1, 1]) for (const kz of [-1, 1]) t.pieza(new THREE.CylinderGeometry(0.008, 0.008, 0.004, 10), t.goma(), g, kx * 0.065, 0.002, kz * 0.045, false)
+  return g
+}

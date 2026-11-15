@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
 import { crearEstacion } from './estacion'
 import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esqueleto'
+import { crearHaz, crearMesa, crearMonitorPresion, crearSilla } from './utileria'
 
 // Guía del brazalete en 3D con el astronauta del Inicio, sentado a la mesa.
 // Una sola escena para los 6 pasos: la cámara viaja suave de un plano a otro y cada paso anima lo suyo.
@@ -16,7 +16,6 @@ import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esquele
 // Si no hay WebGL se muestra la animación 2D del mismo paso (`fallback`).
 
 const FPS = 30
-const redonda = (w: number, h: number, d: number) => new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.3)
 const ANCHO_BRAZALETE = 0.14 // m, un brazalete de adulto
 const R_BRAZO = 0.07 // radio aproximado del brazo del modelo a 1.8 m
 const R_AJUSTADO = 0.086
@@ -167,30 +166,33 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       // la arteria braquial va por la cara anterior-interna (con la palma hacia arriba queda arriba y hacia el cuerpo)
       const arteriaLado = interna.clone().add(arribaBrazo).normalize()
 
-      // --- Muebles: silla con respaldo y mesa a la altura del codo ---
-      const mueble = new THREE.MeshStandardMaterial({ color: '#2A3A52', roughness: 0.6, metalness: 0.35 })
-      const metal = new THREE.MeshStandardMaterial({ color: '#8EA3BF', roughness: 0.3, metalness: 0.8 })
-      mats.push(mueble, metal)
-      const caja3 = (w: number, hh: number, d: number, m: THREE.Material, x: number, y: number, z: number) => {
-        const o = new THREE.Mesh(redonda(w, hh, d), m)
-        geos.push(o.geometry)
-        o.position.set(x, y, z)
-        o.castShadow = true
-        o.receiveShadow = true
-        escena.add(o)
-        return o
-      }
+      // --- Muebles detallados: silla acolchada y mesa a la altura del codo ---
+      const rec = { geos, mats, texturas }
       const cad = hu.cadera.getWorldPosition(v())
       const asiento = cad.y - 0.1
-      const zs = cad.z + 0.14 * frente
-      caja3(0.5, 0.05, 0.46, mueble, cad.x, asiento - 0.025, zs)
-      const respaldo = caja3(0.48, 0.5, 0.04, mueble, cad.x, asiento + 0.3, cad.z - 0.13 * frente)
-      for (const dx of [-0.21, 0.21]) for (const dz of [-0.19, 0.19]) caja3(0.03, asiento - 0.05, 0.03, metal, cad.x + dx, (asiento - 0.05) / 2, zs + dz)
+      const silla = crearSilla(rec, asiento, frente)
+      silla.grupo.position.set(cad.x, 0, cad.z + 0.1 * frente)
+      escena.add(silla.grupo)
       const mesaY = codo.y - 0.05
       const xm = cad.x + lado * 0.12
       const zm = (codo.z + mano.z) / 2 + 0.12 * frente
-      caja3(1.0, 0.035, 0.62, mueble, xm, mesaY - 0.0175, zm)
-      for (const dx of [-0.46, 0.46]) for (const dz of [-0.27, 0.27]) caja3(0.035, mesaY - 0.035, 0.035, metal, xm + dx * 1, (mesaY - 0.035) / 2, zm + dz)
+      const mesa = crearMesa(rec, 1.0, 0.62, mesaY - 0.004)
+      mesa.position.set(xm, 0, zm)
+      escena.add(mesa)
+
+      // --- Luz de trabajo sobre la mesa: foco cenital con haz volumétrico y polvo ---
+      const foco = new THREE.SpotLight('#FFF3DE', 5, 6, 0.42, 0.7, 1.2)
+      foco.position.set(xm + lado * 0.25, 3.3, zm + 0.1 * frente)
+      foco.target.position.set(xm, mesaY, zm - 0.1 * frente)
+      foco.castShadow = true
+      foco.shadow.mapSize.set(1024, 1024)
+      foco.shadow.bias = -0.0005
+      foco.shadow.radius = 6
+      escena.add(foco, foco.target)
+      const hazMesa = crearHaz(rec, { lados: 40, color: '#FFEBC8', opacidad: 0.1, motas: 160 })
+      const radioHaz = Math.tan(0.42) * foco.position.distanceTo(foco.target.position)
+      hazMesa.colocar(foco.position, foco.target.position, radioHaz, radioHaz)
+      escena.add(hazMesa.grupo)
 
       // --- Monitor de presión sobre la mesa, con pantalla que se dibuja en un canvas ---
       const lienzo = document.createElement('canvas')
@@ -210,14 +212,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
         g.font = '600 24px "JetBrains Mono", monospace'; g.fillStyle = '#7FB8A0'; g.fillText(abajo, 128, 132)
         tex.needsUpdate = true
       }
-      const monitor = new THREE.Group()
-      const cuerpoMon = malla(redonda(0.16, 0.05, 0.11), new THREE.MeshStandardMaterial({ color: '#DDE4EE', roughness: 0.45 }))
-      cuerpoMon.position.y = 0.025
-      const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.075), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }))
-      geos.push(pantalla.geometry); mats.push(pantalla.material as THREE.Material)
-      pantalla.rotation.x = -Math.PI / 2
-      pantalla.position.set(0, 0.0505, 0)
-      monitor.add(cuerpoMon, pantalla)
+      const monitor = crearMonitorPresion(rec, tex, C.ok)
       monitor.position.set(mano.x - lado * 0.16, mesaY, mano.z + 0.2 * frente)
       // el texto se lee desde el lado de la cámara
       monitor.rotation.y = lado * Math.PI / 2
@@ -320,9 +315,6 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       const pieMedio = hu.pieI.getWorldPosition(v()).add(hu.pieD.getWorldPosition(v())).multiplyScalar(0.5)
       pies.position.set(pieMedio.x, 0.004, pieMedio.z + 0.05 * frente)
       escena.add(pies)
-      const respaldoMat = respaldo.material as THREE.MeshStandardMaterial
-      respaldo.material = respaldoMat.clone()
-      mats.push(respaldo.material as THREE.Material)
 
       // --- Planos de cámara por paso: [posición, a dónde mira] ---
       const L = new THREE.Vector3(lado, 0, 0), F = new THREE.Vector3(0, 0, frente), Y = new THREE.Vector3(0, 1, 0)
@@ -381,7 +373,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
         corazonM.scale.setScalar(0.8 + 0.5 * latido)
         corazonMat.emissiveIntensity = 0.5 + 0.8 * latido
         piesMat.opacity = 0
-        ;(respaldo.material as THREE.MeshStandardMaterial).emissive.set('#000000')
+        silla.respaldoMat.emissive.set('#000000')
         let r: Hud
         let extra = ''
         pintar('--/--', 'listo', '#4ADE9A')
@@ -392,7 +384,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
           r = { texto: `Reposo ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`, ok: f >= 1 }
           extra = 'Sin hablar · espalda apoyada · pies planos'
           piesMat.opacity = 0.35 + 0.5 * latido
-          ;(respaldo.material as THREE.MeshStandardMaterial).emissive.set(C.accent).multiplyScalar(0.25 + 0.25 * latido)
+          silla.respaldoMat.emissive.set(C.accent).multiplyScalar(0.25 + 0.25 * latido)
         } else if (p === 1) {
           // Primero colgando (mal: mide alto); luego sube a la mesa
           const k = suave(tramo(f, 0.25, 0.62))
@@ -484,6 +476,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
         camara.lookAt(mira)
         hud(r, extra)
         estacion.animar(reloj.elapsedTime)
+        hazMesa.animar(reloj.elapsedTime)
         renderer.render(escena, camara)
       }
 
