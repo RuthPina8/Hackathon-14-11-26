@@ -13,20 +13,13 @@ const PASO_BPM = 0.5
 export const CONFIANZA_BUENA = 0.2 // desde aquí el ritmo se muestra normal
 export const CONFIANZA_MINIMA = 0.12 // entre esta y la buena se muestra en gris como "baja confianza"; abajo no se muestra
 
-export type MuestraColor = { t: number; r: number; g: number; b: number }
+export type MuestraColor = { t: number; r: number; g: number; b: number; n?: number }
 export type Estimacion = { bpm: number; confianza: number }
 
 const promedio = (a: number[]) => a.reduce((s, v) => s + v, 0) / (a.length || 1)
 const desviacion = (a: number[]) => {
   const m = promedio(a)
   return Math.sqrt(promedio(a.map((v) => (v - m) ** 2)))
-}
-
-// Filtro de piel en YCbCr: deja fuera cejas, pelo, ojos y fondo
-function esPiel(r: number, g: number, b: number) {
-  const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b
-  const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b
-  return cr >= 133 && cr <= 173 && cb >= 77 && cb <= 127
 }
 
 // Las cámaras no mandan cuadros a ritmo exacto, así que se interpola a 30 por segundo
@@ -137,6 +130,10 @@ function analizar(lista: MuestraColor[], ventanaMs: number): Analisis | null {
   const fin = lista[lista.length - 1].t
   const ventana = lista.filter((m) => m.t >= fin - ventanaMs)
   if (fin - ventana[0].t < MIN_MS) return null
+  // Huecos: si faltan datos por más de medio segundo, la interpolación ensucia la señal
+  let huecoMax = 0
+  for (let i = 1; i < ventana.length; i++) huecoMax = Math.max(huecoMax, ventana[i].t - ventana[i - 1].t)
+  const penalizacionHuecos = huecoMax > 1000 ? 0.4 : huecoMax > 500 ? 0.7 : 1
   const { r, g, b } = remuestrear(ventana)
   const h = filtrar(pos(r, g, b))
   const principal = estimar(h)
@@ -153,7 +150,7 @@ function analizar(lista: MuestraColor[], ventanaMs: number): Analisis | null {
 
   // SNR: -6 dB o menos es ruido, +6 dB o más es un pulso muy limpio
   const porSnr = Math.min(1, Math.max(0, (principal.snrDb + 6) / 12))
-  const confianza = porSnr * consistencia
+  const confianza = porSnr * consistencia * penalizacionHuecos
 
   const ultimos = h.slice(-4 * FS)
   const max = Math.max(...ultimos.map(Math.abs)) || 1
@@ -186,6 +183,9 @@ export function useRppg() {
     // Resolución completa: más pixeles de piel = menos ruido
     ctx.drawImage(video, 0, 0, W, H)
 
+    // Filtro de piel adaptativo: en cada zona se calcula el brillo típico (mediana) y solo se
+    // usan los pixeles parecidos. Deja fuera cejas, pelo, sombras y brillos sin parpadear,
+    // aunque cambie la luz (un corte fijo de color hacía brincar el conteo de pixeles)
     let sr = 0
     let sg = 0
     let sb = 0
@@ -197,8 +197,16 @@ export function useRppg() {
       const y1 = Math.min(H, Math.ceil((roi.y + roi.h) * H))
       if (x1 - x0 < 2 || y1 - y0 < 2) continue
       const d = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data
+      const histograma = new Uint32Array(256)
+      const total = d.length / 4
+      for (let i = 0; i < d.length; i += 4) histograma[(d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8]++
+      let acumulado = 0
+      let mediana = 0
+      while (mediana < 255 && acumulado + histograma[mediana] < total / 2) acumulado += histograma[mediana++]
+      const margen = Math.max(12, mediana * 0.18)
       for (let i = 0; i < d.length; i += 4) {
-        if (!esPiel(d[i], d[i + 1], d[i + 2])) continue
+        const y = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8
+        if (Math.abs(y - mediana) > margen || y > 245) continue
         sr += d[i]
         sg += d[i + 1]
         sb += d[i + 2]
@@ -209,7 +217,7 @@ export function useRppg() {
 
     const ultima = muestras.current[muestras.current.length - 1]
     if (ultima && t <= ultima.t) return
-    muestras.current.push({ t, r: sr / n, g: sg / n, b: sb / n })
+    muestras.current.push({ t, r: sr / n, g: sg / n, b: sb / n, n })
     brilloActual.current = (sr + sg + sb) / (3 * n)
     const limite = t - BUFFER_MS
     while (muestras.current.length && muestras.current[0].t < limite) muestras.current.shift()

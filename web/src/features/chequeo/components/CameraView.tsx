@@ -13,6 +13,9 @@ type Camara = { id: string; nombre: string }
 type Props = {
   // Se llama en cada cuadro con lo que detectó MediaPipe y las zonas de piel ya suavizadas
   onResultado?: (resultado: FaceLandmarkerResult, tiempoMs: number, video: HTMLVideoElement, rois: Roi[] | null) => void
+  // Se llama en CADA cuadro de la cámara (30 por segundo), aunque MediaPipe vaya más lento,
+  // con las últimas zonas de piel conocidas y el tiempo real del cuadro en ms
+  onCuadro?: (video: HTMLVideoElement, rois: Roi[], tiempoMs: number) => void
   // Avisa cuando el modelo y la cámara ya están listos
   onListo?: (listo: boolean) => void
   mostrarRois?: boolean
@@ -29,7 +32,7 @@ function textoDerecho(ctx: CanvasRenderingContext2D, texto: string, x: number, y
   ctx.restore()
 }
 
-export default function CameraView({ onResultado, onListo, mostrarRois = true, ovalo = 'normal', children }: Props) {
+export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois = true, ovalo = 'normal', children }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ovaloRef = useRef<HTMLDivElement>(null)
@@ -40,11 +43,14 @@ export default function CameraView({ onResultado, onListo, mostrarRois = true, o
   const [errorCamara, setErrorCamara] = useState<string | null>(null)
 
   const onResultadoRef = useRef(onResultado)
+  const onCuadroRef = useRef(onCuadro)
   const mostrarRoisRef = useRef(mostrarRois)
+  const roisActuales = useRef<Roi[] | null>(null)
   useEffect(() => {
     onResultadoRef.current = onResultado
+    onCuadroRef.current = onCuadro
     mostrarRoisRef.current = mostrarRois
-  }, [onResultado, mostrarRois])
+  }, [onResultado, onCuadro, mostrarRois])
 
   const listo = estado === 'listo' && camaraLista && !errorCamara
   useEffect(() => {
@@ -154,6 +160,7 @@ export default function CameraView({ onResultado, onListo, mostrarRois = true, o
         const resultado = landmarker.detectForVideo(video, ahora)
         const primera = resultado.faceLandmarks[0]
         roisPrevias = primera ? suavizarRois(roisPrevias, calcularRois(primera, video.videoWidth / video.videoHeight)) : null
+        roisActuales.current = roisPrevias
         moverOvalo(primera ? cajaCara(primera) : null)
         onResultadoRef.current?.(resultado, ahora, video, roisPrevias)
 
@@ -197,6 +204,21 @@ export default function CameraView({ onResultado, onListo, mostrarRois = true, o
     frameId = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(frameId)
   }, [landmarker, camaraLista])
+
+  // 4. Muestreo de color en cada cuadro que entrega la cámara (requestVideoFrameCallback)
+  useEffect(() => {
+    if (!camaraLista) return
+    const video = videoRef.current
+    if (!video || !('requestVideoFrameCallback' in video)) return
+    let id = 0
+    const cuadro = (_ahora: number, meta: VideoFrameCallbackMetadata) => {
+      const rois = roisActuales.current
+      if (rois) onCuadroRef.current?.(video, rois, meta.mediaTime * 1000)
+      id = video.requestVideoFrameCallback(cuadro)
+    }
+    id = video.requestVideoFrameCallback(cuadro)
+    return () => video.cancelVideoFrameCallback(id)
+  }, [camaraLista])
 
   let aviso: string | null = null
   if (errorCamara) aviso = errorCamara

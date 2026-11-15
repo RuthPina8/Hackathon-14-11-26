@@ -12,12 +12,15 @@ import { useChequeoStore } from './chequeoStore'
 const TOTAL = 60 // segundos de medición
 const UMBRAL_PERCLOS = 0.15
 const BRILLO_MINIMO = 70 // por debajo, la piel se ve muy oscura para el rPPG
-// Movimiento por cuadro (fracción de la imagen). Moverse es normal en microgravedad:
+// Velocidad de la cara en fracciones de la imagen por segundo. Moverse es normal en microgravedad:
 // solo se descartan los cuadros con movimientos bruscos, el resto se sigue usando
-const MOVIMIENTO_SEGUIMIENTO = 0.004
-const MOVIMIENTO_BRUSCO = 0.02
+const MOVIMIENTO_SEGUIMIENTO = 0.12
+const MOVIMIENTO_BRUSCO = 0.6
 
 type Fase = 'inicio' | 'midiendo' | 'pausa' | 'completo'
+
+// Navegadores sin requestVideoFrameCallback toman el color al ritmo de MediaPipe
+const SIN_CUADRO_A_CUADRO = typeof (HTMLVideoElement.prototype as { requestVideoFrameCallback?: unknown }).requestVideoFrameCallback !== 'function'
 
 type Props = {
   onSiguiente: () => void
@@ -27,7 +30,7 @@ type Props = {
 const reloj = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
 export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
-  const { bpm: bpmVivo, confianza, onda, brillo, registrar: registrarColor, reiniciar: reiniciarRppg, estimarFinal } = useRppg()
+  const { bpm: bpmVivo, confianza, onda, brillo, registrar: registrarColor, reiniciar: reiniciarRppg, estimarFinal, ventana } = useRppg()
   const { perclos, parpadeosMin, registrar: registrarOjos, reiniciar: reiniciarPerclos } = usePerclos()
   const guardarCamara = useChequeoStore((s) => s.guardarCamara)
 
@@ -43,13 +46,16 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
     faseRef.current = fase
   }, [fase])
 
-  const narizAnterior = useRef<{ x: number; y: number } | null>(null)
+  const narizAnterior = useRef<{ x: number; y: number; t: number } | null>(null)
   const movimientoProm = useRef(0)
+  const ultimoMovimiento = useRef(0)
+  const cuadrosDeteccion = useRef(0)
   const ultimaUi = useRef(0)
 
   // Cada cuadro: revisa movimiento y, si está midiendo, alimenta rPPG y PERCLOS
   const onResultado = useCallback(
     (r: FaceLandmarkerResult, t: number, video: HTMLVideoElement, rois: Roi[] | null) => {
+      cuadrosDeteccion.current++
       const cara = r.faceLandmarks[0]
       setHayCara(Boolean(cara))
       if (!cara) {
@@ -57,27 +63,58 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
         return
       }
       const nariz = cara[PUNTO_NARIZ]
+      // Velocidad por segundo: MediaPipe no analiza todos los cuadros, así que se divide entre el tiempo real
       let d = 0
-      if (narizAnterior.current) {
-        d = Math.hypot(nariz.x - narizAnterior.current.x, nariz.y - narizAnterior.current.y)
+      const previa = narizAnterior.current
+      if (previa && t > previa.t) {
+        d = Math.hypot(nariz.x - previa.x, nariz.y - previa.y) / ((t - previa.t) / 1000)
         movimientoProm.current = movimientoProm.current * 0.85 + d * 0.15
       }
-      narizAnterior.current = { x: nariz.x, y: nariz.y }
+      narizAnterior.current = { x: nariz.x, y: nariz.y, t }
+      ultimoMovimiento.current = d
       if (t - ultimaUi.current > 300) {
         const m = movimientoProm.current
         setMovimiento(m > MOVIMIENTO_BRUSCO * 0.6 ? 'brusco' : m > MOVIMIENTO_SEGUIMIENTO ? 'siguiendo' : 'estable')
         ultimaUi.current = t
       }
       if (faseRef.current !== 'midiendo') return
-      // Cuadro con movimiento brusco: se descarta solo ese, la medición sigue
-      if (rois && d < MOVIMIENTO_BRUSCO) {
-        // Tiempo real del cuadro de video, no el de cuando terminó MediaPipe
+      // Respaldo para navegadores sin requestVideoFrameCallback: color al ritmo de MediaPipe
+      if (SIN_CUADRO_A_CUADRO && rois && d < MOVIMIENTO_BRUSCO) {
         registrarColor(video, rois, video.currentTime * 1000)
       }
       registrarOjos(r.faceBlendshapes[0]?.categories, t)
     },
     [registrarColor, registrarOjos],
   )
+
+  // Color de la piel en cada cuadro de la cámara (30 por segundo), con las últimas zonas conocidas
+  const onCuadro = useCallback(
+    (video: HTMLVideoElement, rois: Roi[], tiempoMs: number) => {
+      if (faseRef.current !== 'midiendo') return
+      // Cuadro con movimiento brusco: se descarta solo ese, la medición sigue
+      if (ultimoMovimiento.current >= MOVIMIENTO_BRUSCO) return
+      registrarColor(video, rois, tiempoMs)
+    },
+    [registrarColor],
+  )
+
+  // Diagnóstico: descarga la señal cruda para analizarla fuera de la app
+  const descargarSenal = () => {
+    const datos = {
+      fecha: new Date().toISOString(),
+      resultado: final,
+      perclos,
+      parpadeosMin,
+      cuadrosDeteccion: cuadrosDeteccion.current,
+      muestras: ventana(),
+    }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(datos)], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `senal-rppg-${Date.now()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   // Reloj de la medición
   useEffect(() => {
@@ -109,6 +146,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
       reiniciarRppg()
       reiniciarPerclos()
       setFinal(null)
+      cuadrosDeteccion.current = 0
       setSeg(0)
     }
     setFase('midiendo')
@@ -174,7 +212,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
 
       <div className="flex flex-wrap gap-5">
         <div className="min-w-0 flex-[3_1_480px]">
-          <CameraView onResultado={onResultado} onListo={setCamaraLista} ovalo={fase === 'completo' ? 'ok' : fase === 'inicio' ? 'tenue' : 'normal'}>
+          <CameraView onResultado={onResultado} onCuadro={onCuadro} onListo={setCamaraLista} ovalo={fase === 'completo' ? 'ok' : fase === 'inicio' ? 'tenue' : 'normal'}>
             {/* Línea que recorre la cara mientras mide */}
             {midiendo && (
               <div className="pointer-events-none absolute left-[22%] right-[22%] h-0.5 animate-scan bg-gradient-to-r from-transparent via-accent to-transparent shadow-[0_0_18px_var(--color-accent)]" />
@@ -219,6 +257,11 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 >
                   {tarjeta[fase][2]}
                 </button>
+                {fase === 'completo' && (
+                  <button type="button" onClick={descargarSenal} className="text-xs font-semibold text-accent underline-offset-2 hover:underline">
+                    Descargar señal (diagnóstico)
+                  </button>
+                )}
               </div>
             )}
 
