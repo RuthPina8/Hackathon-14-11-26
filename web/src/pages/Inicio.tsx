@@ -23,7 +23,15 @@ export default function Inicio() {
   const status = useAppStore((s) => s.status)
   const user = useSession((s) => s.user)
   const camara = useChequeoStore((s) => s.camara)
-  const rutina = rutinaBase.map((r) => (r.to === '/camera' ? { ...r, done: !!camara } : r))
+  const cognitivo = useChequeoStore((s) => s.cognitivo)
+  const registro = useChequeoStore((s) => s.registro)
+  const hecho: Record<string, boolean> = {
+    'Chequeo con cámara': !!camara,
+    'Prueba cognitiva': !!cognitivo,
+    'Presión arterial': registro?.presionSis != null,
+    'Ánimo y síntomas': registro?.animo != null,
+  }
+  const rutina = rutinaBase.map((r) => ({ ...r, done: hecho[r.label] }))
   const alerts = useMyAlerts()
   const env = useAppStore((s) => s.environment)
   const statusReal = useAppStore((s) => s.statusReal)
@@ -32,7 +40,9 @@ export default function Inicio() {
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
+      {statusReal
+        ? <SimBanner tag="EN PARTE DE EJEMPLO">Tu estado y tu calibración salen de tus mediciones guardadas; el detalle por sistema y las gráficas de 7 días todavía son de ejemplo</SimBanner>
+        : <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
       <PageHeader
         kicker={`Día ${status.diaMision} de misión · ${environmentProfiles[env].nombre}`}
         title={`Hola, ${user?.nombre ?? ''}`}

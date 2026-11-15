@@ -19,6 +19,9 @@ type Props = {
   // Avisa cuando el modelo y la cámara ya están listos
   onListo?: (listo: boolean) => void
   mostrarRois?: boolean
+  // Tope de cuadros por segundo para la detección y el muestreo de color. Sin tope, todo corre a la
+  // velocidad de la cámara (30). Se baja en pantallas con botones para que los clics no esperen.
+  maxFps?: number
   ovalo?: 'normal' | 'ok' | 'tenue'
   children?: ReactNode
 }
@@ -32,7 +35,7 @@ function textoDerecho(ctx: CanvasRenderingContext2D, texto: string, x: number, y
   ctx.restore()
 }
 
-export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois = true, ovalo = 'normal', children }: Props) {
+export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois = true, ovalo = 'normal', maxFps, children }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ovaloRef = useRef<HTMLDivElement>(null)
@@ -45,6 +48,7 @@ export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois
   const onResultadoRef = useRef(onResultado)
   const onCuadroRef = useRef(onCuadro)
   const mostrarRoisRef = useRef(mostrarRois)
+  const intervaloMs = maxFps ? 1000 / maxFps - 4 : 0
   const roisActuales = useRef<Roi[] | null>(null)
   useEffect(() => {
     onResultadoRef.current = onResultado
@@ -128,6 +132,7 @@ export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois
     if (!video || !canvas || !ctx) return
     let frameId = 0
     let ultimoTiempo = -1
+    let ultimaDeteccion = 0
     let roisPrevias: Roi[] | null = null
 
     // El óvalo sigue la cara: se mueve con el astronauta en vez de pedirle que se quede fijo
@@ -154,9 +159,10 @@ export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois
     }
 
     const loop = () => {
-      if (video.currentTime !== ultimoTiempo) {
+      const ahora = performance.now()
+      if (video.currentTime !== ultimoTiempo && ahora - ultimaDeteccion >= intervaloMs) {
         ultimoTiempo = video.currentTime
-        const ahora = performance.now()
+        ultimaDeteccion = ahora
         const resultado = landmarker.detectForVideo(video, ahora)
         const primera = resultado.faceLandmarks[0]
         roisPrevias = primera ? suavizarRois(roisPrevias, calcularRois(primera, video.videoWidth / video.videoHeight)) : null
@@ -203,7 +209,7 @@ export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois
     }
     frameId = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(frameId)
-  }, [landmarker, camaraLista])
+  }, [landmarker, camaraLista, intervaloMs])
 
   // 4. Muestreo de color en cada cuadro que entrega la cámara (requestVideoFrameCallback)
   useEffect(() => {
@@ -211,14 +217,18 @@ export default function CameraView({ onResultado, onCuadro, onListo, mostrarRois
     const video = videoRef.current
     if (!video || !('requestVideoFrameCallback' in video)) return
     let id = 0
-    const cuadro = (_ahora: number, meta: VideoFrameCallbackMetadata) => {
+    let ultimoMuestreo = 0
+    const cuadro = (ahora: number, meta: VideoFrameCallbackMetadata) => {
       const rois = roisActuales.current
-      if (rois) onCuadroRef.current?.(video, rois, meta.mediaTime * 1000)
+      if (rois && ahora - ultimoMuestreo >= intervaloMs) {
+        ultimoMuestreo = ahora
+        onCuadroRef.current?.(video, rois, meta.mediaTime * 1000)
+      }
       id = video.requestVideoFrameCallback(cuadro)
     }
     id = video.requestVideoFrameCallback(cuadro)
     return () => video.cancelVideoFrameCallback(id)
-  }, [camaraLista])
+  }, [camaraLista, intervaloMs])
 
   let aviso: string | null = null
   if (errorCamara) aviso = errorCamara

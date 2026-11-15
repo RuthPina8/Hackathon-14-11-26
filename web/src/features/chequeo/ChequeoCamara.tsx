@@ -5,9 +5,10 @@ import PulseWave from './components/PulseWave'
 import StepBar from './components/StepBar'
 import { PUNTO_NARIZ } from './camara/landmarks'
 import type { Roi } from './camara/landmarks'
-import { CONFIANZA_BUENA, CONFIANZA_MINIMA, useRppg } from './camara/useRppg'
+import { CONFIANZA_BUENA, CONFIANZA_MINIMA, useRppg, type Final } from './camara/useRppg'
+import { useExpresividad } from './camara/useExpresividad'
 import { usePerclos } from './camara/usePerclos'
-import { useChequeoStore } from './chequeoStore'
+import { tuNormal, useChequeoStore } from './chequeoStore'
 
 const TOTAL = 60 // segundos de medición
 const UMBRAL_PERCLOS = 0.15
@@ -18,6 +19,7 @@ const MOVIMIENTO_SEGUIMIENTO = 0.12
 const MOVIMIENTO_BRUSCO = 0.6
 
 type Fase = 'inicio' | 'midiendo' | 'pausa' | 'completo'
+type ResultadoFinal = Omit<Final, 'bpm'> & { bpm: number | null }
 
 // Navegadores sin requestVideoFrameCallback toman el color al ritmo de MediaPipe
 const SIN_CUADRO_A_CUADRO = typeof (HTMLVideoElement.prototype as { requestVideoFrameCallback?: unknown }).requestVideoFrameCallback !== 'function'
@@ -30,16 +32,22 @@ type Props = {
 const reloj = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
 export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
-  const { bpm: bpmVivo, confianza, onda, brillo, registrar: registrarColor, reiniciar: reiniciarRppg, estimarFinal, ventana } = useRppg()
+  const { bpm: bpmVivo, confianza, onda, brillo, zona, respVivo, registrar: registrarColor, registrarCara, reiniciar: reiniciarRppg, estimarFinal, ventana } = useRppg()
   const { perclos, parpadeosMin, registrar: registrarOjos, reiniciar: reiniciarPerclos } = usePerclos()
+  const { expresion, registrar: registrarExpresion, calcular: calcularExpresion, reiniciar: reiniciarExpresion } = useExpresividad()
   const guardarCamara = useChequeoStore((s) => s.guardarCamara)
+  const camaraGuardada = useChequeoStore((s) => s.camara)
+  const historial = useChequeoStore((s) => s.historial)
 
   const [fase, setFase] = useState<Fase>('inicio')
   const [seg, setSeg] = useState(0)
   const [camaraLista, setCamaraLista] = useState(false)
   const [hayCara, setHayCara] = useState(false)
   const [movimiento, setMovimiento] = useState<'estable' | 'siguiendo' | 'brusco'>('estable')
-  const [final, setFinal] = useState<{ bpm: number | null; confianza: number } | null>(null)
+  const [final, setFinal] = useState<ResultadoFinal | null>(null)
+  // Respaldo cuando la cámara no saca el ritmo: capturarlo del Apple Watch o tomado a mano
+  const [pulsoManual, setPulsoManual] = useState('')
+  const [fuenteManual, setFuenteManual] = useState<'apple_watch' | 'manual'>('apple_watch')
   // La tarjeta del resultado se puede cerrar con la X para ver la cámara y los paneles
   const [tarjetaCerrada, setTarjetaCerrada] = useState(false)
 
@@ -85,8 +93,12 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
         registrarColor(video, rois, video.currentTime * 1000)
       }
       registrarOjos(r.faceBlendshapes[0]?.categories, t)
+      // Para la respiración: altura de la nariz relativa al tamaño de la cara (no cambia con la distancia)
+      const anchoCara = Math.abs(cara[454].x - cara[234].x)
+      if (anchoCara > 0) registrarCara(t, nariz.y / anchoCara)
+      registrarExpresion(r.faceBlendshapes[0]?.categories, t, d)
     },
-    [registrarColor, registrarOjos],
+    [registrarColor, registrarOjos, registrarExpresion, registrarCara],
   )
 
   // Color de la piel en cada cuadro de la cámara (30 por segundo), con las últimas zonas conocidas
@@ -130,15 +142,35 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
     if (fase === 'midiendo' && seg >= TOTAL) {
       const est = estimarFinal()
       // Solo se guarda un ritmo si la señal fue confiable
-      const resultado = {
-        bpm: est && est.confianza >= CONFIANZA_MINIMA ? est.bpm : null,
+      const ritmoOk = Boolean(est && est.confianza >= CONFIANZA_MINIMA)
+      const resultado: ResultadoFinal = {
+        bpm: ritmoOk && est ? est.bpm : null,
         confianza: est?.confianza ?? 0,
+        // Sin ritmo confiable tampoco hay VFC
+        rmssd: ritmoOk ? (est?.rmssd ?? null) : null,
+        confianzaVfc: ritmoOk ? (est?.confianzaVfc ?? 0) : 0,
+        respRpm: est?.respRpm ?? null,
+        confianzaResp: est?.confianzaResp ?? 0,
+        fuenteResp: est?.fuenteResp ?? null,
+        zona: est?.zona,
       }
+      const e = calcularExpresion()
       setFinal(resultado)
       setFase('completo')
-      guardarCamara({ ...resultado, perclos, parpadeosMin, fecha: new Date().toISOString() })
+      guardarCamara({
+        ...resultado,
+        fuenteBpm: 'camara',
+        zona: resultado.zona ?? null,
+        perclos,
+        parpadeosMin,
+        expresividad: e?.expresividad ?? null,
+        sonrisa: e?.sonrisa ?? null,
+        ceno: e?.ceno ?? null,
+        movimientoCabeza: e?.movimiento ?? null,
+        fecha: new Date().toISOString(),
+      })
     }
-  }, [fase, seg, perclos, parpadeosMin, guardarCamara, estimarFinal])
+  }, [fase, seg, perclos, parpadeosMin, guardarCamara, estimarFinal, calcularExpresion])
 
   const iniciar = () => {
     if (fase === 'pausa') {
@@ -147,6 +179,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
     } else {
       reiniciarRppg()
       reiniciarPerclos()
+      reiniciarExpresion()
       setFinal(null)
       cuadrosDeteccion.current = 0
       setSeg(0)
@@ -159,6 +192,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const reiniciarPrueba = () => {
     reiniciarRppg()
     reiniciarPerclos()
+    reiniciarExpresion()
     setFinal(null)
     cuadrosDeteccion.current = 0
     narizAnterior.current = null
@@ -180,6 +214,29 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const fatiga = perclos !== null && perclos > UMBRAL_PERCLOS
   const barrasCalidad = onda.length > 0 ? Math.max(1, Math.round(confianzaMostrada * 5)) : 0
 
+  // Tu normal de las señales nuevas, con las sesiones anteriores guardadas en este dispositivo
+  const normalVfc = tuNormal(historial, 'rmssd')
+  const normalResp = tuNormal(historial, 'respRpm')
+  const normalExp = tuNormal(historial, 'expresividad')
+  const terminado = fase === 'completo' && final !== null
+  const comparar = (valor: number | null | undefined, n: { media: number | null; sd: number | null; n: number }) => {
+    if (valor == null) return null
+    if (n.media == null) return `Aprendiendo tu normal (${n.n} de 3 sesiones)`
+    const z = n.sd ? (valor - n.media) / n.sd : 0
+    if (z <= -2) return 'Más bajo que tu normal'
+    if (z >= 2) return 'Más alto que tu normal'
+    return 'Dentro de tu normal'
+  }
+  const expresividadHoy = expresion?.expresividad ?? null
+  const respMostrada = terminado ? (final?.respRpm != null ? { rpm: final.respRpm, confianza: final.confianzaResp, fuente: final.fuenteResp } : null) : respVivo
+  const pulsoNum = Number(pulsoManual)
+  const pulsoValido = pulsoManual !== '' && Number.isFinite(pulsoNum) && pulsoNum >= 30 && pulsoNum <= 220
+  const pulsoRespaldo = camaraGuardada && camaraGuardada.fuenteBpm !== 'camara' ? camaraGuardada : null
+  const guardarPulsoManual = () => {
+    if (!pulsoValido || !camaraGuardada) return
+    guardarCamara({ ...camaraGuardada, bpm: Math.round(pulsoNum), confianza: 1, fuenteBpm: fuenteManual, rmssd: null, confianzaVfc: 0 })
+  }
+
   let pista = 'Siéntate frente a la cámara con buena luz'
   if (fase === 'pausa') pista = 'Medición en pausa'
   if (fase === 'completo') pista = hayRitmo ? 'Listo, ya puedes pasar a la prueba cognitiva' : 'No hubo señal clara de ritmo, puedes repetir la medición'
@@ -193,7 +250,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   }
 
   const tarjeta = {
-    inicio: ['Medición de 60 segundos', 'Mide ritmo cardiaco y fatiga visual solo con la cámara, sin sensores', 'Iniciar medición'],
+    inicio: ['Medición de 60 segundos', 'Mide ritmo, fatiga visual, respiración y expresividad solo con la cámara, sin sensores', 'Iniciar medición'],
     pausa: ['Medición en pausa', `Llevas ${seg} de ${TOTAL} segundos, vuelve a acomodarte en el óvalo`, 'Continuar'],
     completo: [
       'Medición completa',
@@ -385,7 +442,49 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 : senalDebil
                   ? 'Señal débil, no se muestra un ritmo poco confiable'
                   : 'Se necesitan unos segundos de señal estable'}
+              {hayRitmo && zona && midiendo && <span className="text-muted"> · mejor zona: {zona}</span>}
             </p>
+            {fase === 'completo' && !hayRitmo && (
+              <div className="flex flex-col gap-2 rounded-xl border border-line-strong p-3">
+                {pulsoRespaldo ? (
+                  <p className="m-0 text-[13px] text-[#8FF0C4]">
+                    Guardado {pulsoRespaldo.bpm} lpm, {pulsoRespaldo.fuenteBpm === 'apple_watch' ? 'del Apple Watch' : 'tomado a mano'}
+                  </p>
+                ) : (
+                  <>
+                    <p className="m-0 text-[13px] text-soft">La cámara no pudo con esta luz. Captura tu pulso para no perder el dato</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={fuenteManual}
+                        onChange={(e) => setFuenteManual(e.target.value as 'apple_watch' | 'manual')}
+                        className="min-h-10 rounded-lg border border-line-strong bg-[#0A0F1B] px-2 text-sm"
+                      >
+                        <option value="apple_watch">Apple Watch</option>
+                        <option value="manual">A mano (15 s × 4)</option>
+                      </select>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={30}
+                        max={220}
+                        value={pulsoManual}
+                        onChange={(e) => setPulsoManual(e.target.value)}
+                        placeholder="lpm"
+                        className="min-h-10 w-20 rounded-lg border border-line-strong bg-[#0A0F1B] px-2 font-mono text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={guardarPulsoManual}
+                        disabled={!pulsoValido}
+                        className="min-h-10 rounded-lg bg-accent px-3 text-sm font-semibold text-[#04121C] disabled:opacity-50"
+                      >
+                        Guardar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </section>
 
           <section aria-labelledby="calidad" className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]">
@@ -450,6 +549,81 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <section aria-labelledby="vfc" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-panel p-[22px]">
+          <div className="flex flex-col items-start gap-1.5">
+            <h2 className="m-0 font-display text-base font-semibold" id="vfc">Estrés (VFC)</h2>
+            <span className="rounded-md bg-[#2A2312] px-2 py-1 text-[11px] font-semibold tracking-wide text-warn">Experimental</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="m-0 font-mono text-[32px] font-bold">{terminado && final?.rmssd != null ? final.rmssd : '--'}</p>
+            <span className="text-sm text-soft">ms RMSSD</span>
+          </div>
+          <p className="m-0 text-[13px] leading-normal text-soft">
+            {!terminado
+              ? 'Se calcula al terminar, latido por latido, con el tramo más limpio'
+              : final?.rmssd == null
+                ? 'La señal no alcanzó para separar latido por latido, no se guarda'
+                : `${comparar(final.rmssd, normalVfc)}. Una VFC más baja de lo usual suele ir con estrés o cansancio`}
+          </p>
+          {terminado && final?.rmssd != null && <p className="m-0 font-mono text-xs text-muted">confianza {final.confianzaVfc.toFixed(2)}</p>}
+        </section>
+
+        <section aria-labelledby="resp" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-panel p-[22px]">
+          <div className="flex flex-col items-start gap-1.5">
+            <h2 className="m-0 font-display text-base font-semibold" id="resp">Respiración</h2>
+            <span className="rounded-md bg-[#2A2312] px-2 py-1 text-[11px] font-semibold tracking-wide text-warn">Experimental</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="m-0 font-mono text-[32px] font-bold">{respMostrada ? respMostrada.rpm : '--'}</p>
+            <span className="text-sm text-soft">resp/min</span>
+          </div>
+          <p className="m-0 text-[13px] leading-normal text-soft">
+            {respMostrada
+              ? `${comparar(respMostrada.rpm, normalResp)}. En reposo lo típico es de 12 a 20`
+              : terminado
+                ? 'No hubo una onda de respiración clara, no se guarda'
+                : seg < 25
+                  ? 'Aparece a los 25 s, con el color de tu piel y el movimiento de tu cara'
+                  : 'Buscando una onda de respiración clara, respira normal'}
+          </p>
+          {respMostrada && (
+            <p className="m-0 font-mono text-xs text-muted">
+              por {respMostrada.fuente === 'movimiento' ? 'movimiento de la cara' : 'color de la piel'} · confianza {respMostrada.confianza.toFixed(2)}
+            </p>
+          )}
+        </section>
+
+        <section aria-labelledby="expresividad" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-panel p-[22px]">
+          <div className="flex flex-col items-start gap-1.5">
+            <h2 className="m-0 font-display text-base font-semibold" id="expresividad">Expresividad</h2>
+            <span className="rounded-md bg-[#0B2636] px-2 py-1 text-[11px] font-semibold tracking-wide text-[#8AD9F8]">Real</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="m-0 font-mono text-[32px] font-bold">{expresividadHoy != null ? Math.round(expresividadHoy * 100) : '--'}</p>
+            <span className="text-sm text-soft">de 100</span>
+          </div>
+          <div className="relative h-2 rounded bg-line">
+            <div className="h-full rounded bg-accent transition-all duration-500" style={{ width: `${Math.round((expresividadHoy ?? 0) * 100)}%` }} />
+            {normalExp.media != null && (
+              <div className="absolute top-[-5px] h-[18px] w-0.5 rounded-sm bg-ink" style={{ left: `${Math.round(normalExp.media * 100)}%` }} />
+            )}
+          </div>
+          <p className="m-0 text-[13px] leading-normal text-soft">
+            {expresividadHoy == null
+              ? 'Cuánto se mueven cejas, boca y mejillas, sin etiquetar emociones'
+              : normalExp.media != null
+                ? `${comparar(expresividadHoy, normalExp)}, la marca blanca es tu normal`
+                : comparar(expresividadHoy, normalExp)}
+          </p>
+          {expresion && (
+            <p className="m-0 font-mono text-xs text-muted">
+              sonrisa {expresion.sonrisa.toFixed(2)} · ceño {expresion.ceno.toFixed(2)} · cabeza {expresion.movimiento.toFixed(2)}
+            </p>
+          )}
+        </section>
       </div>
     </div>
   )
