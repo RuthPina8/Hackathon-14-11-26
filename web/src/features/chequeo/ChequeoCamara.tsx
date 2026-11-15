@@ -53,6 +53,8 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const [problemas, setProblemas] = useState<Set<Problema>>(new Set())
   const [final, setFinal] = useState<ResultadoCamara | null>(guardado)
   const [pausaAuto, setPausaAuto] = useState(false)
+  // La tarjeta del resultado se puede cerrar con la X para ver la cámara y los paneles
+  const [tarjetaCerrada, setTarjetaCerrada] = useState(false)
   const [movNivel, setMovNivel] = useState<'estable' | 'siguiendo'>('estable')
   const [normalExpr, setNormalExpr] = useState<ServerIndicator | null>(null)
   const [verif, setVerif] = useState<Confiabilidad | null>(null)
@@ -256,6 +258,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
     inicioMs.current = performance.now()
     setSeg(0)
     setPausaAuto(false)
+    setTarjetaCerrada(false)
     setFase('midiendo')
   }
 
@@ -376,8 +379,14 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               </span>
             </div>
 
-            {fase !== 'midiendo' && (
+            {fase !== 'midiendo' && !(fase === 'completo' && tarjetaCerrada) && (
               <div className="absolute left-1/2 top-1/2 flex w-[min(320px,88%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3.5 rounded-[20px] border border-line-strong bg-[rgba(10,15,27,0.92)] px-[26px] py-[24px] text-center">
+                {fase === 'completo' && (
+                  <button type="button" onClick={() => setTarjetaCerrada(true)} aria-label="Cerrar" title="Cerrar"
+                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-soft hover:bg-panel hover:text-ink">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                )}
                 <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={fase === 'analizando' ? 'animate-spin' : ''}>
                   <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
                   <circle cx="12" cy="12" r="3.5" />
@@ -403,6 +412,12 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-b from-transparent to-[rgba(4,7,14,0.92)] px-[22px] pb-5 pt-[18px]">
               <div className="flex items-center gap-3.5">
                 <p aria-live="polite" className={`m-0 flex-1 text-[15px] ${pistaMala ? 'text-[#F5D79A]' : 'text-[#C5CEDF]'}`}>{pista}</p>
+                {fase === 'completo' && tarjetaCerrada && (
+                  <button type="button" onClick={iniciar} disabled={!camaraLista}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
+                    Repetir medición
+                  </button>
+                )}
                 {midiendo && (
                   <>
                     <button type="button" onClick={reiniciarTodo} title="Empezar la medición otra vez desde 00:00"
