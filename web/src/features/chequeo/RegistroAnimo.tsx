@@ -83,11 +83,11 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
               ))}
             </div>
             <label className="flex flex-col gap-2 text-[13px] text-soft">
-              <span className="flex justify-between"><span>Stress</span><strong className="font-mono text-ink">{estres} de 10</strong></span>
+              <span className="flex justify-between"><span>Stress</span><strong className="font-mono text-ink">{estres} of 10</strong></span>
               <input type="range" min={0} max={10} value={estres} onChange={(e) => setEstres(Number(e.target.value))} aria-label="Stress from 0 to 10" />
               <span className="flex justify-between text-[13px] text-muted"><span>None</span><span>Maximum</span></span>
             </label>
-            <label className="flex flex-col gap-1.5 text-[13px] text-soft">Algo que quieras anotar (opcional)
+            <label className="flex flex-col gap-1.5 text-[13px] text-soft">Anything you want to note (optional)
               <input value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} className="min-h-14 rounded-xl border border-line-strong bg-input px-3 text-ink outline-none focus:border-accent" />
             </label>
             <p className="m-0 text-sm leading-relaxed text-muted">The camera learns from your logs; what counts is what you report.</p>
@@ -121,11 +121,11 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
                     ))}
                   </div>
                   <label className="flex items-center gap-2 text-[13px] text-soft">
-                    <input type="checkbox" checked={sueno.medicamento} onChange={(e) => set('medicamento', e.target.checked)} />Tomé medicamento para dormir
+                    <input type="checkbox" checked={sueno.medicamento} onChange={(e) => set('medicamento', e.target.checked)} />I took sleep medication
                   </label>
                 </div>
                 <p className={`m-0 text-sm ${errorSueno ? 'text-warn' : 'text-soft'}`}>
-                  {errorSueno ?? <>You slept <strong className="font-mono text-ink">{calc.tstH.toFixed(1)} h</strong> with an efficiency of <strong className="font-mono text-ink">{calc.eficiencia.toFixed(0)}%</strong> ({calc.tibH.toFixed(1)} h en cama)</>}
+                  {errorSueno ?? <>You slept <strong className="font-mono text-ink">{calc.tstH.toFixed(1)} h</strong> with an efficiency of <strong className="font-mono text-ink">{calc.eficiencia.toFixed(0)}%</strong> ({calc.tibH.toFixed(1)} h in bed)</>}
                 </p>
               </>
             )}

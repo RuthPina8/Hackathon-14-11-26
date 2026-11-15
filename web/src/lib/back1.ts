@@ -177,9 +177,9 @@ export function adaptStatus(s: ServerStatus, prev: StatusMock, inds: Record<stri
 const hace = (iso: string | null) => {
   if (!iso) return 'no check-up'
   const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
-  if (min < 1) return 'ahora'
-  if (min < 60) return `hace ${min} min`
-  if (min < 1440) return `hace ${Math.round(min / 60)} h`
+  if (min < 1) return 'just now'
+  if (min < 60) return `${min} min ago`
+  if (min < 1440) return `${Math.round(min / 60)} h ago`
   return `${Math.round(min / 1440)} days ago`
 }
 

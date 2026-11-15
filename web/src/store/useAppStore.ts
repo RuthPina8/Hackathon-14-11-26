@@ -43,7 +43,7 @@ function initialDemo(): boolean {
 }
 
 const redAlert = (n: number): AlertItem => ({
-  id: `demo-red-${n}`, nivel: 'crit', icono: 'heart', titulo: 'Very high blood pressure', resumen: '168/104 mmHg, your normal is 117/75', cuando: 'ahora',
+  id: `demo-red-${n}`, nivel: 'crit', icono: 'heart', titulo: 'Very high blood pressure', resumen: '168/104 mmHg, your normal is 117/75', cuando: 'just now',
   queCambio: 'Blood pressure 168/104 mmHg, your normal is 117/75', cuanto: '+51 mmHg systolic, above the clinical range', desde: 'Reading from 2 minutes ago, confirmed twice',
   factores: [{ name: 'Systolic pressure', w: 70, capa: 'self' }, { name: 'Heart rate', w: 20, capa: 'real' }, { name: 'Headache', w: 10, capa: 'self' }],
   tareas: ['Sit down and avoid physical exertion', 'Repeat the reading in 5 minutes on the other arm', 'Tell the commander, a critical-priority notice has already been sent to Earth', 'Have the medical kit ready in case Earth prescribes medication'],

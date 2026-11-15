@@ -150,26 +150,26 @@ export default function Perfil() {
               <span className="num">{ac?.n ?? 0}</span>
               <span className="num">—</span>
               <span className="text-[13px] text-muted">
-                {!ac || ac.estado === 'aprendiendo' ? `Learning (${ac?.n ?? 0} days with camera and mood)` : `Acierta ${Math.round(ac.acierto_pct ?? 0)}%`}
+                {!ac || ac.estado === 'aprendiendo' ? `Learning (${ac?.n ?? 0} days with camera and mood)` : `Accuracy ${Math.round(ac.acierto_pct ?? 0)}%`}
               </span>
             </div>
           </div></div>
           <p className="m-0 px-[18px] py-3 text-sm text-faint leading-relaxed">
-            La lectura de ánimo por cámara no lee emociones: aprende cómo cambian tus señales cuando tú reportas sentirte mal. Se muestra como "estimado" y nunca alimenta tu línea base ni las alertas.
+            The camera mood reading doesn’t read emotions: it learns how your signals change when you report feeling down. It’s shown as "estimated" and never feeds your baseline or the alerts.
           </p>
         </section>
 
         <div className="flex flex-col gap-4" style={{ flex: '2 1 320px', minWidth: 0 }}>
           <section className="card flex flex-col gap-3.5" aria-labelledby="formula">
             <h2 id="formula" className="h2">How it’s computed</h2>
-            <p className="num m-0 p-3.5 rounded-xl bg-input border border-line text-[17px] font-bold text-center">peso = n / (n + 7)</p>
+            <p className="num m-0 p-3.5 rounded-xl bg-input border border-line text-[17px] font-bold text-center">weight = n / (n + 7)</p>
             <label className="flex flex-col gap-1.5 text-[13px] text-muted">
               <span>Try with <strong className="num text-text">{n}</strong> data points</span>
               <input type="range" min={0} max={60} value={n} onChange={(e) => setN(Number(e.target.value))} />
             </label>
             <div role="img" aria-label={`With ${n} data points, ${pers}% your normal and ${100 - pers}% clinical range`} className="flex h-[30px] rounded-lg overflow-hidden text-[13px] font-bold">
-              <motion.span animate={{ width: `${100 - pers}%` }} className="bg-track text-subtle flex items-center pl-2 whitespace-nowrap overflow-hidden">Clínico {100 - pers}%</motion.span>
-              <motion.span animate={{ width: `${pers}%` }} className="bg-accent text-on-accent flex items-center justify-end pr-2 whitespace-nowrap overflow-hidden">Tú {pers}%</motion.span>
+              <motion.span animate={{ width: `${100 - pers}%` }} className="bg-track text-subtle flex items-center pl-2 whitespace-nowrap overflow-hidden">Clinical {100 - pers}%</motion.span>
+              <motion.span animate={{ width: `${pers}%` }} className="bg-accent text-on-accent flex items-center justify-end pr-2 whitespace-nowrap overflow-hidden">You {pers}%</motion.span>
             </div>
             <p className="m-0 text-[13px] text-muted leading-relaxed">With little data the clinical range rules, with plenty your own normal rules</p>
           </section>
@@ -198,7 +198,7 @@ export default function Perfil() {
             )}
             {errorWatch && <p role="alert" className="mt-1.5 mb-0 text-sm text-warn">{errorWatch}</p>}
             <p className="mt-1.5 mb-0 text-sm text-faint leading-relaxed">
-              Del reloj se toman ritmo en reposo, VFC (SDNN) y sueño, con confianza 0.95. No da presión arterial.
+              From the watch we take resting heart rate, HRV (SDNN) and sleep, with 0.95 confidence. It doesn’t provide blood pressure.
             </p>
           </section>
         </div>

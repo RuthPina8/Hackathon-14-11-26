@@ -60,7 +60,7 @@ export default function Entrenamiento() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader kicker="Training mission · the app trains the crew" title="Training"
-        right={<span className="inline-flex min-h-[52px] items-center gap-2 rounded-xl border-2 border-line bg-panel px-4 text-base"><GraduationCap size={20} className="text-accent" /><strong className="num">{completados.length}</strong> de {MODULOS.length} módulos</span>} />
+        right={<span className="inline-flex min-h-[52px] items-center gap-2 rounded-xl border-2 border-line bg-panel px-4 text-base"><GraduationCap size={20} className="text-accent" /><strong className="num">{completados.length}</strong> of {MODULOS.length} modules</span>} />
 
       <AnimatePresence>
         {listo && (

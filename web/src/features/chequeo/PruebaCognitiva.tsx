@@ -193,7 +193,7 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
               <div><p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">False starts</p><p className="mt-1 font-mono text-[24px] font-bold">{resultado?.falsos ?? '--'}</p></div>
             </div>
             <p className="m-0 text-[13px] leading-relaxed text-soft">
-              Un lapso es una respuesta de más de 500 ms. {resultado?.practica || (!resultado && sesion < SESIONES_PRACTICA)
+              A lapse is a response slower than 500 ms. {resultado?.practica || (!resultado && sesion < SESIONES_PRACTICA)
                 ? `The first ${SESIONES_PRACTICA} sessions are practice and don’t count toward your normal (everyone improves while learning the test).`
                 : 'This session counts toward your normal.'}
             </p>

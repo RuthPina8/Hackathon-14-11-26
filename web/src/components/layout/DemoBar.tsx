@@ -61,7 +61,7 @@ export default function DemoBar() {
             style={{ background: C.critBg, color: C.critSoft, boxShadow: 'inset 0 0 0 1px #5A2A33' }}
             onClick={() => { red(); navigate('/alerts?id=demo-red-' + (useAppStore.getState().redCount)) }}
           >
-            <Siren size={16} />Simular alerta roja
+            <Siren size={16} />Simulate red alert
           </button>
           <BotonConfirmar className="btn sec sm" onConfirmar={reset} confirmar="Restart the demo? Tap again"><RotateCcw size={15} />Restart</BotonConfirmar>
           <button type="button" aria-label="Exit demo mode" onClick={() => setDemo(false)} className="w-[60px] h-[60px] grid place-items-center rounded-xl border-2 border-line2 bg-raised text-subtle hover:bg-hover cursor-pointer">

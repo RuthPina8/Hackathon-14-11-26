@@ -24,8 +24,8 @@ router = APIRouter(tags=["clínico"])
 
 # Señales que se siguen en la evolución, con su unidad
 EVOLUCION = [
-    ("hr_reposo", "lpm"), ("presion_sis", "mmHg"), ("presion_dia", "mmHg"), ("hrv_rmssd", "ms"),
-    ("reaccion_ms", "ms"), ("perclos", ""), ("sueno_horas", "h"), ("animo", "de 5"), ("estres", "de 10"),
+    ("hr_reposo", "bpm"), ("presion_sis", "mmHg"), ("presion_dia", "mmHg"), ("hrv_rmssd", "ms"),
+    ("reaccion_ms", "ms"), ("perclos", ""), ("sueno_horas", "h"), ("animo", "of 5"), ("estres", "of 10"),
 ]
 VENTANA_PAREO = timedelta(minutes=15)
 

@@ -104,7 +104,7 @@ function Panel({ m, activo, onTocar, onHover, i, encendido }: {
 function lectura(readiness: number, factores: number, sinDatos: boolean) {
   if (sinDatos) return 'No measurements of yours yet. Do your first check-up so the engine can compute your status'
   if (readiness >= 85) return factores ? 'You can operate normally, there’s a minor signal worth watching' : 'You can operate normally, everything is within your normal'
-  if (readiness >= 65) return `You can operate, ${factores === 1 ? 'there is one signal' : `hay ${factores} señales`} worth addressing today`
+  if (readiness >= 65) return `You can operate, ${factores === 1 ? 'there is one signal' : `there are ${factores} signals`} worth addressing today`
   if (readiness >= 45) return 'Avoid critical or precision tasks until you address the signals below'
   return 'Low status: follow the alerts and tell the commander'
 }
@@ -180,7 +180,7 @@ export default function Inicio() {
         right={
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl bg-panel border border-line text-[13px] text-muted">
-              Racha <strong className="num text-[15px] text-text">{status.racha}</strong> días
+              Streak <strong className="num text-[15px] text-text">{status.racha}</strong> days
             </span>
             <Link className="btn pri" to={siguiente?.to ?? '/camera?paso=4'}>{hechos === 0 ? 'Start daily check-up' : siguiente ? 'Continue check-up' : 'See today’s summary'} <ArrowRight size={18} strokeWidth={2.2} /></Link>
           </div>
@@ -272,13 +272,13 @@ export default function Inicio() {
                 </div>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {metricasDetalle.filter((m) => m.link).slice(0, 3).map((m) => (
-                    <Link key={m.id} to={m.link!} className="btn sec sm">Ver {m.label.toLowerCase()} <ArrowRight size={16} /></Link>
+                    <Link key={m.id} to={m.link!} className="btn sec sm">See {m.label.toLowerCase()} <ArrowRight size={16} /></Link>
                   ))}
                 </div>
               </div>
             ) : (
               <p className="m-0 flex items-center gap-2 text-sm text-faint">
-                <RotateCw size={14} className="shrink-0" /> Drag to rotate el cuerpo. Toca un órgano o un panel para ver su detalle. El corazón late a tu ritmo medido y los pulmones respiran a tu frecuencia
+                <RotateCw size={14} className="shrink-0" /> Drag to rotate the body. Tap an organ or a panel to see its details. The heart beats at your measured rate and the lungs breathe at your rate
               </p>
             )}
           </div>
@@ -316,7 +316,7 @@ export default function Inicio() {
         <section className="card flex flex-col gap-3.5" style={{ flex: '2 1 320px', minWidth: 0 }} aria-labelledby="rutina">
           <div className="flex justify-between items-baseline gap-2">
             <h2 id="rutina" className="h2">Today’s routine</h2>
-            <span className="num text-[13px] text-muted">{hechos} de {rutina.length}</span>
+            <span className="num text-[13px] text-muted">{hechos} of {rutina.length}</span>
           </div>
           <div className="h-1.5 rounded bg-line"><motion.div className="h-full rounded bg-ok" initial={{ width: 0 }} animate={{ width: `${(hechos / rutina.length) * 100}%` }} /></div>
           <ul className="m-0 p-0 list-none flex flex-col gap-1 text-sm">

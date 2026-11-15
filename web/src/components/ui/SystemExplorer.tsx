@@ -268,7 +268,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                       <p className="m-0 text-[13px] text-muted">{m.label}</p>
                       <p className="m-0 mt-0.5 flex items-baseline gap-2">
                         <strong className="num text-lg" style={{ color: mst === 'ok' ? C.text : COL[mst] }}>{val}</strong>
-                        <span className="num text-sm text-faint">tu normal {m.base}</span>
+                        <span className="num text-sm text-faint">your normal {m.base}</span>
                         {real && <span className="tag real">Measured today</span>}
                       </p>
                     </div>

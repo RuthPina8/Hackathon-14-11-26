@@ -360,7 +360,7 @@ export default function Login() {
 
           {demo && phase !== 'welcome' && (
             <button type="button" onClick={() => login(crewForLogin[0].id)} className="mt-2 border-0 bg-transparent text-sm text-faint underline cursor-pointer">
-              Modo demo: entrar como {crewForLogin[0].nombre} sin cámara
+              Demo mode: sign in as {crewForLogin[0].nombre} without camera
             </button>
           )}
         </div>

@@ -90,7 +90,7 @@ function BrazoCerca({ children }: { children?: React.ReactNode }) {
       <path d="M20 78 C90 70 170 70 220 82 L300 96 M20 132 C90 140 170 138 214 126 L300 122" stroke={C.accentSoft} strokeWidth={5} fill="none" strokeLinecap="round" />
       {/* pliegue del codo */}
       <path d="M216 84 Q224 104 216 124" stroke={C.muted} strokeWidth={3} fill="none" strokeDasharray="5 4" />
-      <text x={222} y={150} fill={C.muted} fontSize={14} fontWeight={600}>codo</text>
+      <text x={222} y={150} fill={C.muted} fontSize={14} fontWeight={600}>elbow</text>
       {children}
     </g>
   )
@@ -133,7 +133,7 @@ function Tubo() {
       </BrazoCerca>
       <text x={20} y={40} fill={C.text} fontSize={15} fontWeight={600}>▼ mark over the artery</text>
       <circle cx={30} cy={170} r={6} fill={C.crit} opacity={pulso} />
-      <text x={42} y={175} fill={C.critSoft} fontSize={14} fontWeight={600}>arteria</text>
+      <text x={42} y={175} fill={C.critSoft} fontSize={14} fontWeight={600}>artery</text>
     </svg>
   )
 }

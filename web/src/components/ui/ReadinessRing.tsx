@@ -33,7 +33,7 @@ export default function ReadinessGauge({ value: valor, ayer }: { value: number |
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <svg width="240" height="140" viewBox="0 0 220 128" role="img" aria-label={valor === null ? 'Mission readiness, no data' : `Mission readiness ${value} out of 100${ayer !== null ? `, lectura anterior ${ayer}` : ''}`}>
+      <svg width="240" height="140" viewBox="0 0 220 128" role="img" aria-label={valor === null ? 'Mission readiness, no data' : `Mission readiness ${value} out of 100${ayer !== null ? `, previous reading ${ayer}` : ''}`}>
         <path d="M20 112 A90 90 0 0 1 200 112" fill="none" stroke={C.line} strokeWidth="14" strokeLinecap="round" />
         <motion.path
           d="M20 112 A90 90 0 0 1 200 112"

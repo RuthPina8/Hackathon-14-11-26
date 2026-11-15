@@ -63,7 +63,7 @@ function Hallazgo({ o }: { o: Observacion }) {
           <p className="m-0 text-lg">{o.que_cambio_funcional}</p>
           {o.que_cambio_ambiente.map((v) => (
             <p key={v.variable} className="m-0 text-lg">
-              <strong>{v.nombre}</strong>: hasta <span className="num">{v.maximo_registrado}</span> {v.unidad}
+              <strong>{v.nombre}</strong>: up to <span className="num">{v.maximo_registrado}</span> {v.unidad}
               {' '}({v.rango[0] !== null && v.rango[1] !== null ? `range ${v.rango[0]}–${v.rango[1]}` : v.rango[1] !== null ? `limit ${v.rango[1]}` : `minimum ${v.rango[0]}`} {v.unidad}) · {v.lecturas_fuera} readings outside <span className="tag simt">SIM</span>
             </p>
           ))}

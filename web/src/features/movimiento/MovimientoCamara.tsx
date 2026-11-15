@@ -198,7 +198,7 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
             <p className="k">Reps</p>
             <p className="num m-0 text-[96px] font-bold leading-none text-accent">{contador.repeticiones}</p>
             <p className="m-0 text-base text-muted">{fase === 'midiendo' ? `Phase: ${contador.fase}` : 'Only complete cycles are counted'}</p>
-            {angulo !== null && <p className="num m-0 text-sm text-faint">{ejercicio === 'sentadilla' ? 'Knee' : 'Shoulder'}: {angulo}° · meta {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
+            {angulo !== null && <p className="num m-0 text-sm text-faint">{ejercicio === 'sentadilla' ? 'Knee' : 'Shoulder'}: {angulo}° · target {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
           </section>
           <div className="grid grid-cols-2 gap-4">
             <section className="card"><p className="k">Time</p><p className="big">{seg}<span className="text-lg text-muted"> s</span></p></section>

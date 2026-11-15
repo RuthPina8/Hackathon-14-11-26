@@ -77,7 +77,7 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
             ) : (
               <p className="m-0 text-sm text-soft">{statusReal ? 'Nothing outside your normal in today’s check-up.' : 'The analysis shows up when the engine is connected.'}</p>
             )}
-            {activas.length > nuevas.length && <Link to="/alerts" className="text-[13px] font-semibold">Ver {activas.length} active alerts</Link>}
+            {activas.length > nuevas.length && <Link to="/alerts" className="text-[13px] font-semibold">See {activas.length} active alerts</Link>}
           </section>
           <div className="flex flex-wrap justify-end gap-2.5">
             <button type="button" onClick={() => onIrA(3)} className="btn sec">Back</button>

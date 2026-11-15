@@ -41,7 +41,7 @@ export default function GuiaAnimada({ titulo, pasos, alTerminar, escena3D }: { t
     <section className="flex flex-col gap-4 rounded-2xl border-2 border-line bg-panel p-5" aria-label={titulo}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="m-0 font-display text-[20px] font-semibold">{titulo}</h2>
-        <span className="num text-[15px] text-faint">Paso {i + 1} de {pasos.length}</span>
+        <span className="num text-[15px] text-faint">Step {i + 1} of {pasos.length}</span>
       </div>
 
       <div className="relative overflow-hidden rounded-xl border border-holo-line bg-holo-bg" style={{ aspectRatio: '16 / 10' }}>

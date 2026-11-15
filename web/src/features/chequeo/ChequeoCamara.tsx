@@ -427,7 +427,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             </div>
           </CameraView>
           <p className="m-0 text-sm leading-relaxed text-muted">
-            La cámara no lee emociones ni mide presión. Mide el cambio de color de tu piel con cada latido (rPPG) y cuánto tiempo pasan cerrados tus ojos.
+            The camera doesn’t read emotions or measure blood pressure. It measures the color change of your skin with each heartbeat (rPPG) and how long your eyes stay closed.
             No video leaves this device: only the numbers are saved.
           </p>
         </div>
@@ -453,7 +453,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 {verif?.estado === 'verificado' && verif.umbral !== null
                   ? final.confianzaMotor >= verif.umbral
                     ? <span className="text-ok-soft">✓ Verified reading: at this confidence the camera is accurate to ±{verif.tolerancia_lpm} bpm {Math.round((verif.sobre_umbral?.exito_5 ?? 0) * 100)}% of the time</span>
-                    : <span className="text-warn">Confianza {final.confianzaMotor.toFixed(2)}, below the verified threshold ({verif.umbral.toFixed(1)}): treat it with caution</span>
+                    : <span className="text-warn">Confidence {final.confianzaMotor.toFixed(2)}, below the verified threshold ({verif.umbral.toFixed(1)}): treat it with caution</span>
                   : <span className="text-muted">Camera not yet validated against a reference device.</span>}
               </p>
             )}
@@ -467,7 +467,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           <section aria-labelledby="calidad" className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]">
             <div className="flex items-baseline justify-between">
               <h2 id="calidad" className="m-0 font-display text-base font-semibold">Signal quality</h2>
-              <span className="font-mono text-[13px] text-soft">{onda.length > 0 || terminado ? `confianza ${confianzaMostrada.toFixed(2)}` : 'no signal'}</span>
+              <span className="font-mono text-[13px] text-soft">{onda.length > 0 || terminado ? `confidence ${confianzaMostrada.toFixed(2)}` : 'no signal'}</span>
             </div>
             <div role="img" aria-label={`Quality ${barrasCalidad} of 5`} className="grid grid-cols-5 gap-[5px]">
               {[0, 1, 2, 3, 4].map((i) => (
@@ -475,7 +475,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               ))}
             </div>
             <p className="m-0 text-[13px] leading-normal text-soft">
-              Con menos de <span className="font-mono">{CONFIANZA_MINIMA}</span> the heart rate is not shown, and up to <span className="font-mono">{CONFIANZA_BUENA}</span> sale en gris.
+              Below <span className="font-mono">{CONFIANZA_MINIMA}</span> the heart rate is not shown, and up to <span className="font-mono">{CONFIANZA_BUENA}</span> it shows in gray.
               Only good readings go into your normal.
             </p>
           </section>
@@ -502,7 +502,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 </div>
               </div>
               <p className="m-0 text-sm leading-relaxed text-muted">
-                VFC (RMSSD) más baja suele ir con más estrés. {exprHoy !== null && exprNormal !== null && (normalExpr?.linea_base.n ?? 0) >= 3
+                Lower HRV (RMSSD) usually comes with more stress. {exprHoy !== null && exprNormal !== null && (normalExpr?.linea_base.n ?? 0) >= 3
                   ? `Your expressiveness today is ${exprHoy > exprNormal * 1.15 ? 'higher' : exprHoy < exprNormal * 0.85 ? 'lower' : 'similar to'} ${exprHoy > exprNormal * 1.15 || exprHoy < exprNormal * 0.85 ? 'than' : ''} your normal (${exprNormal.toFixed(2)}).`
                   : 'Expressiveness is compared against your normal once there are at least 3 check-ups.'}
                 {final.hrv === null && ' HRV not available: the signal was not clean enough.'}

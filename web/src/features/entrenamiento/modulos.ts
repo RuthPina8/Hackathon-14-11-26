@@ -71,7 +71,7 @@ export const MODULOS: Modulo[] = [
     resultado: 'This is used to compute your sleep (hours and efficiency), your stress and your immune status. If you sleep less than 6 h three nights in a row, the system warns you.',
   },
   {
-    id: 'movimiento', titulo: 'Movimiento (ASTRA-MOVE)', ruta: '/movement', minutos: 2,
+    id: 'movimiento', titulo: 'Movement (ASTRA-MOVE)', ruta: '/movement', minutos: 2,
     enciende: [], insignias: ['movimiento'],
     porQue: 'In microgravity, weight-bearing muscles and bones weaken if they aren’t exercised.',
     dato: 'The camera counts reps from your body pose. It’s a functional estimate: it doesn’t measure strength or diagnose.',

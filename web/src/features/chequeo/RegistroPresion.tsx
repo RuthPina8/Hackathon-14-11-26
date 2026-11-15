@@ -70,18 +70,18 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
         <section className="flex flex-col gap-5 rounded-2xl border border-line bg-panel p-[26px]">
           <p className="m-0 text-[15px] leading-relaxed text-soft">Only if you have the medical kit cuff. The camera does not measure blood pressure.</p>
           <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Sistólica (alta)
+            <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Systolic (high)
               <input inputMode="numeric" className={campo} value={sis} onChange={(e) => setSis(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="118" aria-describedby="err-presion" />
             </label>
-            <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Diastólica (baja)
+            <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Diastolic (low)
               <input inputMode="numeric" className={campo} value={dia} onChange={(e) => setDia(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="76" aria-describedby="err-presion" />
             </label>
           </div>
-          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Pulso del brazalete (opcional, valida a la cámara)
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Cuff pulse (optional, validates the camera)
             <input inputMode="numeric" className={campo} value={pulso} onChange={(e) => setPulso(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="64" />
           </label>
           <p id="err-presion" role="alert" className="m-0 min-h-5 text-sm text-warn">{error ?? aviso ?? ''}</p>
-          <span className="w-fit rounded-md bg-[#1E1838] px-2 py-1 text-[13px] font-semibold text-[#C9BDFF]">Autorreportado · capa auto</span>
+          <span className="w-fit rounded-md bg-[#1E1838] px-2 py-1 text-[13px] font-semibold text-[#C9BDFF]">Self-reported · auto layer</span>
           {envio && <p className="m-0 text-sm text-muted">Today’s latest blood pressure: {envio === 'enviado' ? 'saved' : 'pending upload'}</p>}
         </section>
         <div className="flex flex-col gap-2.5">

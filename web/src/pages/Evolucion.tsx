@@ -61,7 +61,7 @@ export default function Evolucion() {
       {ev && (
         <section className="card flex flex-wrap items-center gap-5" aria-label="Your progress summary">
           <div className="flex-1 min-w-[260px]">
-            <p className="k">{ev.dias_con_datos} days with data · referencia: {ev.tiene_ficha ? 'your pre-flight medical record' : 'your first week'}</p>
+            <p className="k">{ev.dias_con_datos} days with data · reference: {ev.tiene_ficha ? 'your pre-flight medical record' : 'your first week'}</p>
             <p className="m-0 mt-1.5 font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">{ev.resumen}</p>
           </div>
           <div className="flex gap-4">
@@ -117,7 +117,7 @@ export default function Evolucion() {
         </p>
       )}
       <p className="m-0 text-sm text-faint leading-relaxed">
-        "Drifting" significa que tu promedio de la última semana se movió en la dirección desfavorable más de medio desvío de tu propia variación. No es un diagnóstico: es una señal para revisar con el equipo médico.
+        "Drifting" means your last-week average moved in the unfavorable direction by more than half a standard deviation of your own variation. It’s not a diagnosis: it’s a signal to review with the medical team.
       </p>
     </>
   )

@@ -13,7 +13,7 @@ import type { ServerIndicator } from '../lib/back1'
 import { C } from '../lib/paleta'
 
 type Range = 7 | 30 | 60
-const FUENTE: Record<string, string> = { camara: 'Camera', prueba: 'Cognitive test', manual: 'Manual entry', apple_watch: 'Apple Watch', simulador: 'Simulador (demo)', modelo: 'Estimated' }
+const FUENTE: Record<string, string> = { camara: 'Camera', prueba: 'Cognitive test', manual: 'Manual entry', apple_watch: 'Apple Watch', simulador: 'Simulator (demo)', modelo: 'Estimated' }
 
 type Punto = { i: number; label: string; v: number; anom: boolean; fecha?: string; fuente?: string; conf?: number; demo?: boolean }
 
@@ -67,7 +67,7 @@ export default function Detalle() {
     const vals = mockSeries(key, range)
     const upper = d.base + 2 * d.sd
     const lower = d.base - 2 * d.sd
-    const data: Punto[] = vals.map((x, i) => ({ i, label: i === range - 1 ? 'hoy' : `−${range - 1 - i}d`, v: Number(x.toFixed(d.dec + 1)), anom: x > upper || x < lower }))
+    const data: Punto[] = vals.map((x, i) => ({ i, label: i === range - 1 ? 'today' : `−${range - 1 - i}d`, v: Number(x.toFixed(d.dec + 1)), anom: x > upper || x < lower }))
     const today = vals[vals.length - 1]
     return { data, base: d.base, sd: d.sd, upper, lower, today, out: today > upper || today < lower, dom: [d.lo, d.hi] as [number, number], desdeIdx: d.warn ? Math.max(0, range - 7) : -1, n: range + 4 }
   }, [real, srv, key, range, d])
@@ -181,7 +181,7 @@ export default function Detalle() {
           </section>
           <section className="card flex flex-col gap-2.5" aria-labelledby="fuente">
             <h2 id="fuente" className="h2">Source of this data</h2>
-            <p className="m-0 text-sm flex justify-between gap-2"><span className={`tag ${d.capa}`}>{fuentes || d.src}</span><span className="num text-muted">{real ? srv.serie.length : v.n} mediciones</span></p>
+            <p className="m-0 text-sm flex justify-between gap-2"><span className={`tag ${d.capa}`}>{fuentes || d.src}</span><span className="num text-muted">{real ? srv.serie.length : v.n} measurements</span></p>
           </section>
         </div>
       </div>

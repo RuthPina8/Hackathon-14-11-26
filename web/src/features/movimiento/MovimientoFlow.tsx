@@ -53,7 +53,7 @@ export default function MovimientoFlow() {
     <div className="flex flex-col gap-6">
       <PageHeader kicker="ASTRA-MOVE · functional assessment with a webcam" title="Movement" />
       <p className="m-0 max-w-[820px] text-base leading-relaxed text-muted">
-        Estimación computacional del desempeño funcional comparada contra <strong className="text-text">your own baseline</strong>.
+        Computational estimate of functional performance compared against <strong className="text-text">your own baseline</strong>.
         It doesn’t measure muscle strength, doesn’t diagnose injuries and doesn’t replace a specialist.
       </p>
       {error && <p role="alert" className="m-0 rounded-xl border border-warn-line bg-warn-bg px-5 py-4 text-base text-warn-soft">{error}</p>}

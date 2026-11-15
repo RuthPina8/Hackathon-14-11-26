@@ -619,7 +619,7 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
       <div ref={contenedor} className="absolute inset-0" role="img" aria-label="3D body with the status of each system, drag to rotate" />
       <div className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-holo-line bg-holo-bg/80 px-3 py-1 font-mono text-[13px] text-accent-soft">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-        Viendo: <span ref={ladoRef}>Front · 0°</span>
+        Viewing: <span ref={ladoRef}>Front · 0°</span>
       </div>
       {LISTA.map((o) => (
         <button

@@ -52,7 +52,7 @@ function Lista({ valor, onChange, ej }: { valor: string[]; onChange: (v: string[
         ))}
       </div>
       <div className="flex gap-2">
-        <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }} placeholder={`Ej. ${ej}`}
+        <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }} placeholder={`E.g. ${ej}`}
           className="min-h-14 flex-1 rounded-xl border border-line2 bg-input px-3 text-base text-text outline-none focus:border-accent" />
         <button type="button" className="btn sec sm" onClick={agregar}>Add</button>
       </div>
@@ -97,7 +97,7 @@ export default function Ficha() {
 
   const guardar = async () => {
     setMsg(null)
-    if (fueraDeRango.length) { setMsg(`Revisa: ${fueraDeRango.map((b) => `${b.label} (${b.min} a ${b.max})`).join(', ')}`); return }
+    if (fueraDeRango.length) { setMsg(`Check: ${fueraDeRango.map((b) => `${b.label} (${b.min} to ${b.max})`).join(', ')}`); return }
     setEstado('guardando')
     try {
       const r = await fetch(`${BASE}/ficha/${yo}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...f, astronauta_id: yo }) })
@@ -167,7 +167,7 @@ export default function Ficha() {
           <h2 id="gen" className="h2">General information</h2>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
             <Campo label="Name"><input className={input} value={f.nombre} onChange={(e) => set('nombre', e.target.value)} /></Campo>
-            <Campo label={`Date of birth${edad !== null ? ` (${edad} años)` : ''}`}><input type="date" className={input} value={f.fecha_nacimiento ?? ''} onChange={(e) => set('fecha_nacimiento', e.target.value || null)} /></Campo>
+            <Campo label={`Date of birth${edad !== null ? ` (${edad} years)` : ''}`}><input type="date" className={input} value={f.fecha_nacimiento ?? ''} onChange={(e) => set('fecha_nacimiento', e.target.value || null)} /></Campo>
             <Campo label="Sex">
               <select className={input} value={f.sexo} onChange={(e) => set('sexo', e.target.value as FichaMedica['sexo'])}>
                 <option value="">No data</option><option value="F">Female</option><option value="M">Male</option><option value="otro">Other</option>

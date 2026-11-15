@@ -100,7 +100,7 @@ export default function Tierra() {
                 <Nave color={SHIP[x.pri]} />
               </span>
             ))}
-            <span className="num absolute left-1/2 -top-0.5 -translate-x-1/2 text-sm text-muted whitespace-nowrap">{server && link ? `${tiempo(link.retraso_s)} · solo ida` : '13 min 20 s · solo ida'}</span>
+            <span className="num absolute left-1/2 -top-0.5 -translate-x-1/2 text-sm text-muted whitespace-nowrap">{server && link ? `${tiempo(link.retraso_s)} · one way` : '13 min 20 s · one way'}</span>
           </div>
           <div className="flex flex-col items-center gap-2 shrink-0">
             <span className="w-14 h-14 rounded-full bg-accent-bg border border-accent-line grid place-items-center"><Globe size={26} color={C.accentSoft} strokeWidth={1.8} /></span>

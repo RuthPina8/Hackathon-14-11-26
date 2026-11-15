@@ -67,9 +67,9 @@ export default function Simulacion() {
       <section className="card sim flex flex-col gap-3" aria-labelledby="dia">
         <div className="flex flex-wrap justify-between items-baseline gap-2">
           <h2 id="dia" className="h2">Mission day</h2>
-          <p className="m-0 text-sm text-muted"><strong className="num text-[28px] text-text">{day}</strong> de 180</p>
+          <p className="m-0 text-sm text-muted"><strong className="num text-[28px] text-text">{day}</strong> of 180</p>
         </div>
-        <label className="flex flex-col gap-1 text-sm text-faint">Mueve para proyectar
+        <label className="flex flex-col gap-1 text-sm text-faint">Move to project
           <input type="range" min={0} max={180} value={day} onChange={(e) => setDay(Number(e.target.value))} />
         </label>
         <div className="num flex justify-between text-[13px] text-faint">{[0, 30, 60, 90, 120, 150, 180].map((d) => <span key={d}>{d}</span>)}</div>

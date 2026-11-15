@@ -128,7 +128,7 @@ export default function Confiabilidad() {
           <section className="card flex flex-col gap-3" aria-labelledby="ref">
             <h2 id="ref" className="h2">Log a reference</h2>
             <p className="m-0 text-[13px] text-muted leading-relaxed">
-              Justo al terminar el chequeo con cámara (máximo 15 minutos después), mide tu pulso con otro aparato y escríbelo.
+              Right after the camera check-up (15 minutes max), measure your pulse with another device and enter it.
               {camara ? ` Your last camera reading was ${minutos} min ago (${camara.bpm ?? '--'} bpm).` : ' You haven’t done the camera check-up today yet.'}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -163,7 +163,7 @@ export default function Confiabilidad() {
             ))}
           </div></div>
           <p className="m-0 px-4 py-3 text-sm text-faint leading-relaxed">
-            Para sumar bases públicas: descarga UBFC-rPPG o PURE (piden registro a sus autores) y corre <code>python -m ml.validar_dataset --base ubfc --ruta … --api {BASE || 'http://localhost:8000'}</code> desde <code>api/</code>.
+            To add public datasets: download UBFC-rPPG or PURE (their authors require registration) and run <code>python -m ml.validar_dataset --base ubfc --ruta … --api {BASE || 'http://localhost:8000'}</code> from <code>api/</code>.
           </p>
         </section>
       )}
