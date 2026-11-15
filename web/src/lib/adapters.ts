@@ -2,7 +2,7 @@
 // Los nombres del back están en español y con otra escala (prioridad 1 = más urgente,
 // nivel amarilla/roja, estados atendida/escalada), aquí se convierten una sola vez.
 
-import type { AlertFactor, AlertItem, Capa, QueueMessage, Semaforo } from '../store/mockData'
+import type { AlertFactor, AlertItem, Capa, QueueMessage, Semaforo, StatusMock } from '../store/mockData'
 
 // ---------- formas del back ----------
 export interface ServerAlert {
@@ -58,6 +58,17 @@ export interface ServerSimulation {
   radiacion: { dosis_msv: number; limite_carrera_msv: number; pct_limite: number; serie: SeriePunto[] }
   retraso: { ida_s: number; ida_vuelta_s: number; texto: string }
   riesgo: { nivel: 'bajo' | 'medio' | 'alto'; puntaje: number; motivos: string[] }
+}
+
+export interface ServerStatus {
+  astronauta_id: number
+  readiness: number
+  factores: { label: string; delta: number; peso: number }[]
+  sistemas: Record<string, { estado: string; valor: string | null }>
+  calibracion: number
+  fase: 'tierra' | 'adaptacion' | 'personal'
+  dia_mision: number
+  n_mediciones: number
 }
 
 // ---------- señales ----------
@@ -172,4 +183,25 @@ export const SISTEMA_BACK: Record<string, string> = { sueno: 'sueno', cardiovasc
 export const astroNumero = (id: string | undefined | null): number | null => {
   const n = Number((id ?? '').replace(/\D/g, ''))
   return Number.isInteger(n) && n > 0 ? n : null
+}
+
+// ---------- estado general (GET /status de Back 1) ----------
+// Los sistemas que el back no calcula (el óseo es una proyección) se quedan como están.
+export function adaptStatus(prev: StatusMock, s: ServerStatus): StatusMock {
+  const sistemas = prev.sistemas.map((x) => {
+    const clave = Object.keys(s.sistemas).find((k) => SISTEMA_BACK[k] === x.id)
+    if (!clave) return x.id === 'oseo' ? x : { ...x, estado: 'none' as const, valor: 'sin datos', nota: undefined }
+    const r = s.sistemas[clave]
+    const estado = SEMAFORO_BACK[r.estado] ?? 'none'
+    return { ...x, estado, valor: r.valor ?? 'sin datos', nota: undefined }
+  })
+  return {
+    ...prev,
+    readiness: s.readiness,
+    factores: s.factores,
+    sistemas,
+    calibracion: s.calibracion,
+    diaMision: s.dia_mision,
+    diaBase: Math.min(s.dia_mision, prev.diasBase),
+  }
 }
