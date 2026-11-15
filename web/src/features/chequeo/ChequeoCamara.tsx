@@ -3,15 +3,19 @@ import type { FaceLandmarkerResult } from '@mediapipe/tasks-vision'
 import CameraView from './components/CameraView'
 import PulseWave from './components/PulseWave'
 import StepBar from './components/StepBar'
-import { calcularRois, PUNTO_NARIZ } from './camara/landmarks'
-import { CONFIANZA_MINIMA, useRppg } from './camara/useRppg'
+import { PUNTO_NARIZ } from './camara/landmarks'
+import type { Roi } from './camara/landmarks'
+import { CONFIANZA_BUENA, CONFIANZA_MINIMA, useRppg } from './camara/useRppg'
 import { usePerclos } from './camara/usePerclos'
 import { useChequeoStore } from './chequeoStore'
 
 const TOTAL = 60 // segundos de medición
 const UMBRAL_PERCLOS = 0.15
 const BRILLO_MINIMO = 70 // por debajo, la piel se ve muy oscura para el rPPG
-const MOVIMIENTO_MAXIMO = 0.004
+// Movimiento por cuadro (fracción de la imagen). Moverse es normal en microgravedad:
+// solo se descartan los cuadros con movimientos bruscos, el resto se sigue usando
+const MOVIMIENTO_SEGUIMIENTO = 0.004
+const MOVIMIENTO_BRUSCO = 0.02
 
 type Fase = 'inicio' | 'midiendo' | 'pausa' | 'completo'
 
@@ -31,7 +35,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const [seg, setSeg] = useState(0)
   const [camaraLista, setCamaraLista] = useState(false)
   const [hayCara, setHayCara] = useState(false)
-  const [moviendo, setMoviendo] = useState(false)
+  const [movimiento, setMovimiento] = useState<'estable' | 'siguiendo' | 'brusco'>('estable')
   const [final, setFinal] = useState<{ bpm: number | null; confianza: number } | null>(null)
 
   const faseRef = useRef(fase)
@@ -40,12 +44,12 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   }, [fase])
 
   const narizAnterior = useRef<{ x: number; y: number } | null>(null)
-  const movimiento = useRef(0)
+  const movimientoProm = useRef(0)
   const ultimaUi = useRef(0)
 
   // Cada cuadro: revisa movimiento y, si está midiendo, alimenta rPPG y PERCLOS
   const onResultado = useCallback(
-    (r: FaceLandmarkerResult, t: number, video: HTMLVideoElement) => {
+    (r: FaceLandmarkerResult, t: number, video: HTMLVideoElement, rois: Roi[] | null) => {
       const cara = r.faceLandmarks[0]
       setHayCara(Boolean(cara))
       if (!cara) {
@@ -53,18 +57,23 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
         return
       }
       const nariz = cara[PUNTO_NARIZ]
+      let d = 0
       if (narizAnterior.current) {
-        const d = Math.hypot(nariz.x - narizAnterior.current.x, nariz.y - narizAnterior.current.y)
-        movimiento.current = movimiento.current * 0.9 + d * 0.1
+        d = Math.hypot(nariz.x - narizAnterior.current.x, nariz.y - narizAnterior.current.y)
+        movimientoProm.current = movimientoProm.current * 0.85 + d * 0.15
       }
       narizAnterior.current = { x: nariz.x, y: nariz.y }
       if (t - ultimaUi.current > 300) {
-        setMoviendo(movimiento.current > MOVIMIENTO_MAXIMO)
+        const m = movimientoProm.current
+        setMovimiento(m > MOVIMIENTO_BRUSCO * 0.6 ? 'brusco' : m > MOVIMIENTO_SEGUIMIENTO ? 'siguiendo' : 'estable')
         ultimaUi.current = t
       }
       if (faseRef.current !== 'midiendo') return
-      // Tiempo real del cuadro de video, no el de cuando terminó MediaPipe
-      registrarColor(video, calcularRois(cara, video.videoWidth / video.videoHeight), video.currentTime * 1000)
+      // Cuadro con movimiento brusco: se descarta solo ese, la medición sigue
+      if (rois && d < MOVIMIENTO_BRUSCO) {
+        // Tiempo real del cuadro de video, no el de cuando terminó MediaPipe
+        registrarColor(video, rois, video.currentTime * 1000)
+      }
       registrarOjos(r.faceBlendshapes[0]?.categories, t)
     },
     [registrarColor, registrarOjos],
@@ -109,7 +118,9 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   // Al terminar se muestra el cálculo final, mientras mide se muestra el de en vivo
   const bpm = fase === 'completo' && final ? final.bpm : bpmVivo
   const confianzaMostrada = fase === 'completo' && final ? final.confianza : confianza
-  const hayRitmo = bpm !== null
+  const hayRitmo = bpm !== null && confianzaMostrada >= CONFIANZA_MINIMA
+  // Entre 0.12 y 0.3 se muestra el ritmo, pero en gris y marcado como baja confianza
+  const bajaConfianza = hayRitmo && confianzaMostrada < CONFIANZA_BUENA
   const senalDebil = !hayRitmo && onda.length > 0
   const luzBuena = brillo === null || brillo >= BRILLO_MINIMO
   const fatiga = perclos !== null && perclos > UMBRAL_PERCLOS
@@ -119,10 +130,10 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   if (fase === 'pausa') pista = 'Medición en pausa'
   if (fase === 'completo') pista = hayRitmo ? 'Listo, ya puedes pasar a la prueba cognitiva' : 'No hubo señal clara de ritmo, puedes repetir la medición'
   if (midiendo) {
-    if (!hayCara) pista = 'No encuentro tu cara, acomódate dentro del óvalo'
-    else if (moviendo) pista = 'Intenta quedarte quieto'
+    if (!hayCara) pista = 'No encuentro tu cara, que se vea completa en el centro'
+    else if (movimiento === 'brusco') pista = 'Movimiento brusco, esos cuadros no se cuentan'
     else if (!luzBuena) pista = 'Hay poca luz, acércate a una ventana o lámpara'
-    else if (senalDebil) pista = 'Señal débil: más luz de frente y quédate quieto'
+    else if (senalDebil || bajaConfianza) pista = 'Señal débil: pon una luz de frente y evita lámparas detrás o arriba de ti'
     else if (!hayRitmo) pista = 'Estabilizando la señal…'
     else pista = 'Mantén la cara dentro del óvalo y respira normal'
   }
@@ -133,8 +144,8 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
     completo: [
       'Medición completa',
       hayRitmo
-        ? `Ritmo ${bpm} lpm y PERCLOS ${perclos?.toFixed(2) ?? '--'} guardados con confianza ${confianzaMostrada.toFixed(2)}`
-        : 'No se obtuvo una señal clara de ritmo, repite con más luz y sin moverte',
+        ? `Ritmo ${bpm} lpm${bajaConfianza ? ' (baja confianza)' : ''} y PERCLOS ${perclos?.toFixed(2) ?? '--'} guardados con confianza ${confianzaMostrada.toFixed(2)}`
+        : 'No hubo un tramo con señal clara, centra tu cara y evita lámparas detrás o arriba de ti',
       'Repetir medición',
     ],
   }
@@ -178,8 +189,16 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 <span className={`rounded-[10px] border bg-[rgba(4,7,14,0.85)] px-3 py-2 text-xs font-semibold ${luzBuena ? 'border-[#1E5A43] text-[#8FF0C4]' : 'border-[#5C4A1C] text-[#F5D79A]'}`}>
                   {luzBuena ? 'Luz buena' : 'Poca luz'}
                 </span>
-                <span className={`rounded-[10px] border bg-[rgba(4,7,14,0.85)] px-3 py-2 text-xs font-semibold ${moviendo ? 'border-[#5C4A1C] text-[#F5D79A]' : 'border-[#1E5A43] text-[#8FF0C4]'}`}>
-                  {moviendo ? 'Te mueves' : 'Quieto'}
+                <span
+                  className={`rounded-[10px] border bg-[rgba(4,7,14,0.85)] px-3 py-2 text-xs font-semibold ${
+                    !hayCara || movimiento === 'brusco'
+                      ? 'border-[#5C4A1C] text-[#F5D79A]'
+                      : movimiento === 'siguiendo'
+                        ? 'border-[#1F5A78] text-[#8AD9F8]'
+                        : 'border-[#1E5A43] text-[#8FF0C4]'
+                  }`}
+                >
+                  {!hayCara ? 'Sin cara' : movimiento === 'brusco' ? 'Movimiento brusco' : movimiento === 'siguiendo' ? 'Siguiendo tu cara' : 'Estable'}
                 </span>
               </span>
             </div>
@@ -243,17 +262,22 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               >
                 <path
                   d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"
-                  fill={hayRitmo ? 'var(--color-crit)' : '#46536F'}
+                  fill={hayRitmo && !bajaConfianza ? 'var(--color-crit)' : '#46536F'}
                 />
               </svg>
-              <p className="m-0 font-mono text-[44px] font-bold tracking-tight">{bpm ?? '--'}</p>
+              <p className={`m-0 font-mono text-[44px] font-bold tracking-tight transition-colors ${bajaConfianza ? 'text-muted' : 'text-ink'}`}>
+                {hayRitmo ? bpm : '--'}
+              </p>
               <span className="text-sm text-soft">lpm</span>
+              {bajaConfianza && (
+                <span className="ml-auto rounded-md bg-[#2A2312] px-2 py-1 text-[11px] font-semibold text-warn">Baja confianza</span>
+              )}
             </div>
             <PulseWave valores={onda} />
             <p className="m-0 text-[13px] text-soft">
               {hayRitmo
                 ? fase === 'completo'
-                  ? 'Calculado con toda la medición, frente y mejillas'
+                  ? 'Calculado con el tramo más limpio de 20 s de la medición'
                   : 'Calculado con el color de frente y mejillas en los últimos 20 segundos'
                 : senalDebil
                   ? 'Señal débil, no se muestra un ritmo poco confiable'
@@ -274,7 +298,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 />
               ))}
             </div>
-            <p className="m-0 text-[13px] leading-normal text-soft">Con menos de <span className="font-mono">{CONFIANZA_MINIMA}</span> no se muestra el ritmo, y si la confianza es baja el dato pesa menos en tu estado general</p>
+            <p className="m-0 text-[13px] leading-normal text-soft">Con menos de <span className="font-mono">{CONFIANZA_MINIMA}</span> no se muestra el ritmo, hasta <span className="font-mono">{CONFIANZA_BUENA}</span> sale en gris, y entre más baja la confianza menos pesa el dato</p>
           </section>
 
           <section aria-labelledby="fatiga" className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]">

@@ -23,10 +23,41 @@ export function calcularRois(cara: NormalizedLandmark[], aspecto: number): Roi[]
     w,
     h,
   })
-  const m = ancho * 0.15
+  // Zonas amplias: más pixeles de piel = menos ruido (el filtro de piel quita lo que no es piel)
+  const m = ancho * 0.21
   return [
-    caja('FRENTE', cara[FRENTE].x, cara[FRENTE].y, ancho * 0.36, ancho * 0.11 * aspecto),
+    caja('FRENTE', cara[FRENTE].x, cara[FRENTE].y - ancho * 0.02, ancho * 0.5, ancho * 0.15 * aspecto),
     caja('MEJILLA', cara[MEJILLA_A].x, cara[MEJILLA_A].y, m, m * aspecto),
     caja('MEJILLA', cara[MEJILLA_B].x, cara[MEJILLA_B].y, m, m * aspecto),
   ]
+}
+
+// Caja que rodea toda la cara, de 0 a 1
+export function cajaCara(cara: NormalizedLandmark[]) {
+  let x0 = 1
+  let y0 = 1
+  let x1 = 0
+  let y1 = 0
+  for (const p of cara) {
+    if (p.x < x0) x0 = p.x
+    if (p.y < y0) y0 = p.y
+    if (p.x > x1) x1 = p.x
+    if (p.y > y1) y1 = p.y
+  }
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+}
+
+// Suaviza las zonas entre cuadros para que no tiemblen (alfa más alto = sigue más rápido)
+export function suavizarRois(anteriores: Roi[] | null, nuevas: Roi[], alfa = 0.35): Roi[] {
+  if (!anteriores || anteriores.length !== nuevas.length) return nuevas
+  return nuevas.map((n, i) => {
+    const a = anteriores[i]
+    return {
+      nombre: n.nombre,
+      x: a.x + (n.x - a.x) * alfa,
+      y: a.y + (n.y - a.y) * alfa,
+      w: a.w + (n.w - a.w) * alfa,
+      h: a.h + (n.h - a.h) * alfa,
+    }
+  })
 }

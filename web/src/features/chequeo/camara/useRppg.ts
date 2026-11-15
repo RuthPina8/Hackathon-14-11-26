@@ -9,7 +9,9 @@ const BUFFER_MS = 50_000 // se guardan 50 segundos para el cálculo final
 const BPM_MIN = 45
 const BPM_MAX = 180
 const PASO_BPM = 0.5
-export const CONFIANZA_MINIMA = 0.3 // por debajo no se muestra el ritmo
+// Calibrado con pruebas reales contra Apple Watch: el ruido puro queda abajo de 0.07
+export const CONFIANZA_BUENA = 0.2 // desde aquí el ritmo se muestra normal
+export const CONFIANZA_MINIMA = 0.12 // entre esta y la buena se muestra en gris como "baja confianza"; abajo no se muestra
 
 export type MuestraColor = { t: number; r: number; g: number; b: number }
 export type Estimacion = { bpm: number; confianza: number }
@@ -83,52 +85,79 @@ function filtrar(h: number[]) {
   return sinTendencia.map((_, i) => promedio(sinTendencia.slice(Math.max(0, i - 1), i + 2)))
 }
 
+// Potencia de la señal en una frecuencia (en lpm), con transformada de Fourier directa
+function potencia(x: number[], bpm: number) {
+  const f = bpm / 60
+  let re = 0
+  let im = 0
+  for (let i = 0; i < x.length; i++) {
+    const ang = (2 * Math.PI * f * i) / FS
+    re += x[i] * Math.cos(ang)
+    im += x[i] * Math.sin(ang)
+  }
+  return re * re + im * im
+}
+
 // Busca la frecuencia dominante entre 45 y 180 lpm con una ventana de Hann
-function estimar(h: number[]): Estimacion {
+// y calcula la SNR como en de Haan y Jeanne (2013): energía alrededor del pulso y de su
+// armónico (el doble de frecuencia) contra el resto. El latido real deja energía en ambos, el ruido no.
+function estimar(h: number[]): { bpm: number; snrDb: number } {
   const n = h.length
   const x = h.map((v, i) => v * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (n - 1))))
   const bpms: number[] = []
   const potencias: number[] = []
   for (let bpm = BPM_MIN; bpm <= BPM_MAX; bpm += PASO_BPM) {
-    const f = bpm / 60
-    let re = 0
-    let im = 0
-    for (let i = 0; i < n; i++) {
-      const ang = (2 * Math.PI * f * i) / FS
-      re += x[i] * Math.cos(ang)
-      im += x[i] * Math.sin(ang)
-    }
     bpms.push(bpm)
-    potencias.push(re * re + im * im)
+    potencias.push(potencia(x, bpm))
   }
   let mejor = 0
   potencias.forEach((p, i) => {
     if (p > potencias[mejor]) mejor = i
   })
   const bpm = bpms[mejor]
-  // Relación señal/ruido: energía cerca del pico (±6 lpm) contra todo lo demás
   let senal = 0
-  let total = 0
+  let ruido = 0
   potencias.forEach((p, i) => {
-    total += p
-    if (Math.abs(bpms[i] - bpm) <= 6) senal += p
+    const cercaPulso = Math.abs(bpms[i] - bpm) <= 6
+    const cercaArmonico = Math.abs(bpms[i] - 2 * bpm) <= 6
+    if (cercaPulso || cercaArmonico) senal += p
+    else ruido += p
   })
-  const proporcion = senal / (total || 1)
-  // Con ruido puro la proporción ronda 0.09, con un pulso limpio pasa de 0.5
-  const confianza = Math.min(1, Math.max(0, (proporcion - 0.15) / 0.45))
-  return { bpm: Math.round(bpm), confianza }
+  // Si el armónico cae arriba de 180 lpm, se calcula aparte
+  for (let f = 2 * bpm - 6; f <= 2 * bpm + 6; f += PASO_BPM) {
+    if (f > BPM_MAX) senal += potencia(x, f)
+  }
+  return { bpm: Math.round(bpm), snrDb: 10 * Math.log10(senal / (ruido || 1e-9)) }
 }
 
-function analizar(lista: MuestraColor[], ventanaMs: number): (Estimacion & { onda: number[] }) | null {
+type Analisis = Estimacion & { onda: number[] }
+
+function analizar(lista: MuestraColor[], ventanaMs: number): Analisis | null {
   if (lista.length < 2) return null
   const fin = lista[lista.length - 1].t
   const ventana = lista.filter((m) => m.t >= fin - ventanaMs)
   if (fin - ventana[0].t < MIN_MS) return null
   const { r, g, b } = remuestrear(ventana)
   const h = filtrar(pos(r, g, b))
+  const principal = estimar(h)
+
+  // Consistencia: se repite el cálculo en pedazos de 12 s cada 4 s.
+  // Un pulso real da casi el mismo ritmo en todos, el ruido brinca.
+  const largo = 12 * FS
+  const paso = 4 * FS
+  const parciales: number[] = []
+  for (let i = 0; i + largo <= h.length; i += paso) parciales.push(estimar(h.slice(i, i + largo)).bpm)
+  const consistencia = parciales.length
+    ? parciales.filter((v) => Math.abs(v - principal.bpm) <= 6).length / parciales.length
+    : 0.5
+
+  // SNR: -6 dB o menos es ruido, +6 dB o más es un pulso muy limpio
+  const porSnr = Math.min(1, Math.max(0, (principal.snrDb + 6) / 12))
+  const confianza = porSnr * consistencia
+
   const ultimos = h.slice(-4 * FS)
   const max = Math.max(...ultimos.map(Math.abs)) || 1
-  return { ...estimar(h), onda: ultimos.map((v) => v / max) }
+  return { bpm: principal.bpm, confianza, onda: ultimos.map((v) => v / max) }
 }
 
 export function useRppg() {
@@ -203,10 +232,25 @@ export function useRppg() {
     return () => clearInterval(id)
   }, [])
 
-  // Cálculo final con toda la medición (hasta 50 s), más preciso que el de en vivo
+  // Cálculo final: se revisan tramos de 20 s cada 5 s dentro de la medición
+  // y se queda el de mejor calidad, así los ratos con mala señal no arruinan el resultado
   const estimarFinal = useCallback((): Estimacion | null => {
-    const res = analizar(muestras.current, BUFFER_MS)
-    return res ? { bpm: res.bpm, confianza: res.confianza } : null
+    const lista = muestras.current
+    if (lista.length < 2) return null
+    const fin = lista[lista.length - 1].t
+    const inicio = lista[0].t
+    let mejor: Estimacion | null = null
+    for (let corte = fin; corte - VENTANA_VIVO_MS >= inicio - 1; corte -= 5000) {
+      const tramo = lista.filter((m) => m.t <= corte)
+      const res = analizar(tramo, VENTANA_VIVO_MS)
+      if (res && (!mejor || res.confianza > mejor.confianza)) mejor = { bpm: res.bpm, confianza: res.confianza }
+    }
+    // Medición corta (menos de 20 s útiles): se usa lo que haya
+    if (!mejor) {
+      const res = analizar(lista, BUFFER_MS)
+      if (res) mejor = { bpm: res.bpm, confianza: res.confianza }
+    }
+    return mejor
   }, [])
 
   const reiniciar = useCallback(() => {

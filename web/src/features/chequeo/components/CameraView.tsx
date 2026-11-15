@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { FaceLandmarkerResult } from '@mediapipe/tasks-vision'
 import { useFaceLandmarker } from '../camara/useFaceLandmarker'
-import { calcularRois } from '../camara/landmarks'
+import { cajaCara, calcularRois, suavizarRois } from '../camara/landmarks'
+import type { Roi } from '../camara/landmarks'
 
 // Cámaras virtuales que suelen mandar imagen negra si su app no está abierta
 const VIRTUALES = /droidcam|obs|virtual|manycam|snap camera|xsplit|iriun|epoccam|camo/i
@@ -10,8 +11,8 @@ const VIRTUALES = /droidcam|obs|virtual|manycam|snap camera|xsplit|iriun|epoccam
 type Camara = { id: string; nombre: string }
 
 type Props = {
-  // Se llama en cada cuadro con lo que detectó MediaPipe
-  onResultado?: (resultado: FaceLandmarkerResult, tiempoMs: number, video: HTMLVideoElement) => void
+  // Se llama en cada cuadro con lo que detectó MediaPipe y las zonas de piel ya suavizadas
+  onResultado?: (resultado: FaceLandmarkerResult, tiempoMs: number, video: HTMLVideoElement, rois: Roi[] | null) => void
   // Avisa cuando el modelo y la cámara ya están listos
   onListo?: (listo: boolean) => void
   mostrarRois?: boolean
@@ -31,6 +32,7 @@ function textoDerecho(ctx: CanvasRenderingContext2D, texto: string, x: number, y
 export default function CameraView({ onResultado, onListo, mostrarRois = true, ovalo = 'normal', children }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const ovaloRef = useRef<HTMLDivElement>(null)
   const { landmarker, estado, error } = useFaceLandmarker()
   const [camaras, setCamaras] = useState<Camara[]>([])
   const [camaraId, setCamaraId] = useState<string | null>(null)
@@ -120,13 +122,40 @@ export default function CameraView({ onResultado, onListo, mostrarRois = true, o
     if (!video || !canvas || !ctx) return
     let frameId = 0
     let ultimoTiempo = -1
+    let roisPrevias: Roi[] | null = null
+
+    // El óvalo sigue la cara: se mueve con el astronauta en vez de pedirle que se quede fijo
+    const moverOvalo = (caja: { x: number; y: number; w: number; h: number } | null) => {
+      const el = ovaloRef.current
+      if (!el) return
+      if (!caja) {
+        el.style.left = '29%'
+        el.style.top = '15%'
+        el.style.width = '42%'
+        el.style.height = '70%'
+        return
+      }
+      const margen = 0.12
+      const w = caja.w * (1 + margen * 2)
+      const h = caja.h * (1 + margen * 2)
+      // El video está en espejo, por eso se voltea la x
+      const x = 1 - (caja.x + caja.w) - caja.w * margen
+      const y = caja.y - caja.h * margen
+      el.style.left = `${(x * 100).toFixed(1)}%`
+      el.style.top = `${(y * 100).toFixed(1)}%`
+      el.style.width = `${(w * 100).toFixed(1)}%`
+      el.style.height = `${(h * 100).toFixed(1)}%`
+    }
 
     const loop = () => {
       if (video.currentTime !== ultimoTiempo) {
         ultimoTiempo = video.currentTime
         const ahora = performance.now()
         const resultado = landmarker.detectForVideo(video, ahora)
-        onResultadoRef.current?.(resultado, ahora, video)
+        const primera = resultado.faceLandmarks[0]
+        roisPrevias = primera ? suavizarRois(roisPrevias, calcularRois(primera, video.videoWidth / video.videoHeight)) : null
+        moverOvalo(primera ? cajaCara(primera) : null)
+        onResultadoRef.current?.(resultado, ahora, video, roisPrevias)
 
         if (canvas.width !== video.videoWidth) {
           canvas.width = video.videoWidth
@@ -147,7 +176,7 @@ export default function CameraView({ onResultado, onListo, mostrarRois = true, o
           if (mostrarRoisRef.current) {
             ctx.font = '600 11px Inter, sans-serif'
             ctx.textAlign = 'center'
-            for (const roi of calcularRois(cara, W / H)) {
+            for (const roi of roisPrevias ?? []) {
               const x = roi.x * W
               const y = roi.y * H
               const w = roi.w * W
@@ -186,7 +215,9 @@ export default function CameraView({ onResultado, onListo, mostrarRois = true, o
         <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full -scale-x-100" />
         <div
-          className={`pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[42%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-dashed transition-all duration-500 ${colorOvalo} ${
+          ref={ovaloRef}
+          style={{ left: '29%', top: '15%', width: '42%', height: '70%' }}
+          className={`pointer-events-none absolute rounded-[50%] border-2 border-dashed transition-[left,top,width,height,opacity,border-color] duration-200 ease-out ${colorOvalo} ${
             ovalo === 'tenue' ? 'opacity-40' : 'opacity-100'
           }`}
         />
