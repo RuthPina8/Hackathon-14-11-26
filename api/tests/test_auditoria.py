@@ -125,3 +125,26 @@ def test_resolver_encuentra_la_alerta_por_una_senal_secundaria():
     ], dia_mision=20))
     r = run(alerts.resolver(1, "perclos"))
     assert r is not None and r.id == a.id and r.estado == "resuelta"
+
+
+# --- Guion de la demo alineado con docs/motor.md (secciones 5 y 8) ----------------------
+
+def test_guion_inmune_a3_amarillo_el_27_y_rojo_el_29_por_fiebre(client):
+    from app.triage import guion
+
+    # La fiebre aparece 2 días seguidos (28 y 29) junto a otro síntoma inmune
+    fiebre = [d for d, s in guion.SINTOMAS_A3.items() if any(x["clave"] == "fiebre" for x in s)]
+    assert fiebre == [28, 29]
+
+    client.post("/demo/advance", json={"dias": 27})
+    a3 = [x for x in client.get("/alerts").json()["activas"] if x["astronauta_id"] == 3]
+    assert len(a3) == 1 and a3[0]["nivel"] == "amarilla"
+
+    client.post("/demo/advance", json={"dias": 1})  # día 28: fiebre un día, sigue amarillo
+    a3 = [x for x in client.get("/alerts").json()["activas"] if x["astronauta_id"] == 3]
+    assert len(a3) == 1 and a3[0]["nivel"] == "amarilla"
+
+    client.post("/demo/advance", json={"dias": 1})  # día 29: fiebre 2 días -> rojo y a Tierra
+    a3 = [x for x in client.get("/alerts").json()["activas"] if x["astronauta_id"] == 3]
+    assert len(a3) == 1 and a3[0]["nivel"] == "roja" and a3[0]["estado"] == "escalada"
+    assert "Fiebre 2 días" in a3[0]["que_cambio"]
