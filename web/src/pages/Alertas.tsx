@@ -3,12 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Lock } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { useMyAlerts } from '../store/selectors'
 import { PageHeader } from '../components/ui/Page'
 
 const capaColor = { real: '#F5B544', self: '#B7A4FF', sim: '#93A0B8' }
 
 export default function Alertas() {
-  const alerts = useAppStore((s) => s.alerts)
+  const alerts = useMyAlerts()
   const resolveAlert = useAppStore((s) => s.resolveAlert)
   const escalateAlert = useAppStore((s) => s.escalateAlert)
   const [params] = useSearchParams()
@@ -19,6 +20,17 @@ export default function Alertas() {
   const [escalated, setEscalated] = useState<Record<string, boolean>>({})
 
   const cur = alerts.find((a) => a.id === sel) ?? alerts[0]
+  if (!cur) {
+    return (
+      <>
+        <PageHeader kicker="0 activas" title="Alertas y triage" />
+        <section className="card flex flex-col gap-2" style={{ padding: 26 }}>
+          <h2 className="h2">Todo en orden</h2>
+          <p className="m-0 text-sm text-[#A3AEC4]">No hay alertas por ahora. Cuando una señal se salga de tu normal, aparece aquí con qué hacer.</p>
+        </section>
+      </>
+    )
+  }
   const open = alerts.filter((a) => a.estado === 'activa').length
   const done = cur.estado === 'resuelta'
   const crit = cur.nivel === 'crit'
@@ -110,7 +122,7 @@ export default function Alertas() {
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#8FF0C4]"><Check size={18} strokeWidth={2.6} />Atendida</span>
             ) : (
               <div className="flex flex-wrap gap-2.5">
-                {escalated[cur.id]
+                {escalated[cur.id] || cur.escalada
                   ? <Link className="btn sec" to="/earth">Ver en la cola a Tierra</Link>
                   : <button type="button" className="btn sec" onClick={() => { escalateAlert(cur.id); setEscalated((e) => ({ ...e, [cur.id]: true })) }}>Escalar a Tierra</button>}
                 <button type="button" className="btn pri" onClick={() => resolveAlert(cur.id)}>Marcar como atendida</button>

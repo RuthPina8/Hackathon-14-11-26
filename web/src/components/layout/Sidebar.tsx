@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Home, ScanFace, LineChart, Bell, User, Orbit, RadioTower, Users, LogOut } from 'lucide-react'
 import { useSession } from '../../store/useSession'
+import { useMyAlerts } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
 import ConnectionStatus from './TopBar'
 
@@ -35,8 +36,9 @@ function Link({ item, count, crit }: { item: Item; count: number; crit?: boolean
 }
 
 export default function Sidebar() {
-  const activeAlerts = useAppStore((s) => s.alerts.filter((a) => a.estado === 'activa').length)
-  const hasCrit = useAppStore((s) => s.alerts.some((a) => a.estado === 'activa' && a.nivel === 'crit'))
+  const mine = useMyAlerts()
+  const activeAlerts = mine.filter((a) => a.estado === 'activa').length
+  const hasCrit = mine.some((a) => a.estado === 'activa' && a.nivel === 'crit')
   const demo = useAppStore((s) => s.demo)
   const setDemo = useAppStore((s) => s.setDemo)
   const user = useSession((s) => s.user)
