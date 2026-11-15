@@ -6,10 +6,11 @@ import { useSession } from '../../store/useSession'
 import MovimientoCamara from './MovimientoCamara'
 import { idNumerico, movimientoApi, NOMBRE_EJERCICIO, type Sesion, type SesionIn } from './movimientoApi'
 import type { Ejercicio } from './pose/calcularAngulos'
+import { C } from '../../lib/paleta'
 
 type Paso = 'elegir' | 'camara' | 'resultado'
 
-const COLOR = { estable: '#3DDC97', bajo: '#F5B544', sin_referencia: '#5CC8F5', baja_calidad: '#F5B544' }
+const COLOR = { estable: C.ok, bajo: C.warn, sin_referencia: C.accent, baja_calidad: C.warn }
 
 export default function MovimientoFlow() {
   const user = useSession((s) => s.user)
@@ -42,23 +43,23 @@ export default function MovimientoFlow() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader kicker="ASTRA-MOVE · evaluación funcional con webcam" title="Movimiento" />
-      <p className="m-0 max-w-[820px] text-base leading-relaxed text-[#A3AEC4]">
-        Estimación computacional del desempeño funcional comparada contra <strong className="text-[#E8ECF4]">tu propia línea base</strong>.
+      <p className="m-0 max-w-[820px] text-base leading-relaxed text-muted">
+        Estimación computacional del desempeño funcional comparada contra <strong className="text-text">tu propia línea base</strong>.
         No mide fuerza muscular, no diagnostica lesiones y no sustituye a un especialista.
       </p>
-      {error && <p role="alert" className="m-0 rounded-xl border border-[#5C4A1C] bg-[#2A2312] px-5 py-4 text-base text-[#F5D79A]">{error}</p>}
+      {error && <p role="alert" className="m-0 rounded-xl border border-warn-line bg-warn-bg px-5 py-4 text-base text-warn-soft">{error}</p>}
 
       {paso === 'elegir' && (
         <>
           <div className="grid gap-5 sm:grid-cols-2">
             {(['brazos', 'sentadilla'] as Ejercicio[]).map((e) => (
               <button key={e} type="button" onClick={() => { setEjercicio(e); setPaso('camara') }}
-                className="card flex min-h-[220px] cursor-pointer flex-col items-start justify-between gap-4 text-left transition-colors hover:border-[#5CC8F5] active:translate-y-[2px]"
+                className="card flex min-h-[220px] cursor-pointer flex-col items-start justify-between gap-4 text-left transition-colors hover:border-accent active:translate-y-[2px]"
                 style={{ borderWidth: 2 }}>
-                {e === 'brazos' ? <ArrowUpFromLine size={52} color="#5CC8F5" /> : <PersonStanding size={52} color="#5CC8F5" />}
+                {e === 'brazos' ? <ArrowUpFromLine size={52} color={C.accent} /> : <PersonStanding size={52} color={C.accent} />}
                 <span>
                   <span className="block font-[family-name:var(--font-display)] text-[28px] font-bold">{NOMBRE_EJERCICIO[e]}</span>
-                  <span className="mt-1 block text-base text-[#A3AEC4]">
+                  <span className="mt-1 block text-base text-muted">
                     {e === 'brazos' ? 'Funciona sentado frente a la laptop. Cuenta repeticiones, amplitud y compara ambos lados' : 'Necesitas unos 2 m de espacio. Cuenta repeticiones, rango de movimiento y regularidad'}
                   </span>
                 </span>
@@ -67,7 +68,7 @@ export default function MovimientoFlow() {
           </div>
 
           <section className="card sim flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3"><span className="tag simt">PLAN B · DATO DE DEMO</span><span className="text-base text-[#C5CEDF]">Si la cámara falla, la demo sigue con sesiones preparadas de {NOMBRE_EJERCICIO[ejercicio].toLowerCase()}</span></div>
+            <div className="flex flex-wrap items-center gap-3"><span className="tag simt">PLAN B · DATO DE DEMO</span><span className="text-base text-subtle">Si la cámara falla, la demo sigue con sesiones preparadas de {NOMBRE_EJERCICIO[ejercicio].toLowerCase()}</span></div>
             <div className="flex flex-wrap gap-4">
               <button type="button" className="btn sec" onClick={() => void demo('linea_base')}>Cargar línea base de demo</button>
               <button type="button" className="btn sec" onClick={() => void demo('descenso')}>Sesión de respaldo con descenso</button>

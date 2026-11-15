@@ -7,7 +7,7 @@ import ReadinessGauge from '../../components/ui/ReadinessRing'
 
 // Paso 5: lo que se midió hoy, si llegó al motor y qué detectó.
 const envioTxt: Record<EstadoEnvio, [string, string]> = {
-  enviado: ['Analizado', 'text-[#8FF0C4]'],
+  enviado: ['Analizado', 'text-ok-soft'],
   pendiente: ['En cola, sin conexión', 'text-warn'],
   sin_back: ['Solo en este equipo', 'text-muted'],
 }
@@ -36,7 +36,7 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
     <div className="flex flex-col gap-[22px]">
       <header className="flex flex-col gap-[18px]">
         <div>
-          <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 5 de 5</p>
+          <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 5 de 5</p>
           <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Resumen de hoy</h1>
         </div>
         <StepBar actual={4} />
@@ -47,16 +47,16 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
           <h2 className="m-0 mb-2 font-display text-base font-semibold">{hechos} de 4 pasos hechos</h2>
           {filas.map((f) => (
             <div key={f.nombre} className="flex min-h-14 items-center gap-3 border-b border-line py-2 last:border-b-0">
-              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] text-xs font-bold ${f.hecho ? 'bg-ok text-[#04121C]' : 'border-2 border-line-strong'}`}>{f.hecho ? '✓' : ''}</span>
+              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] text-sm font-bold ${f.hecho ? 'bg-ok text-on-accent' : 'border-2 border-line-strong'}`}>{f.hecho ? '✓' : ''}</span>
               <div className="min-w-0 flex-1">
                 <p className="m-0 text-sm font-semibold">{f.nombre} <span className={`tag ${f.capa}`}>{f.capa === 'real' ? 'Real' : 'Auto'}</span></p>
                 <p className="m-0 mt-0.5 font-mono text-[13px] text-soft">{f.valor}</p>
               </div>
-              {f.envio && <span className={`text-xs font-semibold ${envioTxt[f.envio][1]}`}>{envioTxt[f.envio][0]}</span>}
-              <button type="button" onClick={() => onIrA(f.paso)} className="min-h-14 rounded-lg px-3 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-nav">{f.hecho ? 'Rehacer' : 'Hacer'}</button>
+              {f.envio && <span className={`text-sm font-semibold ${envioTxt[f.envio][1]}`}>{envioTxt[f.envio][0]}</span>}
+              <button type="button" onClick={() => onIrA(f.paso)} className="btn sec sm">{f.hecho ? 'Rehacer' : 'Hacer'}</button>
             </div>
           ))}
-          {pendientes > 0 && <p className="m-0 mt-2 text-xs text-warn">{pendientes} envío(s) esperan conexión con la base; se mandan solos al reconectar.</p>}
+          {pendientes > 0 && <p className="m-0 mt-2 text-sm text-warn">{pendientes} envío(s) esperan conexión con la base; se mandan solos al reconectar.</p>}
         </section>
 
         <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-4">
@@ -70,7 +70,7 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
             <h2 className="m-0 font-display text-base font-semibold">Qué detectó el motor</h2>
             {nuevas.length > 0 ? (
               nuevas.map((a) => (
-                <Link key={a.id} to={`/alerts?id=${a.id}`} className={`rounded-xl border p-3 text-sm no-underline ${a.nivel === 'crit' ? 'border-crit text-[#FFB8BF]' : 'border-warn text-[#F5D79A]'}`}>
+                <Link key={a.id} to={`/alerts?id=${a.id}`} className={`rounded-xl border p-3 text-sm no-underline ${a.nivel === 'crit' ? 'border-crit text-crit-soft' : 'border-warn text-warn-soft'}`}>
                   <strong>{a.titulo}</strong> · {a.resumen}
                 </Link>
               ))
@@ -80,8 +80,8 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
             {activas.length > nuevas.length && <Link to="/alerts" className="text-[13px] font-semibold">Ver {activas.length} alertas activas</Link>}
           </section>
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={() => onIrA(3)} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Atrás</button>
-            <button type="button" onClick={onSalir} className="min-h-14 rounded-xl bg-accent px-5 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Terminar e ir a Inicio</button>
+            <button type="button" onClick={() => onIrA(3)} className="btn sec">Atrás</button>
+            <button type="button" onClick={onSalir} className="btn pri">Terminar e ir a Inicio</button>
           </div>
         </div>
       </div>

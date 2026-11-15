@@ -4,6 +4,7 @@ import { usePoseLandmarker } from './pose/usePoseLandmarker'
 import { anguloHombro, anguloRodilla, cuerpoVisible, HUESOS, NECESARIOS, type Ejercicio } from './pose/calcularAngulos'
 import { actualizar, FONDO, nuevoContador, resumen, type Contador } from './pose/detectarRepeticiones'
 import type { SesionIn } from './movimientoApi'
+import { C } from '../../lib/paleta'
 
 type Fase = 'preparando' | 'midiendo'
 
@@ -70,12 +71,12 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
     if (!ctx) return
     ctx.clearRect(0, 0, c.width, c.height)
     if (!lm) return
-    const color = ok ? '#3DDC97' : '#F5B544'
+    const color = ok ? C.ok : C.warn
     ctx.lineWidth = 6; ctx.strokeStyle = color; ctx.lineCap = 'round'
     for (const [a, b] of HUESOS) {
       ctx.beginPath(); ctx.moveTo(lm[a].x * c.width, lm[a].y * c.height); ctx.lineTo(lm[b].x * c.width, lm[b].y * c.height); ctx.stroke()
     }
-    ctx.fillStyle = '#E8ECF4'
+    ctx.fillStyle = C.text
     for (const i of NECESARIOS[ejercicio]) {
       ctx.beginPath(); ctx.arc(lm[i].x * c.width, lm[i].y * c.height, 7, 0, Math.PI * 2); ctx.fill()
     }
@@ -175,30 +176,30 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap gap-5">
-        <div className="relative min-w-0 flex-[3_1_480px] overflow-hidden rounded-[20px] border-2 border-[#1C2740] bg-black aspect-[4/3]">
+        <div className="relative min-w-0 flex-[3_1_480px] overflow-hidden rounded-[20px] border-2 border-line bg-black aspect-[4/3]">
           <video ref={videoRef} playsInline muted className="absolute inset-0 h-full w-full object-cover -scale-x-100" />
           <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover -scale-x-100" />
           <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-            <span className={`rounded-xl px-4 py-2 text-base font-bold ${visible ? 'bg-[#0F2E22] text-[#8FF0C4]' : 'bg-[#2A2312] text-[#F5D79A]'}`}>
+            <span className={`rounded-xl px-4 py-2 text-base font-bold ${visible ? 'bg-[#0F2E22] text-ok-soft' : 'bg-warn-bg text-warn-soft'}`}>
               {visible ? 'Cuerpo detectado' : 'Cuerpo no visible'}
             </span>
             <span className="tag real" style={{ fontSize: 14, padding: '8px 12px' }}>Webcam · real</span>
           </div>
-          <p aria-live="polite" className="absolute inset-x-0 bottom-0 m-0 bg-gradient-to-b from-transparent to-[rgba(4,7,14,0.95)] px-6 pb-5 pt-10 text-lg font-semibold text-[#E8ECF4]">{pista}</p>
+          <p aria-live="polite" className="absolute inset-x-0 bottom-0 m-0 bg-gradient-to-b from-transparent to-[rgba(4,7,14,0.95)] px-6 pb-5 pt-10 text-lg font-semibold text-text">{pista}</p>
         </div>
 
         <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-4">
           <section className="card flex flex-col items-center gap-1 text-center">
             <p className="k">Repeticiones</p>
-            <p className="num m-0 text-[96px] font-bold leading-none text-[#5CC8F5]">{contador.repeticiones}</p>
-            <p className="m-0 text-base text-[#A3AEC4]">{fase === 'midiendo' ? `Fase: ${contador.fase}` : 'Se cuentan solo los ciclos completos'}</p>
-            {angulo !== null && <p className="num m-0 text-sm text-[#93A0B8]">{ejercicio === 'sentadilla' ? 'Rodilla' : 'Hombro'}: {angulo}° · meta {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
+            <p className="num m-0 text-[96px] font-bold leading-none text-accent">{contador.repeticiones}</p>
+            <p className="m-0 text-base text-muted">{fase === 'midiendo' ? `Fase: ${contador.fase}` : 'Se cuentan solo los ciclos completos'}</p>
+            {angulo !== null && <p className="num m-0 text-sm text-faint">{ejercicio === 'sentadilla' ? 'Rodilla' : 'Hombro'}: {angulo}° · meta {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
           </section>
           <div className="grid grid-cols-2 gap-4">
-            <section className="card"><p className="k">Tiempo</p><p className="big">{seg}<span className="text-lg text-[#A3AEC4]"> s</span></p></section>
-            <section className="card"><p className="k">Calidad de detección</p><p className="big" style={{ color: calidadVivo !== null && calidadVivo < 0.6 ? '#F5B544' : undefined }}>{calidadVivo === null ? '--' : `${Math.round(calidadVivo * 100)}%`}</p></section>
+            <section className="card"><p className="k">Tiempo</p><p className="big">{seg}<span className="text-lg text-muted"> s</span></p></section>
+            <section className="card"><p className="k">Calidad de detección</p><p className="big" style={{ color: calidadVivo !== null && calidadVivo < 0.6 ? C.warn : undefined }}>{calidadVivo === null ? '--' : `${Math.round(calidadVivo * 100)}%`}</p></section>
           </div>
-          {origen === 'remoto' && <p className="m-0 text-sm text-[#F5D79A]">Modelo de pose cargado de internet; para usarlo sin conexión hay que copiarlo a web/public/models</p>}
+          {origen === 'remoto' && <p className="m-0 text-sm text-warn-soft">Modelo de pose cargado de internet; para usarlo sin conexión hay que copiarlo a web/public/models</p>}
         </div>
       </div>
 

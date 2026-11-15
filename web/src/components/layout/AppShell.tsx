@@ -29,10 +29,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 bg-[#0A0F1B]/95 backdrop-blur border-b border-[#1C2740]">
+      <main className="flex-1 min-w-0 overflow-y-auto" style={{ paddingBottom: demo ? 190 : undefined }}>
+        <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 bg-deep/95 backdrop-blur border-b border-line">
           <button type="button" aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setAbierto((x) => !x)}
-            className="w-10 h-10 grid place-items-center rounded-lg border border-[#2F3F60] bg-transparent text-[#E8ECF4] cursor-pointer">
+            className="w-[52px] h-[52px] grid place-items-center rounded-xl border-2 border-line2 bg-transparent text-text cursor-pointer">
             {abierto ? <X size={20} /> : <Menu size={20} />}
           </button>
           <span className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight">AstroHealth</span>

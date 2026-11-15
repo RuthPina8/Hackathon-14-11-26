@@ -14,7 +14,7 @@ export function PageHeader({ kicker, title, right }: { kicker: ReactNode; title:
 
 export function SimBanner({ children, tag = 'SIMULACIÓN' }: { children: ReactNode; tag?: string }) {
   return (
-    <div role="note" className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-[#46536F] bg-[#0A0F1B] text-sm text-[#C5CEDF]">
+    <div role="note" className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-line3 bg-deep text-sm text-subtle">
       <span className="tag simt">{tag}</span>
       <span>{children}</span>
     </div>

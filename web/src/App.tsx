@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import Inicio from './pages/Inicio'
@@ -17,6 +17,8 @@ import { useSession } from './store/useSession'
 import { useAppStore } from './store/useAppStore'
 import ChequeoFlow from './features/chequeo/ChequeoFlow'
 import { useChequeoStore } from './features/chequeo/chequeoStore'
+import { AlertaRoja, Encendido } from './components/layout/EfectosGlobales'
+import { useEfectos } from './lib/efectos'
 
 // Flujo del chequeo diario (features/chequeo). El paso va en la URL: /camera?paso=0..4
 function ChequeoRoute() {
@@ -40,6 +42,13 @@ export default function App() {
   useMissionClock()
   useCameraToDashboard()
   const user = useSession((s) => s.user)
+  // Encendido de cabina: solo cuando se entra con la cara (no al recargar con la sesión abierta)
+  const habiaUsuario = useRef(!!user)
+  const iniciarEncendido = useEfectos((s) => s.iniciarEncendido)
+  useEffect(() => {
+    if (user && !habiaUsuario.current) iniciarEncendido()
+    habiaUsuario.current = !!user
+  }, [user, iniciarEncendido])
   // Lo hecho hoy en el chequeo es de cada astronauta (Inicio muestra su rutina)
   const cargarChequeo = useChequeoStore((s) => s.cargar)
   useEffect(() => { if (user) cargarChequeo(user.id) }, [user, cargarChequeo])
@@ -73,6 +82,8 @@ export default function App() {
     </AppShell>
     {/* fuera del AppShell: la transición de página usa transform y rompería el position: fixed */}
     <DemoBar />
+    <AlertaRoja />
+    <Encendido />
     </>
   )
 }

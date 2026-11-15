@@ -10,6 +10,7 @@ import { useSession } from '../store/useSession'
 import { api } from '../lib/api'
 import { astroNumero } from '../lib/adapters'
 import type { ServerIndicator } from '../lib/back1'
+import { C } from '../lib/paleta'
 
 type Range = 7 | 30 | 60
 const FUENTE: Record<string, string> = { camara: 'Cámara', prueba: 'Prueba cognitiva', manual: 'Registro manual', apple_watch: 'Apple Watch', simulador: 'Simulador (demo)', modelo: 'Estimado' }
@@ -103,7 +104,7 @@ export default function Detalle() {
       <div role="group" aria-label="Indicador" className="flex flex-wrap gap-2">
         {Object.entries(indicators).map(([k, ind]) => (
           <button key={k} type="button" className="chip" aria-pressed={k === key} onClick={() => navigate(`/indicators/${k}`)}>
-            {!real && <span className="w-2 h-2 rounded-full" style={{ background: ind.warn ? '#F5B544' : '#3DDC97' }} />}
+            {!real && <span className="w-2 h-2 rounded-full" style={{ background: ind.warn ? C.warn : C.ok }} />}
             {ind.label}
           </button>
         ))}
@@ -113,9 +114,9 @@ export default function Detalle() {
         <section className="card flex flex-col gap-3.5" style={{ flex: '3 1 540px', minWidth: 0 }} aria-labelledby="graf">
           <h2 id="graf" className="h2" style={{ fontSize: 17, lineHeight: 1.4 }}>{cargando && !srv ? 'Cargando…' : titulo}</h2>
           {sinDatos ? (
-            <div className="grid place-items-center gap-3 rounded-xl border border-dashed border-[#2F3F60] text-center" style={{ height: 300 }}>
+            <div className="grid place-items-center gap-3 rounded-xl border border-dashed border-line2 text-center" style={{ height: 300 }}>
               <div className="flex flex-col items-center gap-3">
-                <p className="m-0 text-sm text-[#A3AEC4]">Sin mediciones en este periodo</p>
+                <p className="m-0 text-sm text-muted">Sin mediciones en este periodo</p>
                 <Link to={d.capa === 'real' && d.tipo !== 'reaccion_ms' ? '/camera' : d.tipo === 'reaccion_ms' ? '/camera?paso=1' : d.tipo === 'presion_sis' ? '/camera?paso=2' : '/camera?paso=3'} className="btn pri sm">Hacer la medición</Link>
               </div>
             </div>
@@ -123,50 +124,50 @@ export default function Detalle() {
             <div style={{ width: '100%', height: 300 }} role="img" aria-label={`${d.name} contra tu línea base`}>
               <ResponsiveContainer>
                 <ComposedChart data={v.data} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="#1C2740" vertical={false} />
-                  <XAxis dataKey="i" type="number" domain={[0, Math.max(1, v.data.length - 1)]} allowDecimals={false} stroke="#46536F" tick={{ fill: '#93A0B8', fontSize: 11 }} tickFormatter={(i: number) => v.data[i]?.label ?? ''} minTickGap={28} tickLine={false} />
-                  <YAxis domain={v.dom} stroke="#46536F" tick={{ fill: '#93A0B8', fontSize: 11, fontFamily: 'JetBrains Mono' }} width={48} tickLine={false} tickFormatter={(x: number) => x.toFixed(d.dec)} />
+                  <CartesianGrid stroke={C.line} vertical={false} />
+                  <XAxis dataKey="i" type="number" domain={[0, Math.max(1, v.data.length - 1)]} allowDecimals={false} stroke={C.line3} tick={{ fill: C.faint, fontSize: 13 }} tickFormatter={(i: number) => v.data[i]?.label ?? ''} minTickGap={28} tickLine={false} />
+                  <YAxis domain={v.dom} stroke={C.line3} tick={{ fill: C.faint, fontSize: 13, fontFamily: 'JetBrains Mono' }} width={48} tickLine={false} tickFormatter={(x: number) => x.toFixed(d.dec)} />
                   {v.upper !== null && v.lower !== null && (
-                    <ReferenceArea y1={v.lower} y2={v.upper} fill="#5CC8F5" fillOpacity={0.09} stroke="none"
-                      label={{ value: `Tu rango normal ${f(v.lower)} a ${f(v.upper)}`, position: 'insideTopLeft', fill: '#8AD9F8', fontSize: 11 }} />
+                    <ReferenceArea y1={v.lower} y2={v.upper} fill={C.accent} fillOpacity={0.09} stroke="none"
+                      label={{ value: `Tu rango normal ${f(v.lower)} a ${f(v.upper)}`, position: 'insideTopLeft', fill: C.accentSoft, fontSize: 13 }} />
                   )}
-                  <ReferenceLine y={v.base} stroke="#5CC8F5" strokeOpacity={0.55} strokeDasharray="5 5" />
+                  <ReferenceLine y={v.base} stroke={C.accent} strokeOpacity={0.55} strokeDasharray="5 5" />
                   {v.desdeIdx >= 0 && v.data.length > 1 && (
-                    <ReferenceArea x1={v.desdeIdx} x2={v.data.length - 1} fill="#F5B544" fillOpacity={0.08} stroke="none"
-                      label={{ value: real ? 'Desde aquí (alerta)' : 'CUSUM detecta tendencia', position: 'insideTopRight', fill: '#F5B544', fontSize: 11, fontWeight: 600 }} />
+                    <ReferenceArea x1={v.desdeIdx} x2={v.data.length - 1} fill={C.warn} fillOpacity={0.08} stroke="none"
+                      label={{ value: real ? 'Desde aquí (alerta)' : 'CUSUM detecta tendencia', position: 'insideTopRight', fill: C.warn, fontSize: 13, fontWeight: 600 }} />
                   )}
                   <Tooltip
-                    contentStyle={{ background: '#0E1422', border: '1px solid #2F3F60', borderRadius: 10, fontSize: 12 }}
-                    labelStyle={{ color: '#93A0B8' }}
+                    contentStyle={{ background: C.panel, border: '1px solid #2F3F60', borderRadius: 10, fontSize: 14 }}
+                    labelStyle={{ color: C.faint }}
                     labelFormatter={(i) => v.data[Number(i)]?.label ?? ''}
                     formatter={(x) => [`${Number(x).toFixed(d.dec)} ${d.unit}`, d.label]}
                   />
-                  <Area type="monotone" dataKey="v" stroke="none" fill="#E8ECF4" fillOpacity={0.04} isAnimationActive />
+                  <Area type="monotone" dataKey="v" stroke="none" fill={C.text} fillOpacity={0.04} isAnimationActive />
                   <Line
-                    type="monotone" dataKey="v" stroke="#E8ECF4" strokeWidth={2.2} isAnimationActive
+                    type="monotone" dataKey="v" stroke={C.text} strokeWidth={2.2} isAnimationActive
                     dot={(p: { cx?: number; cy?: number; index?: number; payload?: Punto }) =>
                       p.payload?.anom
-                        ? <circle key={p.index} cx={p.cx} cy={p.cy} r={5} fill="#F5B544" stroke="#0E1422" strokeWidth={2} />
+                        ? <circle key={p.index} cx={p.cx} cy={p.cy} r={5} fill={C.warn} stroke={C.panel} strokeWidth={2} />
                         : real && v.data.length <= 40
-                          ? <circle key={p.index} cx={p.cx} cy={p.cy} r={2.5} fill={p.payload?.demo ? 'transparent' : '#E8ECF4'} stroke="#E8ECF4" strokeDasharray={p.payload?.demo ? '2 2' : undefined} />
+                          ? <circle key={p.index} cx={p.cx} cy={p.cy} r={2.5} fill={p.payload?.demo ? 'transparent' : C.text} stroke={C.text} strokeDasharray={p.payload?.demo ? '2 2' : undefined} />
                           : <g key={p.index} />}
-                    activeDot={{ r: 5, fill: '#5CC8F5' }}
+                    activeDot={{ r: 5, fill: C.accent }}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}
-          <div className="flex flex-wrap gap-4 text-xs text-[#A3AEC4]">
+          <div className="flex flex-wrap gap-4 text-sm text-muted">
             <span className="inline-flex items-center gap-2"><span className="w-4 h-2 rounded-sm" style={{ background: 'rgba(92,200,245,0.3)' }} />Tu rango normal (±2σ)</span>
-            <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#F5B544]" />Fuera de tu normal</span>
-            {real && v.upper === null && !sinDatos && <span className="text-[#93A0B8]">La banda aparece con 3 mediciones o más</span>}
+            <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-warn" />Fuera de tu normal</span>
+            {real && v.upper === null && !sinDatos && <span className="text-faint">La banda aparece con 3 mediciones o más</span>}
           </div>
         </section>
 
         <div className="flex flex-col gap-4" style={{ flex: '1 1 280px', minWidth: 0 }}>
           <section className="card grid grid-cols-2 gap-x-3.5 gap-y-4" aria-labelledby="resumen">
             <h2 id="resumen" className="h2 col-span-2">Resumen</h2>
-            <div><p className="k">Último</p><p className="big" style={{ marginTop: 4, fontSize: 28, color: v.out ? '#F5B544' : '#E8ECF4' }}>{sinDatos ? '--' : f(v.today)}</p></div>
+            <div><p className="k">Último</p><p className="big" style={{ marginTop: 4, fontSize: 28, color: v.out ? C.warn : C.text }}>{sinDatos ? '--' : f(v.today)}</p></div>
             <div><p className="k">Tu normal</p><p className="big" style={{ marginTop: 4, fontSize: 22 }}>{sinDatos || v.n < 3 ? 'aprendiendo' : `${f(v.base)} ± ${f(v.sd)}`}</p></div>
             <div><p className="k">z-score</p><p className="big" style={{ marginTop: 4, fontSize: 22 }}>{sinDatos || v.n < 3 ? '—' : z}</p></div>
             <div><p className="k">Rango clínico</p><p className="big" style={{ marginTop: 4, fontSize: 18 }}>{clin}</p></div>
@@ -175,12 +176,12 @@ export default function Detalle() {
             <h2 id="det" className="h2">Qué detectó el modelo</h2>
             <p className="m-0 text-sm leading-relaxed">{explicacion}</p>
             {real && srv.alerta_id && <Link to={`/alerts?id=${srv.alerta_id}`} className="text-[13px] font-semibold">Ver la alerta</Link>}
-            {real && srv.linea_base.congelada && <p className="m-0 text-xs text-[#F5B544]">Tu línea base está congelada mientras la alerta siga abierta, para no aprender lo anormal como normal.</p>}
-            <p className="m-0 text-xs text-[#93A0B8] leading-relaxed">Las alertas comparan contra tu propio normal, no solo contra el rango clínico</p>
+            {real && srv.linea_base.congelada && <p className="m-0 text-sm text-warn">Tu línea base está congelada mientras la alerta siga abierta, para no aprender lo anormal como normal.</p>}
+            <p className="m-0 text-sm text-faint leading-relaxed">Las alertas comparan contra tu propio normal, no solo contra el rango clínico</p>
           </section>
           <section className="card flex flex-col gap-2.5" aria-labelledby="fuente">
             <h2 id="fuente" className="h2">Fuente de este dato</h2>
-            <p className="m-0 text-sm flex justify-between gap-2"><span className={`tag ${d.capa}`}>{fuentes || d.src}</span><span className="num text-[#A3AEC4]">{real ? srv.serie.length : v.n} mediciones</span></p>
+            <p className="m-0 text-sm flex justify-between gap-2"><span className={`tag ${d.capa}`}>{fuentes || d.src}</span><span className="num text-muted">{real ? srv.serie.length : v.n} mediciones</span></p>
           </section>
         </div>
       </div>
@@ -194,7 +195,7 @@ export default function Detalle() {
                 <span className="k">Fecha</span><span className="k">Valor</span><span className="k">Fuente</span><span className="k">Confianza</span><span className="k">Estado</span>
               </div>
               {ultimas.map((p) => {
-                const c = p.anom ? '#F5B544' : '#3DDC97'
+                const c = p.anom ? C.warn : C.ok
                 return (
                   <div key={p.i} className="trow" style={{ gridTemplateColumns: '1.2fr 1fr 1.2fr .8fr 1.4fr' }}>
                     <span>{p.fecha ? new Date(p.fecha).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : p.label}</span>

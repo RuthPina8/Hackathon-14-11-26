@@ -7,6 +7,7 @@ import { useAppStore } from '../store/useAppStore'
 import { BASE, api, apiEnabled } from '../lib/api'
 import { astroNumero } from '../lib/adapters'
 import type { Basales, FichaMedica } from '../lib/back1'
+import { C } from '../lib/paleta'
 
 // Ficha médica pre-misión: lo que el equipo médico registra antes del vuelo (como el expediente que
 // tiene cada astronauta). Es la referencia contra la que se mide la evolución; no alimenta el motor.
@@ -43,16 +44,16 @@ function Lista({ valor, onChange, ej }: { valor: string[]; onChange: (v: string[
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-1.5">
-        {valor.length === 0 && <span className="text-xs text-[#93A0B8]">Ninguna registrada</span>}
+        {valor.length === 0 && <span className="text-sm text-faint">Ninguna registrada</span>}
         {valor.map((v) => (
-          <span key={v} className="inline-flex items-center gap-1.5 rounded-lg bg-[#15233B] px-2.5 py-1 text-[13px]">
-            {v}<button type="button" aria-label={`Quitar ${v}`} onClick={() => onChange(valor.filter((x) => x !== v))} className="border-0 bg-transparent p-0 text-[#A3AEC4] cursor-pointer"><X size={13} /></button>
+          <span key={v} className="inline-flex items-center gap-1.5 rounded-lg bg-sel px-2.5 py-1 text-[13px]">
+            {v}<button type="button" aria-label={`Quitar ${v}`} onClick={() => onChange(valor.filter((x) => x !== v))} className="border-0 bg-transparent p-0 text-muted cursor-pointer"><X size={13} /></button>
           </span>
         ))}
       </div>
       <div className="flex gap-2">
         <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }} placeholder={`Ej. ${ej}`}
-          className="min-h-14 flex-1 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 text-base text-[#E8ECF4] outline-none focus:border-[#5CC8F5]" />
+          className="min-h-14 flex-1 rounded-xl border border-line2 bg-input px-3 text-base text-text outline-none focus:border-accent" />
         <button type="button" className="btn sec sm" onClick={agregar}>Agregar</button>
       </div>
     </div>
@@ -66,9 +67,9 @@ function edadEn(nacimiento: string): number {
 }
 
 const Campo = ({ label, children }: { label: string; children: ReactNode }) => (
-  <label className="flex flex-col gap-1.5 text-[13px] text-[#A3AEC4]">{label}{children}</label>
+  <label className="flex flex-col gap-1.5 text-[13px] text-muted">{label}{children}</label>
 )
-const input = 'min-h-11 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 text-sm text-[#E8ECF4] outline-none focus:border-[#5CC8F5]'
+const input = 'min-h-11 rounded-xl border border-line2 bg-input px-3 text-sm text-text outline-none focus:border-accent'
 
 export default function Ficha() {
   const user = useSession((s) => s.user)
@@ -156,7 +157,7 @@ export default function Ficha() {
         }
       />
       {(msg || estado === 'guardado') && (
-        <p role="status" className="m-0 text-sm" style={{ color: estado === 'guardado' ? '#8FF0C4' : '#F5B544' }}>
+        <p role="status" className="m-0 text-sm" style={{ color: estado === 'guardado' ? C.okSoft : C.warn }}>
           {estado === 'guardado' ? <>✓ Ficha guardada. <Link to="/progress">Ver tu evolución contra ella</Link></> : msg}
         </p>
       )}
@@ -185,14 +186,14 @@ export default function Ficha() {
 
         <section className="card flex flex-col gap-4" style={{ flex: '1 1 360px', minWidth: 0 }} aria-labelledby="bas">
           <h2 id="bas" className="h2">Valores basales en Tierra</h2>
-          <p className="m-0 text-[13px] text-[#A3AEC4] leading-relaxed">Tu referencia antes del vuelo. "Mi evolución" compara tus mediciones de la misión contra estos valores.</p>
+          <p className="m-0 text-[13px] text-muted leading-relaxed">Tu referencia antes del vuelo. "Mi evolución" compara tus mediciones de la misión contra estos valores.</p>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
             {BASALES.map((b) => {
               const v = f.basales[b.k]
               const mal = v !== null && (v < b.min || v > b.max)
               return (
                 <Campo key={b.k} label={`${b.label} (${b.unidad})`}>
-                  <input type="number" className={input} style={mal ? { borderColor: '#F5B544' } : undefined} value={v ?? ''} onChange={(e) => setBasal(b.k, e.target.value)} />
+                  <input type="number" className={input} style={mal ? { borderColor: C.warn } : undefined} value={v ?? ''} onChange={(e) => setBasal(b.k, e.target.value)} />
                 </Campo>
               )
             })}
@@ -212,7 +213,7 @@ export default function Ficha() {
           <textarea value={f.notas} maxLength={2000} onChange={(e) => set('notas', e.target.value)} rows={4} className={`${input} py-2`} />
         </div>
       </section>
-      <p className="m-0 text-xs text-[#93A0B8]">
+      <p className="m-0 text-sm text-faint">
         Datos médicos sensibles: se guardan en la base de la misión y no viajan a Tierra salvo en un reporte que tú escales.
         {f.actualizada && ` Última actualización: ${new Date(f.actualizada).toLocaleString('es-MX')}.`}
       </p>

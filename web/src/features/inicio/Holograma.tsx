@@ -1,14 +1,20 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import EstadoIcono from '../../components/ui/EstadoIcono'
 import type { Estado, Organo } from './useSalud'
+import { C } from '../../lib/paleta'
 
 // Cuerpo holográfico en 3D que gira 360°. Cada órgano toma el color de su estado real
 // y se mueve con tus datos: el corazón late a tu ritmo medido y los pulmones respiran
 // a tu frecuencia medida. Se arrastra para girar y se toca un órgano para ver su detalle
 
-const COLOR: Record<Estado, string> = { ok: '#3DDC97', warn: '#F5B544', crit: '#FF6B7A', none: '#5C7896' }
-const CIAN = new THREE.Color('#5CC8F5')
+const COLOR: Record<Estado, string> = { ok: C.ok, warn: C.warn, crit: C.crit, none: C.none }
+const CIAN = new THREE.Color(C.accent)
 
 type Props = {
   organos: Record<Organo, Estado>
@@ -19,7 +25,13 @@ type Props = {
   onSelect: (o: Organo | null) => void
   vista: number // se incrementa para pedir girar a frente (par) o espalda (impar)
   sexo: 'F' | 'M' | '' // de la ficha médica: ajusta las proporciones del cuerpo
+  destello?: { organo: Organo; n: number } | null // alerta roja nueva: el órgano destella 3 s
+  escaneo?: number // se incrementa con cada medición nueva: el anillo recorre el cuerpo
 }
+
+const FPS = 30 // tope para laptops: no se renderiza más rápido que esto
+const ESCANEO_S = 2.6
+const DESTELLO_S = 3
 
 // Proporciones del cuerpo femenino sobre el mismo esqueleto. Cada hueso hereda la escala del
 // anterior, así que se escribe la escala que debe quedar en cada zona y aquí se convierte a relativa
@@ -81,14 +93,14 @@ const LISTA: Organo[] = ['cerebro', 'ojos', 'corazon', 'pulmones', 'inmune']
 // Desplazamiento vertical de cada etiqueta para que no se encimen (px)
 const DY: Record<Organo, number> = { cerebro: -26, ojos: 4, corazon: 6, pulmones: 0, inmune: -6 }
 
-export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, onSelect, vista, sexo }: Props) {
+export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, onSelect, vista, sexo, destello = null, escaneo = 0 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const etiquetasRef = useRef<Partial<Record<Organo, HTMLButtonElement | null>>>({})
   const ladoRef = useRef<HTMLSpanElement>(null)
   // Valores que cambian sin volver a montar la escena
-  const datos = useRef({ organos, bpm, rpm, seleccionado, onSelect, vista, sexo })
+  const datos = useRef({ organos, bpm, rpm, seleccionado, onSelect, vista, sexo, destello, escaneo })
   useEffect(() => {
-    datos.current = { organos, bpm, rpm, seleccionado, onSelect, vista, sexo }
+    datos.current = { organos, bpm, rpm, seleccionado, onSelect, vista, sexo, destello, escaneo }
   })
 
   useEffect(() => {
@@ -104,6 +116,24 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
     renderer.domElement.style.cursor = 'grab'
 
     const escena = new THREE.Scene()
+    // Fondo dentro del canvas (el bloom necesita un lienzo opaco): mismo degradado y cuadrícula que antes
+    const lienzo = document.createElement('canvas')
+    lienzo.width = lienzo.height = 512
+    const cx = lienzo.getContext('2d')!
+    const grad = cx.createRadialGradient(256, 230, 10, 256, 256, 330)
+    grad.addColorStop(0, '#0B2236')
+    grad.addColorStop(0.55, '#070D19')
+    grad.addColorStop(1, '#050912')
+    cx.fillStyle = grad
+    cx.fillRect(0, 0, 512, 512)
+    cx.strokeStyle = 'rgba(92,200,245,0.07)'
+    cx.lineWidth = 1
+    for (let i = 0; i <= 512; i += 18) {
+      cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i, 512); cx.moveTo(0, i); cx.lineTo(512, i); cx.stroke()
+    }
+    const fondo = new THREE.CanvasTexture(lienzo)
+    fondo.colorSpace = THREE.SRGBColorSpace
+    escena.background = fondo
     const camara = new THREE.PerspectiveCamera(32, 1, 0.1, 50)
     camara.position.set(0, 0.1, 9)
     camara.lookAt(0, -0.12, 0)
@@ -337,11 +367,36 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
     const particulas = new THREE.Points(partGeo, partMat)
     escena.add(particulas)
 
+    // ---------- pulso: partículas que suben por el torso a la velocidad del ritmo medido ----------
+    const nPulso = 42
+    const posPulso = new Float32Array(nPulso * 3)
+    const fasePulso = Array.from({ length: nPulso }, (_, i) => i / nPulso)
+    const ladoPulso = Array.from({ length: nPulso }, (_, i) => (i % 3) - 1)
+    const pulsoGeo = g(new THREE.BufferGeometry())
+    pulsoGeo.setAttribute('position', new THREE.BufferAttribute(posPulso, 3))
+    const pulsoMat = new THREE.PointsMaterial({ color: CIAN, size: 0.06, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
+    materiales.push(pulsoMat)
+    const pulso = new THREE.Points(pulsoGeo, pulsoMat)
+    pulso.frustumCulled = false
+    pulso.visible = !reducido
+    cuerpo.add(pulso)
+
+    // ---------- resplandor (bloom); con "reducir movimiento" no hay postprocesado ----------
+    const composer = reducido ? null : new EffectComposer(renderer)
+    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.85, 0.45, 0.12)
+    if (composer) {
+      composer.addPass(new RenderPass(escena, camara))
+      composer.addPass(bloom)
+      composer.addPass(new OutputPass())
+    }
+
     // ---------- tamaño ----------
     const ajustar = () => {
       const w = el.clientWidth
       const h = el.clientHeight
       renderer.setSize(w, h)
+      composer?.setSize(w, h)
+      bloom.resolution.set(w, h)
       camara.aspect = w / h
       // En pantallas angostas se aleja la cámara para que quepa todo el cuerpo
       camara.position.z = w / h < 0.75 ? 11 : 9
@@ -397,9 +452,18 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
     const tmp = new THREE.Vector3()
     const color = new THREE.Color()
     let frame = 0
+    let acumulado = 0
+    let inicioEscaneo = -99
+    let ultimoEscaneo = datos.current.escaneo
+    let inicioDestello = -99
+    let ultimoDestello = datos.current.destello?.n ?? 0
+    const blanco = new THREE.Color('#FFFFFF')
     const animar = () => {
       frame = requestAnimationFrame(animar)
-      const dt = reloj.getDelta()
+      acumulado += reloj.getDelta()
+      if (acumulado < 1 / FPS) return
+      const dt = Math.min(acumulado, 0.1)
+      acumulado = 0
       const t = reloj.elapsedTime
       mixer?.update(dt)
       // Se aplica después de la animación en cada cuadro para que no la sobrescriba
@@ -414,6 +478,16 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
       cuerpo.scale.setScalar(estatura)
       cuerpo.position.y = -2 * (1 - estatura)
       const d = datos.current
+      if (d.escaneo !== ultimoEscaneo) {
+        ultimoEscaneo = d.escaneo
+        if (!reducido) inicioEscaneo = t
+      }
+      if ((d.destello?.n ?? 0) !== ultimoDestello) {
+        ultimoDestello = d.destello?.n ?? 0
+        inicioDestello = t
+      }
+      const flash = t - inicioDestello < DESTELLO_S ? 1 - (t - inicioDestello) / DESTELLO_S : 0
+      const organoFlash = flash > 0 ? d.destello?.organo : undefined
 
       // Pedido de girar a frente o espalda
       if (d.vista !== ultimaVista) {
@@ -442,26 +516,53 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
         matHalo[o].color.copy(color)
         const activo = !d.seleccionado || d.seleccionado === o
         const alerta = estado === 'crit' ? 0.5 + 0.5 * Math.sin(t * 6) : 1
+        const destella = organoFlash === o ? flash : 0
         matOrgano[o].opacity = (activo ? (o === 'pulmones' ? 0.4 : o === 'cerebro' ? 0.55 : 0.9) : 0.15) * (estado === 'none' ? 0.55 : 1) * alerta
-        matHalo[o].opacity = (d.seleccionado === o ? 0.3 : activo ? 0.12 : 0.03) * alerta
-        let k = 1
-        if (o === 'corazon') k = latido
-        if (o === 'pulmones') k = respiro
+        matHalo[o].opacity = Math.max((d.seleccionado === o ? 0.3 : activo ? 0.12 : 0.03) * alerta, destella * (0.55 + 0.45 * Math.sin(t * 14)))
+        if (destella) {
+          matOrgano[o].opacity = 1
+          matOrgano[o].color.lerp(blanco, 0.5 * destella * (0.5 + 0.5 * Math.sin(t * 14)))
+        }
+        let k = 1 + destella * 0.5
+        if (o === 'corazon') k *= latido
+        if (o === 'pulmones') k *= respiro
         mesh.scale.set(base.x * k, base.y * (o === 'ojos' ? parpadeo : k), base.z * k)
         halo.scale.set(baseHalo.x * k, baseHalo.y * k, baseHalo.z * k)
       }
 
-      // Escáner que sube y baja
-      const y = Math.sin(t * 0.6) * 1.95
-      escaner.position.y = y
-      const ancho = 0.5 + 0.35 * Math.cos((y / 2) * Math.PI * 0.5)
-      escaner.scale.set(ancho / 0.56, ancho / 0.56, 1)
-      escanerMat.opacity = 0.35 + 0.15 * Math.sin(t * 3)
+      // Anillo de escaneo: recorre el cuerpo de abajo arriba y de regreso cuando llega una medición nueva
+      const ke = (t - inicioEscaneo) / ESCANEO_S
+      if (ke >= 0 && ke < 1) {
+        const y = -2 + 4 * Math.sin(ke * Math.PI)
+        escaner.position.y = y
+        const ancho = 0.5 + 0.35 * Math.cos((y / 2) * Math.PI * 0.5)
+        escaner.scale.set(ancho / 0.56, ancho / 0.56, 1)
+        escanerMat.opacity = 0.9 * Math.sin(ke * Math.PI) + 0.1
+        escaner.visible = true
+      } else escaner.visible = false
+
+      // Pulso: las partículas suben por el torso a la velocidad del ritmo medido (más lpm = más rápido)
+      if (pulso.visible) {
+        const vel = ((d.bpm ?? 60) / 60) * 0.55
+        pulsoMat.color.set(COLOR[d.organos.corazon === 'none' ? 'ok' : d.organos.corazon])
+        const faseLat = (t * ((d.bpm ?? 60) / 60)) % 1
+        pulsoMat.opacity = 0.45 + 0.55 * Math.exp(-faseLat * 7)
+        for (let i = 0; i < nPulso; i++) {
+          fasePulso[i] = (fasePulso[i] + dt * vel) % 1
+          const f = fasePulso[i]
+          const ang = f * Math.PI * 3 + ladoPulso[i] * 2.1
+          posPulso[i * 3] = Math.cos(ang) * 0.13 * (1 - f * 0.3)
+          posPulso[i * 3 + 1] = 0.15 + f * 0.95
+          posPulso[i * 3 + 2] = Math.sin(ang) * 0.09 + 0.02
+        }
+        pulsoGeo.attributes.position.needsUpdate = true
+      }
       anillos.forEach((a, i) => (a.rotation.z = t * (i % 2 ? -0.25 : 0.4)))
       particulas.rotation.y = t * 0.05
       ;(rim.uniforms.uOpacity as { value: number }).value = 0.8 + 0.08 * Math.sin(t * 1.7)
 
-      renderer.render(escena, camara)
+      if (composer) composer.render()
+      else renderer.render(escena, camara)
 
       // Qué lado del cuerpo se está viendo, para no perderse al girar
       if (ladoRef.current) {
@@ -504,6 +605,9 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
       renderer.domElement.removeEventListener('pointerup', arriba)
       geometrias.forEach((x) => x.dispose())
       materiales.forEach((x) => x.dispose())
+      fondo.dispose()
+      bloom.dispose()
+      composer?.dispose()
       renderer.dispose()
       el.removeChild(renderer.domElement)
     }
@@ -512,8 +616,8 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div ref={contenedor} className="absolute inset-0" role="img" aria-label="Cuerpo en 3D con el estado de cada sistema, arrastra para girar" />
-      <div className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-[#1C2E4A] bg-[#060B16]/80 px-3 py-1 font-mono text-[11px] text-[#8AD9F8]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#5CC8F5]" />
+      <div className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-holo-line bg-holo-bg/80 px-3 py-1 font-mono text-[13px] text-accent-soft">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
         Viendo: <span ref={ladoRef}>Frente · 0°</span>
       </div>
       {LISTA.map((o) => (
@@ -524,10 +628,10 @@ export default function Holograma({ organos, etiquetas, bpm, rpm, seleccionado, 
             etiquetasRef.current[o] = b
           }}
           onClick={() => onSelect(seleccionado === o ? null : o)}
-          className="absolute left-0 top-0 flex items-center gap-1.5 whitespace-nowrap rounded-md border bg-[#060B16]/80 px-2 py-1 font-mono text-[11px] backdrop-blur-sm transition-opacity"
+          className="absolute left-0 top-0 flex min-h-[40px] items-center gap-1.5 whitespace-nowrap rounded-lg border bg-holo-bg/85 px-2.5 py-1.5 font-mono text-[14px] backdrop-blur-sm transition-opacity"
           style={{ borderColor: `${COLOR[organos[o]]}66`, color: COLOR[organos[o]], boxShadow: seleccionado === o ? `0 0 12px ${COLOR[organos[o]]}55` : undefined }}
         >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: COLOR[organos[o]] }} />
+          <EstadoIcono estado={organos[o]} size={14} />
           {etiquetas[o]}
         </button>
       ))}

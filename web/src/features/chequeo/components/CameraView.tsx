@@ -5,6 +5,7 @@ import { useFaceLandmarker } from '../camara/useFaceLandmarker'
 import { cajaCara, calcularRois, suavizarRois } from '../camara/landmarks'
 import type { Roi } from '../camara/landmarks'
 import { medirLuz, type Luz } from '../camara/calidad'
+import { C } from '../../../lib/paleta'
 
 // Cámaras virtuales que suelen mandar imagen negra si su app no está abierta
 const VIRTUALES = /droidcam|obs|virtual|manycam|snap camera|xsplit|iriun|epoccam|camo/i
@@ -268,10 +269,10 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
               const h = roi.h * H
               ctx.fillStyle = 'rgba(61, 220, 151, 0.10)'
               ctx.fillRect(x, y, w, h)
-              ctx.strokeStyle = '#3DDC97'
+              ctx.strokeStyle = C.ok
               ctx.lineWidth = 1.5
               ctx.strokeRect(x, y, w, h)
-              ctx.fillStyle = '#8FF0C4'
+              ctx.fillStyle = C.okSoft
               textoDerecho(ctx, roi.nombre, x + w / 2, roi.nombre === 'FRENTE' ? y - 6 : y + h + 14)
             }
           }
@@ -327,7 +328,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
     <div className="flex flex-col gap-3">
       <section
         aria-label="Vista de la cámara"
-        className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] border border-line bg-[#04070E]"
+        className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] border border-line bg-void"
       >
         <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full -scale-x-100" />
@@ -342,7 +343,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
           <div role="alert" className="absolute left-1/2 top-1/2 flex w-[min(360px,86%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl border border-line-strong bg-nav/95 px-4 py-4 text-center text-sm font-semibold">
             <span>{aviso}</span>
             {(errorCamara || estado === 'error') && (
-              <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="min-h-14 rounded-xl bg-accent px-4 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
+              <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="btn pri">
                 Reintentar
               </button>
             )}

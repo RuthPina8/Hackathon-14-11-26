@@ -14,6 +14,8 @@ import { baseMedicion, enviarPaso } from './enviar'
 import { api } from '../../lib/api'
 import type { Confiabilidad, ServerIndicator } from '../../lib/back1'
 import { useAppStore } from '../../store/useAppStore'
+import { C } from '../../lib/paleta'
+import { BotonConfirmar } from '../../components/ui/Deshacer'
 
 const TOTAL = 60 // segundos VÁLIDOS de medición (con cara, pose y sin movimientos bruscos)
 const MAXIMO_MS = 150_000 // si en 2.5 min no se juntan, se termina con lo que haya
@@ -310,11 +312,11 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const estadoChip = {
     inicio: { texto: 'Cámara lista', borde: 'border-line-strong', color: 'text-soft', punto: 'bg-muted' },
     midiendo: pistaMala
-      ? { texto: 'Esperando', borde: 'border-[#5C4A1C]', color: 'text-[#F5D79A]', punto: 'bg-warn' }
-      : { texto: 'Midiendo', borde: 'border-[#5A2A33]', color: 'text-[#FFB8BF]', punto: 'bg-crit animate-blink' },
-    pausa: { texto: 'En pausa', borde: 'border-[#5C4A1C]', color: 'text-[#F5D79A]', punto: 'bg-warn' },
-    analizando: { texto: 'Analizando', borde: 'border-[#1F5A78]', color: 'text-[#8AD9F8]', punto: 'bg-accent animate-blink' },
-    completo: { texto: 'Completo', borde: 'border-[#1E5A43]', color: 'text-[#8FF0C4]', punto: 'bg-ok' },
+      ? { texto: 'Esperando', borde: 'border-warn-line', color: 'text-warn-soft', punto: 'bg-warn' }
+      : { texto: 'Midiendo', borde: 'border-crit-line', color: 'text-crit-soft', punto: 'bg-crit animate-blink' },
+    pausa: { texto: 'En pausa', borde: 'border-warn-line', color: 'text-warn-soft', punto: 'bg-warn' },
+    analizando: { texto: 'Analizando', borde: 'border-accent-line', color: 'text-accent-soft', punto: 'bg-accent animate-blink' },
+    completo: { texto: 'Completo', borde: 'border-ok-line', color: 'text-ok-soft', punto: 'bg-ok' },
   }[fase]
 
   // Lista de verificación visible: el astronauta ve exactamente qué falla
@@ -333,7 +335,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
       <header className="flex flex-col gap-[18px]">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 1 de 5</p>
+            <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 1 de 5</p>
             <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Chequeo con cámara</h1>
           </div>
           <p className="m-0 text-sm text-soft">Unos <strong className="text-ink">4 minutos</strong> en total</p>
@@ -362,7 +364,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               </span>
               <span className="flex flex-wrap gap-1.5">
                 {checks.map((c) => (
-                  <span key={c.k} className={`rounded-[10px] border bg-[rgba(4,7,14,0.85)] px-2.5 py-1.5 text-xs font-semibold ${c.ok ? 'border-[#1E5A43] text-[#8FF0C4]' : 'border-[#5C4A1C] text-[#F5D79A]'}`}>
+                  <span key={c.k} className={`rounded-[10px] border bg-[rgba(4,7,14,0.85)] px-2.5 py-1.5 text-sm font-semibold ${c.ok ? 'border-ok-line text-ok-soft' : 'border-warn-line text-warn-soft'}`}>
                     {c.k}: {c.txt}
                   </span>
                 ))}
@@ -373,7 +375,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               <div className="absolute left-1/2 top-1/2 flex w-[min(320px,88%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3.5 rounded-[20px] border border-line-strong bg-[rgba(10,15,27,0.92)] px-[26px] py-[24px] text-center">
                 {fase === 'completo' && (
                   <button type="button" onClick={() => setTarjetaCerrada(true)} aria-label="Cerrar" title="Cerrar"
-                    className="absolute right-2 top-2 inline-flex h-12 w-12 items-center justify-center rounded-xl text-soft hover:bg-panel hover:text-ink">
+                    className="absolute right-2 top-2 inline-flex h-[60px] w-[60px] items-center justify-center rounded-xl text-soft hover:bg-panel hover:text-ink">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
                   </button>
                 )}
@@ -385,37 +387,35 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 <p className="m-0 text-[13px] leading-normal text-soft">{tarjeta[fase][1]}</p>
                 {fase !== 'analizando' && (
                   <button type="button" onClick={iniciar} disabled={!camaraLista}
-                    className="inline-flex min-h-14 items-center justify-center rounded-xl bg-accent px-5 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8] disabled:opacity-50">
+                    className="btn pri">
                     {tarjeta[fase][2]}
                   </button>
                 )}
                 {fase === 'pausa' && (
-                  <button type="button" onClick={reiniciarTodo} disabled={!camaraLista}
-                    className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl px-5 text-base font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
+                  <BotonConfirmar onConfirmar={reiniciarTodo} disabled={!camaraLista}>
                     Reiniciar desde cero
-                  </button>
+                  </BotonConfirmar>
                 )}
-                {fase === 'completo' && final?.luz && <p className="m-0 text-xs text-warn">Durante la medición: {final.luz.toLowerCase()}</p>}
+                {fase === 'completo' && final?.luz && <p className="m-0 text-sm text-warn">Durante la medición: {final.luz.toLowerCase()}</p>}
               </div>
             )}
 
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-b from-transparent to-[rgba(4,7,14,0.92)] px-[22px] pb-5 pt-[18px]">
               <div className="flex items-center gap-3.5">
-                <p aria-live="polite" className={`m-0 flex-1 text-[15px] ${pistaMala ? 'text-[#F5D79A]' : 'text-[#C5CEDF]'}`}>{pista}</p>
+                <p aria-live="polite" className={`m-0 flex-1 text-[15px] ${pistaMala ? 'text-warn-soft' : 'text-subtle'}`}>{pista}</p>
                 {fase === 'completo' && tarjetaCerrada && (
                   <button type="button" onClick={iniciar} disabled={!camaraLista}
-                    className="inline-flex min-h-14 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
+                    className="btn sec">
                     Repetir medición
                   </button>
                 )}
                 {midiendo && (
                   <>
-                    <button type="button" onClick={reiniciarTodo} title="Empezar la medición otra vez desde 00:00"
-                      className="inline-flex min-h-14 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
+                    <BotonConfirmar onConfirmar={reiniciarTodo} title="Empezar la medición otra vez desde 00:00">
                       Reiniciar
-                    </button>
+                    </BotonConfirmar>
                     <button type="button" onClick={() => setFase('pausa')}
-                      className="min-h-14 rounded-xl bg-[rgba(10,15,27,0.8)] px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
+                      className="btn sec">
                       Pausar
                     </button>
                   </>
@@ -426,7 +426,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               </div>
             </div>
           </CameraView>
-          <p className="m-0 text-xs leading-relaxed text-muted">
+          <p className="m-0 text-sm leading-relaxed text-muted">
             La cámara no lee emociones ni mide presión. Mide el cambio de color de tu piel con cada latido (rPPG) y cuánto tiempo pasan cerrados tus ojos.
             Nada del video sale de este equipo: solo se guardan los números.
           </p>
@@ -436,23 +436,23 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           <section aria-labelledby="hr" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-panel p-[22px]">
             <div className="flex items-center justify-between">
               <h2 id="hr" className="m-0 font-display text-base font-semibold">Ritmo cardiaco</h2>
-              <span className="rounded-md bg-[#0B2636] px-2 py-1 text-[11px] font-semibold tracking-wide text-[#8AD9F8]">rPPG · Real</span>
+              <span className="rounded-md bg-accent-bg px-2 py-1 text-[13px] font-semibold tracking-wide text-accent-soft">rPPG · Real</span>
             </div>
             <div className="flex items-center gap-3.5">
               <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true" className={hayRitmo && midiendo ? 'animate-beat' : ''}
                 style={hayRitmo ? { animationDuration: `${(60 / (bpm ?? 72)).toFixed(2)}s` } : undefined}>
-                <path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill={hayRitmo && !bajaConfianza ? 'var(--color-crit)' : '#46536F'} />
+                <path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill={hayRitmo && !bajaConfianza ? 'var(--color-crit)' : C.line3} />
               </svg>
               <p className={`m-0 font-mono text-[44px] font-bold tracking-tight transition-colors ${bajaConfianza ? 'text-muted' : 'text-ink'}`}>{hayRitmo ? bpm : '--'}</p>
               <span className="text-sm text-soft">lpm</span>
-              {bajaConfianza && <span className="ml-auto rounded-md bg-[#2A2312] px-2 py-1 text-[11px] font-semibold text-warn">Baja confianza</span>}
+              {bajaConfianza && <span className="ml-auto rounded-md bg-warn-bg px-2 py-1 text-[13px] font-semibold text-warn">Baja confianza</span>}
             </div>
             <PulseWave valores={onda} />
             {terminado && hayRitmo && (
-              <p className="m-0 text-xs">
+              <p className="m-0 text-sm">
                 {verif?.estado === 'verificado' && verif.umbral !== null
                   ? final.confianzaMotor >= verif.umbral
-                    ? <span className="text-[#8FF0C4]">✓ Lectura verificada: con esta confianza la cámara acierta ±{verif.tolerancia_lpm} lpm el {Math.round((verif.sobre_umbral?.exito_5 ?? 0) * 100)}% de las veces</span>
+                    ? <span className="text-ok-soft">✓ Lectura verificada: con esta confianza la cámara acierta ±{verif.tolerancia_lpm} lpm el {Math.round((verif.sobre_umbral?.exito_5 ?? 0) * 100)}% de las veces</span>
                     : <span className="text-warn">Confianza {final.confianzaMotor.toFixed(2)}, debajo del umbral verificado ({verif.umbral.toFixed(1)}): tómala con cautela</span>
                   : <span className="text-muted">Cámara aún sin validar con aparato de referencia.</span>}
               </p>
@@ -485,23 +485,23 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             <section aria-labelledby="exp" className="flex flex-col gap-3 rounded-2xl border border-dashed border-line-strong bg-panel p-[22px]">
               <div className="flex items-center justify-between">
                 <h2 id="exp" className="m-0 font-display text-base font-semibold">Señales experimentales</h2>
-                <span className="rounded-md bg-[#2A2312] px-2 py-1 text-[11px] font-semibold text-warn">No alertan</span>
+                <span className="rounded-md bg-warn-bg px-2 py-1 text-[13px] font-semibold text-warn">No alertan</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Estrés (VFC)</p>
+                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Estrés (VFC)</p>
                   <p className="mt-1 font-mono text-[22px] font-bold">{final.hrv ?? '--'}<span className="text-sm text-soft"> ms</span></p>
                 </div>
                 <div>
-                  <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Respiración</p>
+                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Respiración</p>
                   <p className="mt-1 font-mono text-[22px] font-bold">{final.resp ?? '--'}<span className="text-sm text-soft"> /min</span></p>
                 </div>
                 <div>
-                  <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Expresividad</p>
+                  <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Expresividad</p>
                   <p className="mt-1 font-mono text-[22px] font-bold">{exprHoy !== null ? exprHoy.toFixed(2) : '--'}</p>
                 </div>
               </div>
-              <p className="m-0 text-xs leading-relaxed text-muted">
+              <p className="m-0 text-sm leading-relaxed text-muted">
                 VFC (RMSSD) más baja suele ir con más estrés. {exprHoy !== null && exprNormal !== null && (normalExpr?.linea_base.n ?? 0) >= 3
                   ? `Tu expresividad de hoy es ${exprHoy > exprNormal * 1.15 ? 'más alta' : exprHoy < exprNormal * 0.85 ? 'más baja' : 'parecida a'} ${exprHoy > exprNormal * 1.15 || exprHoy < exprNormal * 0.85 ? 'que' : ''} tu normal (${exprNormal.toFixed(2)}).`
                   : 'La expresividad se compara contra tu normal cuando haya al menos 3 chequeos.'}
@@ -511,7 +511,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           )}
 
           {terminado && (
-            <p className={`m-0 text-xs ${envio === 'enviado' ? 'text-[#8FF0C4]' : envio === 'pendiente' ? 'text-warn' : 'text-muted'}`} role="status">
+            <p className={`m-0 text-sm ${envio === 'enviado' ? 'text-ok-soft' : envio === 'pendiente' ? 'text-warn' : 'text-muted'}`} role="status">
               {envio === 'enviado' ? '✓ Guardado en tu historial y analizado por el motor'
                 : envio === 'pendiente' ? 'Sin conexión con la base: se guardó en este equipo y se enviará al reconectar'
                   : !server ? 'Sin back: el resultado queda solo en este equipo' : 'Enviando…'}
@@ -519,11 +519,11 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           )}
 
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={onCancelar} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
+            <button type="button" onClick={onCancelar} className="btn sec">
               Salir
             </button>
             <button type="button" onClick={onSiguiente} disabled={midiendo || fase === 'analizando'}
-              className={`min-h-14 rounded-xl px-5 text-base font-semibold disabled:opacity-50 ${fase === 'completo' ? 'bg-accent text-[#04121C] hover:bg-[#8AD9F8]' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel'}`}>
+              className={`btn ${fase === 'completo' ? 'pri' : 'sec'}`}>
               {fase === 'completo' ? 'Siguiente: prueba cognitiva' : 'Saltar este paso'}
             </button>
           </div>

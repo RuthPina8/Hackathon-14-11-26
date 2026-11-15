@@ -8,8 +8,9 @@ import { useAppStore } from '../store/useAppStore'
 import { api } from '../lib/api'
 import { astroNumero } from '../lib/adapters'
 import type { Evolucion as EvolucionT, ItemEvolucion } from '../lib/back1'
+import { C } from '../lib/paleta'
 
-const COLOR = { mejora: '#3DDC97', estable: '#5CC8F5', empeora: '#F5B544', sin_datos: '#93A0B8' } as const
+const COLOR = { mejora: C.ok, estable: C.accent, empeora: C.warn, sin_datos: C.faint } as const
 const TXT = { mejora: 'Mejora', estable: 'Estable', empeora: 'Se aleja', sin_datos: 'Sin datos' } as const
 const RUTA: Record<string, string> = { hr_reposo: '/indicators/hr', presion_sis: '/indicators/bp', reaccion_ms: '/indicators/rt', perclos: '/indicators/perclos', sueno_horas: '/indicators/sleep', animo: '/indicators/mood', estres: '/indicators/stress' }
 
@@ -17,7 +18,7 @@ const fmt = (v: number | null, unidad: string) => (v === null ? '—' : `${Math.
 
 function Mini({ item }: { item: ItemEvolucion }) {
   const s = item.serie
-  if (s.length < 2) return <div className="h-[46px] grid place-items-center text-[11px] text-[#93A0B8]">{s.length ? '1 día' : 'sin datos'}</div>
+  if (s.length < 2) return <div className="h-[46px] grid place-items-center text-[13px] text-faint">{s.length ? '1 día' : 'sin datos'}</div>
   const vals = s.map((p) => p.valor)
   const ref = item.referencia === 'ficha' ? item.ficha : item.inicio
   const lo = Math.min(...vals, ref ?? Infinity)
@@ -27,7 +28,7 @@ function Mini({ item }: { item: ItemEvolucion }) {
   const y = (v: number) => 42 - ((v - lo) / span) * 38
   return (
     <svg viewBox="0 0 240 46" className="w-full h-[46px]" aria-hidden="true">
-      {ref !== null && <line x1="0" x2="240" y1={y(ref)} y2={y(ref)} stroke="#5CC8F5" strokeOpacity="0.5" strokeDasharray="4 4" />}
+      {ref !== null && <line x1="0" x2="240" y1={y(ref)} y2={y(ref)} stroke={C.accent} strokeOpacity="0.5" strokeDasharray="4 4" />}
       <polyline points={vals.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" stroke={COLOR[item.estado]} strokeWidth="2" strokeLinejoin="round" />
       <circle cx={x(vals.length - 1)} cy={y(vals[vals.length - 1])} r="3" fill={COLOR[item.estado]} />
     </svg>
@@ -72,7 +73,7 @@ export default function Evolucion() {
             ))}
           </div>
           {!ev.tiene_ficha && (
-            <p className="m-0 w-full text-[13px] text-[#A3AEC4]">
+            <p className="m-0 w-full text-[13px] text-muted">
               Sin ficha médica se compara contra tu primera semana y solo desde los 10 días con datos.
             </p>
           )}
@@ -86,20 +87,20 @@ export default function Evolucion() {
             const ref = it.referencia === 'ficha' ? it.ficha : it.inicio
             return (
               <motion.section key={it.tipo} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                className="card flex flex-col gap-3" aria-label={it.nombre} style={{ borderColor: it.estado === 'empeora' ? '#5C4A1C' : undefined }}>
+                className="card flex flex-col gap-3" aria-label={it.nombre} style={{ borderColor: it.estado === 'empeora' ? C.warnLine : undefined }}>
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="h2" style={{ fontSize: 16 }}>{it.nombre}</h2>
-                  <span className="tag inline-flex items-center gap-1" style={{ background: '#0A0F1B', color: COLOR[it.estado], boxShadow: `inset 0 0 0 1px ${COLOR[it.estado]}55` }}>
+                  <span className="tag inline-flex items-center gap-1" style={{ background: C.deep, color: COLOR[it.estado], boxShadow: `inset 0 0 0 1px ${COLOR[it.estado]}55` }}>
                     <Icono size={13} />{TXT[it.estado]}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div><p className="k">{it.referencia === 'ficha' ? 'Ficha' : 'Inicio'}</p><p className="num m-0 mt-1 text-[15px] font-bold">{fmt(ref, '')}</p></div>
                   <div><p className="k">Últimos 7 días</p><p className="num m-0 mt-1 text-[15px] font-bold" style={{ color: COLOR[it.estado] }}>{fmt(it.reciente, '')}</p></div>
-                  <div><p className="k">Cambio</p><p className="num m-0 mt-1 text-[15px] font-bold">{it.cambio === null ? '—' : `${it.cambio > 0 ? '+' : ''}${fmt(it.cambio, '')}`}{it.cambio_pct !== null && <span className="text-[11px] text-[#93A0B8]"> {it.cambio_pct > 0 ? '+' : ''}{it.cambio_pct}%</span>}</p></div>
+                  <div><p className="k">Cambio</p><p className="num m-0 mt-1 text-[15px] font-bold">{it.cambio === null ? '—' : `${it.cambio > 0 ? '+' : ''}${fmt(it.cambio, '')}`}{it.cambio_pct !== null && <span className="text-[13px] text-faint"> {it.cambio_pct > 0 ? '+' : ''}{it.cambio_pct}%</span>}</p></div>
                 </div>
                 <Mini item={it} />
-                <p className="m-0 text-[13px] text-[#A3AEC4] leading-snug">
+                <p className="m-0 text-[13px] text-muted leading-snug">
                   {it.explicacion}{it.unidad && it.cambio !== null ? '' : ''}
                   {it.tendencia_semana !== null && Math.abs(it.tendencia_semana) > 0 && ` · tendencia ${it.tendencia_semana > 0 ? '+' : ''}${fmt(it.tendencia_semana, it.unidad)} por semana`}
                 </p>
@@ -111,11 +112,11 @@ export default function Evolucion() {
       )}
 
       {ev && sinDatos.length > 0 && (
-        <p className="m-0 text-[13px] text-[#93A0B8]">
+        <p className="m-0 text-[13px] text-faint">
           Sin datos todavía: {sinDatos.map((i) => i.nombre.toLowerCase()).join(', ')}. <Link to="/camera">Haz tu chequeo diario</Link>.
         </p>
       )}
-      <p className="m-0 text-xs text-[#93A0B8] leading-relaxed">
+      <p className="m-0 text-sm text-faint leading-relaxed">
         "Se aleja" significa que tu promedio de la última semana se movió en la dirección desfavorable más de medio desvío de tu propia variación. No es un diagnóstico: es una señal para revisar con el equipo médico.
       </p>
     </>

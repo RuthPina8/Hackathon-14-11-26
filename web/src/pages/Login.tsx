@@ -9,6 +9,7 @@ import {
 } from '../lib/faceLandmarker'
 import { crewForLogin, useSession } from '../store/useSession'
 import { useAppStore } from '../store/useAppStore'
+import { C } from '../lib/paleta'
 
 // Inicio de sesión solo con la cara: reconoce quién eres, pide 2 gestos al azar como prueba
 // de vida (una foto no se mueve y un video grabado no sabe qué gestos tocan) y abre tu sesión. La primera vez cada tripulante registra su cara.
@@ -224,43 +225,43 @@ export default function Login() {
   const startEnroll = (id: string) => { st.current.enrollId = id; st.current.enrollBuf = []; setEnrollId(id); setProgress(0); go('enroll') }
 
   const person = crewForLogin.find((c) => c.id === (phase === 'enroll' || phase === 'enrolled' ? enrollId : who))
-  const ovalColor = phase === 'welcome' || phase === 'enrolled' ? '#3DDC97' : phase === 'unknown' ? '#FF6B7A' : phase === 'challenge' ? '#F5B544' : '#5CC8F5'
+  const ovalColor = phase === 'welcome' || phase === 'enrolled' ? C.ok : phase === 'unknown' ? C.crit : phase === 'challenge' ? C.warn : C.accent
   const showRing = phase === 'identify' || phase === 'enroll'
   const enrolledCount = Object.keys(faces).length
 
   return (
-    <div className="min-h-screen w-screen flex flex-wrap bg-[#070B14]">
+    <div className="min-h-screen w-screen flex flex-wrap bg-bg">
       {/* ---------- panel de marca ---------- */}
-      <aside className="flex flex-col justify-between gap-8 p-10 bg-[#0A0F1B] border-r border-[#1C2740]" style={{ flex: '1 1 340px', maxWidth: 460 }}>
+      <aside className="flex flex-col justify-between gap-8 p-10 bg-deep border-r border-line" style={{ flex: '1 1 340px', maxWidth: 460 }}>
         <div className="flex items-center gap-3">
           <svg width="38" height="38" viewBox="0 0 30 30" aria-hidden="true">
-            <rect x="1" y="1" width="28" height="28" rx="9" fill="#0B2636" stroke="#1F5A78" />
-            <path d="M6 16h4l2.5-6 4.5 11 2.5-5h4.5" fill="none" stroke="#5CC8F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="1" y="1" width="28" height="28" rx="9" fill={C.accentBg} stroke={C.accentLine} />
+            <path d="M6 16h4l2.5-6 4.5 11 2.5-5h4.5" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span className="font-[family-name:var(--font-display)] text-2xl font-bold">AstroHealth</span>
         </div>
         <div className="flex flex-col gap-4">
           <h1 className="m-0 font-[family-name:var(--font-display)] text-[34px] leading-tight font-semibold">Tu médico de bolsillo en la misión</h1>
-          <p className="m-0 text-[15px] text-[#A3AEC4] leading-relaxed">Entra solo con tu cara. La misma cámara que te identifica es la que te mide, así tus datos nunca se mezclan con los de otro tripulante.</p>
-          <ul className="m-0 p-0 list-none flex flex-col gap-3 text-sm text-[#C5CEDF]">
-            <li className="flex items-center gap-3"><ScanFace size={18} color="#5CC8F5" />Te reconoce sin usuario ni contraseña</li>
-            <li className="flex items-center gap-3"><Eye size={18} color="#5CC8F5" />Un gesto al azar confirma que eres tú, no una foto ni un video</li>
-            <li className="flex items-center gap-3"><Lock size={18} color="#5CC8F5" />Tu firma facial se queda a bordo, nunca viaja a Tierra</li>
+          <p className="m-0 text-[15px] text-muted leading-relaxed">Entra solo con tu cara. La misma cámara que te identifica es la que te mide, así tus datos nunca se mezclan con los de otro tripulante.</p>
+          <ul className="m-0 p-0 list-none flex flex-col gap-3 text-sm text-subtle">
+            <li className="flex items-center gap-3"><ScanFace size={18} color={C.accent} />Te reconoce sin usuario ni contraseña</li>
+            <li className="flex items-center gap-3"><Eye size={18} color={C.accent} />Un gesto al azar confirma que eres tú, no una foto ni un video</li>
+            <li className="flex items-center gap-3"><Lock size={18} color={C.accent} />Tu firma facial se queda a bordo, nunca viaja a Tierra</li>
           </ul>
         </div>
-        <p className="m-0 text-xs text-[#93A0B8]">{enrolledCount} de {crewForLogin.length} tripulantes con cara registrada en este dispositivo</p>
+        <p className="m-0 text-sm text-faint">{enrolledCount} de {crewForLogin.length} tripulantes con cara registrada en este dispositivo</p>
       </aside>
 
       {/* ---------- cámara ---------- */}
       <main className="flex-1 min-w-0 flex flex-col items-center justify-center gap-6 p-8" style={{ flexBasis: 520 }}>
-        <div className="relative w-full max-w-[560px] aspect-[4/3] rounded-[24px] overflow-hidden bg-[#04070E] border border-[#1C2740]">
+        <div className="relative w-full max-w-[560px] aspect-[4/3] rounded-[24px] overflow-hidden bg-void border border-line">
           <video ref={videoRef} playsInline muted className="absolute inset-0 w-full h-full object-cover" style={{ transform: 'scaleX(-1)', opacity: phase === 'loading' || phase === 'nocam' ? 0 : 0.9 }} />
           <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
 
           {/* óvalo guía con anillo de progreso */}
           <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
             <defs><mask id="ovalMask"><rect width="400" height="300" fill="white" /><ellipse cx="200" cy="148" rx="88" ry="114" fill="black" /></mask></defs>
-            <rect width="400" height="300" fill="#04070E" fillOpacity="0.55" mask="url(#ovalMask)" />
+            <rect width="400" height="300" fill={C.void} fillOpacity="0.55" mask="url(#ovalMask)" />
             <ellipse cx="200" cy="148" rx="88" ry="114" fill="none" stroke={ovalColor} strokeWidth="2.5" strokeDasharray={showRing ? undefined : '8 7'} strokeOpacity={showRing ? 0.25 : 1} />
             {showRing && (
               <ellipse cx="200" cy="148" rx="88" ry="114" fill="none" stroke={ovalColor} strokeWidth="3.5" pathLength={100}
@@ -270,27 +271,27 @@ export default function Login() {
 
           {/* estado */}
           <div className="absolute top-4 left-4 right-4 flex justify-between gap-2">
-            <span className="tag" style={{ background: 'rgba(4,7,14,.85)', color: ovalColor, fontSize: 12, padding: '7px 10px', boxShadow: `inset 0 0 0 1px ${ovalColor}55` }}>
+            <span className="tag" style={{ background: 'rgba(4,7,14,.85)', color: ovalColor, fontSize: 14, padding: '7px 10px', boxShadow: `inset 0 0 0 1px ${ovalColor}55` }}>
               {phase === 'enroll' ? 'REGISTRANDO CARA' : 'INICIO DE SESIÓN'}
             </span>
-            {demo && dist !== null && <span className="tag num" style={{ background: 'rgba(4,7,14,.85)', color: '#A3AEC4' }}>dist {dist.toFixed(3)} · umbral {MATCH_THRESHOLD}</span>}
+            {demo && dist !== null && <span className="tag num" style={{ background: 'rgba(4,7,14,.85)', color: C.muted }}>dist {dist.toFixed(3)} · umbral {MATCH_THRESHOLD}</span>}
           </div>
 
           {phase === 'challenge' && chal.list[chal.idx] && (
             <div className="absolute left-4 right-4 bottom-4 flex flex-col gap-2.5 p-4 rounded-2xl" style={{ background: 'rgba(4,7,14,.88)', boxShadow: 'inset 0 0 0 1px #5C4A1C' }}>
               <div className="flex items-center gap-3">
-                {chal.list[chal.idx] === 'left' && <ArrowLeft size={30} color="#F5B544" />}
+                {chal.list[chal.idx] === 'left' && <ArrowLeft size={30} color={C.warn} />}
                 <span className="flex-1 flex items-center gap-2.5">
-                  <Shuffle size={16} color="#F5B544" className="shrink-0" />
+                  <Shuffle size={16} color={C.warn} className="shrink-0" />
                   <strong className="font-[family-name:var(--font-display)] text-xl">{CHALLENGES[chal.list[chal.idx]].label}</strong>
                 </span>
-                {chal.list[chal.idx] === 'right' && <ArrowRight size={30} color="#F5B544" />}
+                {chal.list[chal.idx] === 'right' && <ArrowRight size={30} color={C.warn} />}
                 <span className="flex gap-1.5">
-                  {chal.list.map((c, i) => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: i < chal.idx ? '#3DDC97' : i === chal.idx ? '#F5B544' : '#2F3F60' }} />)}
+                  {chal.list.map((c, i) => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: i < chal.idx ? C.ok : i === chal.idx ? C.warn : C.line2 }} />)}
                 </span>
               </div>
-              <div className="h-1 rounded bg-[#1C2740] overflow-hidden">
-                <motion.div key={chal.idx} className="h-full bg-[#F5B544]" initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: CHALLENGE_MS / 1000, ease: 'linear' }} />
+              <div className="h-1 rounded bg-line overflow-hidden">
+                <motion.div key={chal.idx} className="h-full bg-warn" initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: CHALLENGE_MS / 1000, ease: 'linear' }} />
               </div>
             </div>
           )}
@@ -299,7 +300,7 @@ export default function Login() {
             {(phase === 'welcome' || phase === 'enrolled') && (
               <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
                 className="absolute inset-0 grid place-items-center pointer-events-none">
-                <span className="w-24 h-24 rounded-full grid place-items-center bg-[#3DDC97] text-[#04121C]" style={{ boxShadow: '0 0 60px rgba(61,220,151,.55)' }}><Check size={48} strokeWidth={3} /></span>
+                <span className="w-24 h-24 rounded-full grid place-items-center bg-ok text-on-accent" style={{ boxShadow: '0 0 60px rgba(61,220,151,.55)' }}><Check size={48} strokeWidth={3} /></span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -307,9 +308,9 @@ export default function Login() {
           {phase === 'nocam' && (
             <div className="absolute inset-0 grid place-items-center p-8 text-center">
               <div className="flex flex-col items-center gap-3">
-                <ScanFace size={40} color="#46536F" />
+                <ScanFace size={40} color={C.line3} />
                 <p className="m-0 font-semibold">No pude usar la cámara</p>
-                <p className="m-0 text-sm text-[#A3AEC4]">{hint || 'Permite el acceso a la cámara en el navegador y recarga la página'}</p>
+                <p className="m-0 text-sm text-muted">{hint || 'Permite el acceso a la cámara en el navegador y recarga la página'}</p>
               </div>
             </div>
           )}
@@ -322,10 +323,10 @@ export default function Login() {
               <p className="m-0 font-[family-name:var(--font-display)] text-2xl font-semibold">
                 {phase === 'welcome' ? `Hola, ${person?.nombre}` : phase === 'challenge' ? CHALLENGES[chal.list[chal.idx]]?.label ?? '' : phase === 'enrolled' ? `Listo, ${person?.nombre}` : hint || PHASE_TEXT[phase] || ''}
               </p>
-              <p className="m-0 text-sm text-[#A3AEC4]">
+              <p className="m-0 text-sm text-muted">
                 {phase === 'welcome' && 'Abriendo tu sesión…'}
                 {phase === 'challenge' && `${person?.nombre}, comprobamos que eres tú y no una foto o un video`}
-                {(phase === 'search' || phase === 'align') && failMsg && <span style={{ color: '#FFB8BF' }}>{failMsg}, intenta otra vez</span>}
+                {(phase === 'search' || phase === 'align') && failMsg && <span style={{ color: C.critSoft }}>{failMsg}, intenta otra vez</span>}
                 {phase === 'identify' && 'Mantente quieto un momento'}
                 {phase === 'unknown' && 'Puede ser la luz o el ángulo. Si es tu primera vez aquí, registra tu cara'}
                 {phase === 'enroll' && `Registrando a ${person?.nombre}, solo toma unos segundos`}
@@ -346,10 +347,10 @@ export default function Login() {
               <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(120px, 100%), 1fr))' }}>
                 {crewForLogin.map((c) => (
                   <button key={c.id} type="button" onClick={() => startEnroll(c.id)}
-                    className="flex flex-col items-center gap-1.5 p-3.5 rounded-[14px] bg-[#0E1422] border border-[#1C2740] hover:border-[#5CC8F5] cursor-pointer text-[#E8ECF4]" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    <span className="w-11 h-11 rounded-[12px] grid place-items-center bg-[#15233B] font-[family-name:var(--font-display)] font-bold">{c.id}</span>
+                    className="flex flex-col items-center gap-1.5 p-3.5 rounded-[14px] bg-panel border border-line hover:border-accent cursor-pointer text-text" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <span className="w-11 h-11 rounded-[12px] grid place-items-center bg-sel font-[family-name:var(--font-display)] font-bold">{c.id}</span>
                     <span className="text-sm font-semibold">{c.nombre}</span>
-                    <span className="text-[11px] text-[#93A0B8]">{faces[c.id] ? 'Ya registrada, actualizar' : c.cargo}</span>
+                    <span className="text-[13px] text-faint">{faces[c.id] ? 'Ya registrada, actualizar' : c.cargo}</span>
                   </button>
                 ))}
               </div>
@@ -358,7 +359,7 @@ export default function Login() {
           )}
 
           {demo && phase !== 'welcome' && (
-            <button type="button" onClick={() => login(crewForLogin[0].id)} className="mt-2 border-0 bg-transparent text-xs text-[#93A0B8] underline cursor-pointer">
+            <button type="button" onClick={() => login(crewForLogin[0].id)} className="mt-2 border-0 bg-transparent text-sm text-faint underline cursor-pointer">
               Modo demo: entrar como {crewForLogin[0].nombre} sin cámara
             </button>
           )}

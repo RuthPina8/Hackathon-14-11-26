@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { C } from '../../lib/paleta'
 
 // Tira de días de la línea base personal (un cuadrito por día). El día actual
 // lleva anillo. Cuando sube la calibración (calibration_changed) los cuadros se llenan.
@@ -16,7 +17,7 @@ export default function CalibrationStrip({ day, total }: { day: number; total: n
             transition={{ delay: i * 0.03 }}
             className="h-[22px] rounded"
             style={{
-              background: filled ? '#5CC8F5' : '#1C2740',
+              background: filled ? C.accent : C.line,
               boxShadow: current ? '0 0 0 2px #0E1422, 0 0 0 3.5px #5CC8F5' : undefined,
             }}
           />

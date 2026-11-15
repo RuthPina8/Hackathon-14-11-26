@@ -4,6 +4,7 @@ import { useSession } from '../../store/useSession'
 import { useMyAlerts } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
 import ConnectionStatus from './TopBar'
+import { C } from '../../lib/paleta'
 
 interface Item { to: string; label: string; icon: typeof Home; badge?: boolean; end?: boolean }
 
@@ -28,7 +29,7 @@ function Link({ item, count, crit }: { item: Item; count: number; crit?: boolean
       <Icon size={26} strokeWidth={2} className="shrink-0" />
       <span>{item.label}</span>
       {item.badge && count > 0 && (
-        <span className="num ml-auto min-w-[30px] h-[30px] px-1.5 rounded-full text-sm font-bold grid place-items-center" style={{ background: crit ? '#FF6B7A' : '#F5B544', color: crit ? '#1A0508' : '#1D1503' }}>
+        <span className="num ml-auto min-w-[30px] h-[30px] px-1.5 rounded-full text-sm font-bold grid place-items-center" style={{ background: crit ? C.crit : C.warn, color: crit ? '#1A0508' : '#1D1503' }}>
           {count}
         </span>
       )}
@@ -48,12 +49,12 @@ export default function Sidebar() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="shrink-0 w-[300px] h-full overflow-y-auto bg-[#0A0F1B] border-r border-[#1C2740] px-3.5 py-5 flex flex-col gap-2"
+      className="shrink-0 w-[300px] h-full overflow-y-auto bg-deep border-r border-line px-3.5 py-5 flex flex-col gap-2"
     >
       <div className="flex items-center gap-2.5 px-2.5 pb-5">
         <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-          <rect x="1" y="1" width="28" height="28" rx="9" fill="#0B2636" stroke="#1F5A78" />
-          <path d="M6 16h4l2.5-6 4.5 11 2.5-5h4.5" fill="none" stroke="#5CC8F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="1" y="1" width="28" height="28" rx="9" fill={C.accentBg} stroke={C.accentLine} />
+          <path d="M6 16h4l2.5-6 4.5 11 2.5-5h4.5" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <span className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">AstroHealth</span>
       </div>
@@ -62,15 +63,15 @@ export default function Sidebar() {
       <p className="k" style={{ margin: '18px 12px 8px' }}>Simulación</p>
       {sim.map((i) => <Link key={i.to} item={i} count={0} />)}
 
-      <div className="mt-auto pt-4 px-3 border-t border-[#1C2740] flex flex-col gap-2.5">
+      <div className="mt-auto pt-4 px-3 border-t border-line flex flex-col gap-2.5">
         {user && (
           <div className="flex items-center gap-2.5 -mx-1 px-1 pb-2">
-            <span className="w-9 h-9 rounded-[10px] grid place-items-center bg-[#15233B] border border-[#2F3F60] font-[family-name:var(--font-display)] text-sm font-bold shrink-0">{user.id}</span>
+            <span className="w-9 h-9 rounded-[10px] grid place-items-center bg-sel border border-line2 font-[family-name:var(--font-display)] text-sm font-bold shrink-0">{user.id}</span>
             <span className="flex-1 min-w-0 flex flex-col">
               <span className="text-sm font-semibold truncate">{user.nombre}</span>
-              <span className="text-[11px] text-[#93A0B8] truncate">{user.cargo}</span>
+              <span className="text-[13px] text-faint truncate">{user.cargo}</span>
             </span>
-            <button type="button" onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="w-14 h-14 grid place-items-center rounded-xl border-2 border-[#2F3F60] bg-[#121B2E] text-[#C5CEDF] hover:bg-[#18243B] hover:text-[#E8ECF4] cursor-pointer shrink-0">
+            <button type="button" onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="w-14 h-14 grid place-items-center rounded-xl border-2 border-line2 bg-raised text-subtle hover:bg-[#18243B] hover:text-text cursor-pointer shrink-0">
               <LogOut size={24} />
             </button>
           </div>
@@ -82,18 +83,18 @@ export default function Sidebar() {
           onClick={() => setDemo(!demo)}
           className="flex items-center gap-3 min-h-[60px] -mx-1 px-1 border-0 bg-transparent cursor-pointer text-left"
         >
-          <span className="relative w-14 h-8 rounded-full shrink-0 transition-colors" style={{ background: demo ? '#F5B544' : '#22314F' }}>
+          <span className="relative w-14 h-8 rounded-full shrink-0 transition-colors" style={{ background: demo ? C.demo : C.track }}>
             <span className="absolute top-1 w-6 h-6 rounded-full bg-white transition-all" style={{ left: demo ? 28 : 4 }} />
           </span>
           <span className="flex flex-col">
-            <span className="text-base font-semibold" style={{ color: demo ? '#F5D79A' : '#E8ECF4' }}>Modo demo</span>
-            <span className="text-[11px] text-[#93A0B8]">{demo ? 'Controles para presentar' : 'Viendo la app real'}</span>
+            <span className="text-base font-semibold" style={{ color: demo ? C.demo : C.text }}>Modo demo</span>
+            <span className="text-[13px] text-faint">{demo ? 'Controles para presentar' : 'Viendo la app real'}</span>
           </span>
         </button>
         <p className="k">Capas de datos</p>
-        <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] bg-[#5CC8F5]" />Real, medido en vivo</span>
-        <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] bg-[#B7A4FF]" />Autorreportado</span>
-        <span className="flex items-center gap-2.5 text-xs text-[#A3AEC4]"><span className="w-2.5 h-2.5 rounded-[3px] border-[1.5px] border-dashed border-[#93A0B8]" />Simulado</span>
+        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-accent" />Real, medido en vivo</span>
+        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-self" />Autorreportado</span>
+        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] border-[1.5px] border-dashed border-faint" />Simulado</span>
         <div className="pt-2"><ConnectionStatus /></div>
       </div>
     </nav>

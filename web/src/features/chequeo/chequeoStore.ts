@@ -96,7 +96,14 @@ export const useChequeoStore = create<EstadoChequeo>()((set, get) => {
     guardarCamara: (camara) => guardar({ camara }),
     guardarCognitivo: (cognitivo) => guardar({ cognitivo }),
     guardarPresion: (presion) => guardar({ presion }),
-    guardarRegistro: (registro) => guardar({ registro }),
+    guardarRegistro: (registro) => {
+      guardar({ registro })
+      // El último sueño se recuerda para precargar el registro del día siguiente
+      const usuario = get().clave.split('_')[2]
+      if (registro.sueno && usuario) {
+        try { localStorage.setItem(`astro_ultimo_sueno_${usuario}`, JSON.stringify(registro.sueno)) } catch { /* sin storage */ }
+      }
+    },
     marcarEnvio: (paso, estado, alertaId) => guardar({
       envios: { ...get().envios, [paso]: estado },
       alertas: alertaId != null && !get().alertas.includes(alertaId) ? [...get().alertas, alertaId] : get().alertas,
@@ -111,4 +118,16 @@ export function sesionesCognitivas(usuario: string): number {
 }
 export function sumarSesionCognitiva(usuario: string) {
   try { localStorage.setItem(`astro_pvt_${usuario}`, String(sesionesCognitivas(usuario) + 1)) } catch { /* sin storage */ }
+}
+
+// Último sueño registrado por este astronauta (para precargar el registro de hoy)
+export function ultimoSueno(): Sueno | null {
+  const usuario = useChequeoStore.getState().clave.split('_')[2]
+  if (!usuario) return null
+  try {
+    const raw = localStorage.getItem(`astro_ultimo_sueno_${usuario}`)
+    return raw ? (JSON.parse(raw) as Sueno) : null
+  } catch {
+    return null
+  }
 }

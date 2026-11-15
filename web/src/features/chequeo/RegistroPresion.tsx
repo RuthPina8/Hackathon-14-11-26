@@ -47,14 +47,14 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
     onSiguiente()
   }
 
-  const campo = 'min-h-12 w-full rounded-xl border border-line-strong bg-[#080C16] px-4 font-mono text-2xl font-bold text-ink outline-none focus:border-accent'
+  const campo = 'min-h-12 w-full rounded-xl border border-line-strong bg-input px-4 font-mono text-2xl font-bold text-ink outline-none focus:border-accent'
   const aviso = !validar() && (s >= 140 || d >= 90) ? 'Valor alto: repite la medición en 5 minutos, sentado y en el otro brazo' : null
 
   return (
     <div className="flex flex-col gap-[22px]">
       <header className="flex flex-col gap-[18px]">
         <div>
-          <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 3 de 5</p>
+          <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 3 de 5</p>
           <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Presión arterial</h1>
         </div>
         <StepBar actual={2} />
@@ -76,13 +76,13 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
             <input inputMode="numeric" className={campo} value={pulso} onChange={(e) => setPulso(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="64" />
           </label>
           <p id="err-presion" role="alert" className="m-0 min-h-5 text-sm text-warn">{error ?? aviso ?? ''}</p>
-          <span className="w-fit rounded-md bg-[#1E1838] px-2 py-1 text-[11px] font-semibold text-[#C9BDFF]">Autorreportado · capa auto</span>
-          {envio && <p className="m-0 text-xs text-muted">Última presión de hoy: {envio === 'enviado' ? 'guardada' : 'pendiente de enviar'}</p>}
+          <span className="w-fit rounded-md bg-[#1E1838] px-2 py-1 text-[13px] font-semibold text-[#C9BDFF]">Autorreportado · capa auto</span>
+          {envio && <p className="m-0 text-sm text-muted">Última presión de hoy: {envio === 'enviado' ? 'guardada' : 'pendiente de enviar'}</p>}
         </section>
         <div className="flex min-w-0 flex-[2_1_260px] flex-col justify-end gap-2.5">
-          <button type="button" onClick={enviar} className="min-h-16 rounded-xl bg-accent text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Guardar y seguir</button>
-          <button type="button" onClick={omitir} className="min-h-14 rounded-xl text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">No tengo brazalete, saltar</button>
-          <button type="button" onClick={onAtras} className="min-h-14 rounded-xl text-base font-semibold text-soft hover:bg-panel">Atrás</button>
+          <button type="button" onClick={enviar} className="btn pri">Guardar y seguir</button>
+          <button type="button" onClick={omitir} className="btn sec">No tengo brazalete, saltar</button>
+          <button type="button" onClick={onAtras} className="btn sec">Atrás</button>
         </div>
       </div>
     </div>

@@ -1,17 +1,7 @@
 import type { Semaforo } from '../../store/mockData'
-import { semColor } from './semColor'
+import EstadoIcono from './EstadoIcono'
 
+// Antes era solo un punto de color; ahora cada estado tiene su forma (daltonismo).
 export default function SemaphoreDot({ estado, size = 10 }: { estado: Semaforo; size?: number }) {
-  return (
-    <span
-      className="inline-block rounded-full shrink-0"
-      style={{
-        width: size,
-        height: size,
-        background: semColor[estado],
-        border: estado === 'none' ? '1.5px dashed #A3AEC4' : undefined,
-        boxSizing: 'border-box',
-      }}
-    />
-  )
+  return <EstadoIcono estado={estado} size={Math.max(size, 14)} />
 }

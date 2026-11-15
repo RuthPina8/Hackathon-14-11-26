@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, ShieldAlert } from 'lucide-react'
 import { systemDetails, type Semaforo, type SystemStatus } from '../../store/mockData'
+import { C } from '../../lib/paleta'
 
 // Explorador del cuerpo (Inicio). Cada órgano de la figura y cada fila de la lista
 // seleccionan un sistema; el panel de la derecha explica qué pasa, contra tu normal,
 // qué riesgo de NASA cubre y qué hacer. Los colores salen del estado en vivo del store.
 
-const C: Record<Semaforo, string> = { ok: '#3DDC97', warn: '#F5B544', crit: '#FF6B7A', none: '#A3AEC4' }
-const BG: Record<Semaforo, string> = { ok: '#0E2A20', warn: '#241D0D', crit: '#2A1218', none: '#15233B' }
+const COL: Record<Semaforo, string> = { ok: C.ok, warn: C.warn, crit: C.crit, none: C.none }
+const BG: Record<Semaforo, string> = { ok: C.okBg, warn: C.warnBg, crit: C.critBg, none: C.sel }
 const TXT: Record<Semaforo, string> = { ok: 'Dentro de tu normal', warn: 'Atención a bordo', crit: 'Escalar a Tierra', none: 'Proyección simulada' }
 // Un sistema medido hoy pero sin línea base todavía no está "simulado", está aprendiendo tu normal
 // Un sistema sin mediciones todavía no es "simulado": solo el óseo es proyección
@@ -69,7 +70,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
   const [hover, setHover] = useState<string | null>(null)
   const selId = picked ?? worst.id
   const by = Object.fromEntries(sistemas.map((s) => [s.id, s]))
-  const col = (id: string) => C[by[id]?.estado ?? 'none']
+  const col = (id: string) => COL[by[id]?.estado ?? 'none']
 
   const sel = by[selId]
   const det = systemDetails[selId]
@@ -82,7 +83,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
     <section className="card" aria-labelledby="cuerpo" style={{ padding: 0, overflow: 'hidden' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2 px-[22px] pt-5">
         <h2 id="cuerpo" className="h2">Estado por sistema</h2>
-        <span className="text-[13px] text-[#93A0B8]">Toca un órgano o un sistema para ver el detalle</span>
+        <span className="text-[13px] text-faint">Toca un órgano o un sistema para ver el detalle</span>
       </div>
 
       <div className="flex flex-wrap items-stretch gap-2 p-[22px] pt-4">
@@ -101,15 +102,15 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                 onMouseLeave={() => setHover(null)}
                 className="flex items-center gap-2.5 min-h-[48px] px-3 rounded-[12px] text-sm text-left cursor-pointer transition-colors"
                 style={{
-                  background: on ? BG[s.estado] : hover === s.id ? '#111A2C' : 'transparent',
-                  border: `1px ${s.sim ? 'dashed' : 'solid'} ${on ? C[s.estado] : s.sim ? '#3A4866' : '#1C2740'}`,
-                  color: s.sim && !on ? '#A3AEC4' : '#E8ECF4',
+                  background: on ? BG[s.estado] : hover === s.id ? C.hover : 'transparent',
+                  border: `1px ${s.sim ? 'dashed' : 'solid'} ${on ? COL[s.estado] : s.sim ? C.line3 : C.line}`,
+                  color: s.sim && !on ? C.muted : C.text,
                   fontFamily: 'Inter, sans-serif',
                 }}
               >
-                <span className="w-[9px] h-[9px] rounded-full shrink-0" style={{ background: s.sim ? 'transparent' : C[s.estado], border: s.sim ? '1.5px dashed #A3AEC4' : undefined }} />
+                <span className="w-[9px] h-[9px] rounded-full shrink-0" style={{ background: s.sim ? 'transparent' : COL[s.estado], border: s.sim ? '1.5px dashed #A3AEC4' : undefined }} />
                 <span className="flex-1 min-w-0 font-medium">{s.nombre}</span>
-                <span className="num text-xs" style={{ color: s.estado === 'ok' || s.sim ? '#A3AEC4' : C[s.estado] }}>{s.valor}</span>
+                <span className="num text-sm" style={{ color: s.estado === 'ok' || s.sim ? C.muted : COL[s.estado] }}>{s.valor}</span>
               </button>
             )
           })}
@@ -125,38 +126,38 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                 <stop offset="1" stopColor="#0D1524" />
               </linearGradient>
               <radialGradient id="bodyLight" cx="0.5" cy="0.3" r="0.6">
-                <stop offset="0" stopColor="#5CC8F5" stopOpacity="0.10" />
-                <stop offset="1" stopColor="#5CC8F5" stopOpacity="0" />
+                <stop offset="0" stopColor={C.accent} stopOpacity="0.10" />
+                <stop offset="1" stopColor={C.accent} stopOpacity="0" />
               </radialGradient>
               <filter id="bodyGlow" x="-20%" y="-10%" width="140%" height="120%">
                 <feGaussianBlur stdDeviation="5" />
               </filter>
               <linearGradient id="scan" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#5CC8F5" stopOpacity="0" />
-                <stop offset="0.5" stopColor="#5CC8F5" stopOpacity="0.32" />
-                <stop offset="1" stopColor="#5CC8F5" stopOpacity="0" />
+                <stop offset="0" stopColor={C.accent} stopOpacity="0" />
+                <stop offset="0.5" stopColor={C.accent} stopOpacity="0.32" />
+                <stop offset="1" stopColor={C.accent} stopOpacity="0" />
               </linearGradient>
               <clipPath id="bodyClip"><path d={BODY} /></clipPath>
             </defs>
 
             {/* silueta: halo, relleno con volumen y contorno */}
-            <path d={BODY} fill="none" stroke="#5CC8F5" strokeOpacity="0.28" strokeWidth="6" filter="url(#bodyGlow)" />
+            <path d={BODY} fill="none" stroke={C.accent} strokeOpacity="0.28" strokeWidth="6" filter="url(#bodyGlow)" />
             <path d={BODY} fill="url(#bodyFill)" />
             <path d={BODY} fill="url(#bodyLight)" />
             <path d={BODY} fill="none" stroke="#3A5078" strokeWidth="1.4" strokeLinejoin="round" />
 
             {/* detalles anatómicos sutiles */}
-            <g fill="none" stroke="#2F3F60" strokeWidth="1.1" strokeLinecap="round" opacity="0.9">
+            <g fill="none" stroke={C.line2} strokeWidth="1.1" strokeLinecap="round" opacity="0.9">
               <path d="M84 118 Q96 122 106 119 M136 118 Q124 122 114 119" />
               <path d="M110 160 L110 232" strokeDasharray="2 4" />
               <path d="M84 196 Q96 200 106 198 M136 196 Q124 200 114 198" opacity="0.6" />
               <path d="M81 326 Q88 331 96 326 M139 326 Q132 331 124 326" />
               <path d="M52 196 Q57 199 62 196 M168 196 Q163 199 158 196" />
             </g>
-            <circle cx="110" cy="216" r="1.8" fill="#2F3F60" />
+            <circle cx="110" cy="216" r="1.8" fill={C.line2} />
 
             {/* pulmones de referencia, sin estado */}
-            <g fill="#5CC8F5" fillOpacity="0.05" stroke="#2F3F60" strokeWidth="1">
+            <g fill={C.accent} fillOpacity="0.05" stroke={C.line2} strokeWidth="1">
               <path d="M86 128 C76 140 74 172 78 196 C88 200 100 194 104 182 L104 132 C98 124 92 124 86 128 Z" />
               <path d="M134 128 C144 140 146 172 142 196 C132 200 120 194 116 182 L116 132 C122 124 128 124 134 128 Z" />
             </g>
@@ -215,7 +216,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             <motion.circle
               key={selId}
               cx={cx} cy={cy} r={r}
-              fill="none" stroke={C[st]} strokeWidth="1.5"
+              fill="none" stroke={COL[st]} strokeWidth="1.5"
               initial={{ opacity: 0, scale: 0.6 }}
               animate={reduce ? { opacity: 0.7, scale: 1 } : { opacity: [0.8, 0.15, 0.8], scale: [1, 1.08, 1] }}
               transition={{ duration: 2, repeat: reduce ? 0 : Infinity }}
@@ -240,8 +241,8 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.2 }}
             aria-live="polite"
-            className="flex flex-col gap-4 min-w-0 rounded-[14px] p-5 bg-[#0A0F1B] border"
-            style={{ flex: '1.4 1 320px', borderColor: st === 'ok' || st === 'none' ? '#1C2740' : C[st] + '66', borderStyle: sel.sim ? 'dashed' : 'solid' }}
+            className="flex flex-col gap-4 min-w-0 rounded-[14px] p-5 bg-deep border"
+            style={{ flex: '1.4 1 320px', borderColor: st === 'ok' || st === 'none' ? C.line : COL[st] + '66', borderStyle: sel.sim ? 'dashed' : 'solid' }}
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
@@ -249,12 +250,12 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                 <h3 className="m-0 mt-1 font-[family-name:var(--font-display)] text-xl font-semibold">{sel.nombre}</h3>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="tag" style={{ background: BG[st], color: C[st] }}>{etiqueta(sel)}</span>
+                <span className="tag" style={{ background: BG[st], color: COL[st] }}>{etiqueta(sel)}</span>
                 <span className={`tag ${capaTag[det.capa][0]}`}>{capaTag[det.capa][1]}</span>
               </div>
             </div>
 
-            <p className="m-0 text-sm leading-relaxed" style={{ color: st === 'crit' ? '#FFC2C8' : '#E8ECF4' }}>{sel.nota ?? det.porque}</p>
+            <p className="m-0 text-sm leading-relaxed" style={{ color: st === 'crit' ? C.critSoft : C.text }}>{sel.nota ?? det.porque}</p>
 
             <div className="flex flex-col gap-2">
               {(sel.metricas ?? det.metricas).map((m) => {
@@ -262,34 +263,34 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                 const real = sel.real?.[m.label]
                 const val = st === 'crit' && m.label === 'Presión' ? sel.valor : real ?? m.value
                 return (
-                  <div key={m.label} className="flex items-center gap-3 py-2 border-b border-[#1C2740] last:border-b-0">
+                  <div key={m.label} className="flex items-center gap-3 py-2 border-b border-line last:border-b-0">
                     <div className="flex-1 min-w-0">
-                      <p className="m-0 text-[13px] text-[#A3AEC4]">{m.label}</p>
+                      <p className="m-0 text-[13px] text-muted">{m.label}</p>
                       <p className="m-0 mt-0.5 flex items-baseline gap-2">
-                        <strong className="num text-lg" style={{ color: mst === 'ok' ? '#E8ECF4' : C[mst] }}>{val}</strong>
-                        <span className="num text-xs text-[#93A0B8]">tu normal {m.base}</span>
+                        <strong className="num text-lg" style={{ color: mst === 'ok' ? C.text : COL[mst] }}>{val}</strong>
+                        <span className="num text-sm text-faint">tu normal {m.base}</span>
                         {real && <span className="tag real">Medido hoy</span>}
                       </p>
                     </div>
-                    {m.serie.length > 1 ? <Spark serie={m.serie} color={C[mst]} /> : <span className="w-[120px] text-right text-[11px] text-[#93A0B8]">{m.serie.length ? '1 dato' : 'sin datos'}</span>}
+                    {m.serie.length > 1 ? <Spark serie={m.serie} color={COL[mst]} /> : <span className="w-[120px] text-right text-[13px] text-faint">{m.serie.length ? '1 dato' : 'sin datos'}</span>}
                   </div>
                 )
               })}
             </div>
 
             <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))' }}>
-              <div className="p-3 rounded-[10px] bg-[#0E1422] border border-[#1C2740]">
+              <div className="p-3 rounded-[10px] bg-panel border border-line">
                 <p className="k flex items-center gap-1.5"><ShieldAlert size={13} />Riesgo NASA</p>
                 <p className="m-0 mt-1.5 text-[13px] leading-snug">{det.riesgo}</p>
               </div>
-              <div className="p-3 rounded-[10px] bg-[#0E1422] border border-[#1C2740]">
+              <div className="p-3 rounded-[10px] bg-panel border border-line">
                 <p className="k">Por qué importa</p>
-                <p className="m-0 mt-1.5 text-[13px] leading-snug text-[#C5CEDF]">{det.funcion}</p>
+                <p className="m-0 mt-1.5 text-[13px] leading-snug text-subtle">{det.funcion}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 mt-auto">
-              <p className="m-0 text-[13px] text-[#A3AEC4] flex-1 min-w-[200px]"><strong className="text-[#E8ECF4]">Qué hacer:</strong> {st === 'crit' ? 'Siéntate, repite la medición en 5 minutos y sigue la alerta roja' : det.hacer}</p>
+              <p className="m-0 text-[13px] text-muted flex-1 min-w-[200px]"><strong className="text-text">Qué hacer:</strong> {st === 'crit' ? 'Siéntate, repite la medición en 5 minutos y sigue la alerta roja' : det.hacer}</p>
               <Link to={st === 'crit' ? '/alerts' : det.link.to} className="btn sec sm">{st === 'crit' ? 'Ver alerta' : det.link.label}<ArrowRight size={15} /></Link>
             </div>
           </motion.div>

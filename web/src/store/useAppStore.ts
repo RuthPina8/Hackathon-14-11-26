@@ -266,7 +266,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       const dia = get().status.diaMision
       const base = { astronauta_id: yo, unidad: 'mmHg', capa: 'auto', fuente: 'simulador', confianza: 1, dia_mision: dia, detalle: { demo: 'alerta_roja' } }
       const r = await api.post<GuardadoOut>('/measurements', [
-        { ...base, tipo: 'presion_sis', valor: 168 }, { ...base, tipo: 'presion_dia', valor: 104 },
+        // Arriba de 180/120 (hipertensión severa, AHA/ACC) es el rango clínico rojo de app/core/umbrales.py
+        { ...base, tipo: 'presion_sis', valor: 186 }, { ...base, tipo: 'presion_dia', valor: 122 },
       ])
       if (r && r.alerta_id != null) return String(r.alerta_id)
     }

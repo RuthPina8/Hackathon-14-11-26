@@ -131,7 +131,7 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
     <div className="flex flex-col gap-[22px]">
       <header className="flex flex-col gap-[18px]">
         <div>
-          <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 2 de 5</p>
+          <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Chequeo diario · paso 2 de 5</p>
           <h1 className="mt-1.5 font-display text-[30px] font-semibold tracking-tight">Prueba de atención</h1>
         </div>
         <StepBar actual={1} />
@@ -145,7 +145,7 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
             disabled={!enCurso}
             aria-label={fase === 'estimulo' ? 'Toca ahora' : 'Zona de respuesta'}
             className={`relative grid aspect-[4/3] w-full select-none place-items-center rounded-[20px] border text-center transition-colors duration-75 ${
-              fase === 'estimulo' ? 'border-crit bg-[#2A1218]' : fase === 'falso' ? 'border-warn bg-[#241D0D]' : 'border-line bg-[#04070E]'
+              fase === 'estimulo' ? 'border-crit bg-crit-bg' : fase === 'falso' ? 'border-warn bg-warn-bg' : 'border-line bg-void'
             } ${enCurso ? 'cursor-pointer' : 'cursor-default'}`}
           >
             {fase === 'inicio' && (
@@ -169,13 +169,13 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
               </span>
             )}
             {enCurso && ultimo !== null && (
-              <span className={`absolute right-4 top-4 rounded-[10px] px-3 py-1.5 font-mono text-[13px] ${ultimo > LAPSO_MS ? 'bg-[#241D0D] text-warn' : 'bg-[#0E2A20] text-[#8FF0C4]'}`}>
+              <span className={`absolute right-4 top-4 rounded-[10px] px-3 py-1.5 font-mono text-[13px] ${ultimo > LAPSO_MS ? 'bg-warn-bg text-warn' : 'bg-ok-bg text-ok-soft'}`}>
                 {ultimo} ms
               </span>
             )}
           </button>
           {fase === 'inicio' && (
-            <button type="button" onClick={empezar} className="min-h-16 rounded-xl bg-accent text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
+            <button type="button" onClick={empezar} className="btn pri">
               Empezar prueba
             </button>
           )}
@@ -185,32 +185,32 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
           <section className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]">
             <div className="flex items-center justify-between">
               <h2 className="m-0 font-display text-base font-semibold">Resultado</h2>
-              <span className="rounded-md bg-[#0B2636] px-2 py-1 text-[11px] font-semibold text-[#8AD9F8]">Prueba · Real</span>
+              <span className="rounded-md bg-accent-bg px-2 py-1 text-[13px] font-semibold text-accent-soft">Prueba · Real</span>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Reacción</p><p className="mt-1 font-mono text-[24px] font-bold">{resultado ? Math.round(resultado.medianaMs) : '--'}</p></div>
-              <div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Lapsos</p><p className={`mt-1 font-mono text-[24px] font-bold ${resultado && resultado.lapsos > 2 ? 'text-warn' : ''}`}>{resultado?.lapsos ?? '--'}</p></div>
-              <div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Falsos</p><p className="mt-1 font-mono text-[24px] font-bold">{resultado?.falsos ?? '--'}</p></div>
+              <div><p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Reacción</p><p className="mt-1 font-mono text-[24px] font-bold">{resultado ? Math.round(resultado.medianaMs) : '--'}</p></div>
+              <div><p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Lapsos</p><p className={`mt-1 font-mono text-[24px] font-bold ${resultado && resultado.lapsos > 2 ? 'text-warn' : ''}`}>{resultado?.lapsos ?? '--'}</p></div>
+              <div><p className="m-0 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Falsos</p><p className="mt-1 font-mono text-[24px] font-bold">{resultado?.falsos ?? '--'}</p></div>
             </div>
             <p className="m-0 text-[13px] leading-relaxed text-soft">
               Un lapso es una respuesta de más de 500 ms. {resultado?.practica || (!resultado && sesion < SESIONES_PRACTICA)
                 ? `Las primeras ${SESIONES_PRACTICA} sesiones son de práctica y no cuentan para tu normal (todos mejoran al aprender la prueba).`
                 : 'Esta sesión sí cuenta para tu normal.'}
             </p>
-            {resultado && resultado.estimulos < 5 && <p className="m-0 text-xs text-warn">Muy pocas respuestas para guardar el resultado, repite la prueba.</p>}
+            {resultado && resultado.estimulos < 5 && <p className="m-0 text-sm text-warn">Muy pocas respuestas para guardar el resultado, repite la prueba.</p>}
             {resultado && envio && (
-              <p className={`m-0 text-xs ${envio === 'enviado' ? 'text-[#8FF0C4]' : 'text-warn'}`}>
+              <p className={`m-0 text-sm ${envio === 'enviado' ? 'text-ok-soft' : 'text-warn'}`}>
                 {envio === 'enviado' ? '✓ Guardado y analizado por el motor' : envio === 'pendiente' ? 'Guardado en este equipo, se enviará al reconectar' : 'Sin back: queda solo en este equipo'}
               </p>
             )}
           </section>
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={onAtras} disabled={enCurso} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">Atrás</button>
+            <button type="button" onClick={onAtras} disabled={enCurso} className="btn sec">Atrás</button>
             {fase === 'completo' && (
-              <button type="button" onClick={() => { setFase('inicio'); setResultado(null) }} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Repetir</button>
+              <button type="button" onClick={() => { setFase('inicio'); setResultado(null) }} className="btn sec">Repetir</button>
             )}
             <button type="button" onClick={onSiguiente} disabled={enCurso}
-              className={`min-h-14 rounded-xl px-5 text-base font-semibold disabled:opacity-50 ${fase === 'completo' ? 'bg-accent text-[#04121C] hover:bg-[#8AD9F8]' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel'}`}>
+              className={`btn ${fase === 'completo' ? 'pri' : 'sec'}`}>
               {fase === 'completo' ? 'Siguiente: presión' : 'Saltar este paso'}
             </button>
           </div>

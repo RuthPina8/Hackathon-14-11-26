@@ -11,7 +11,7 @@ export default function StepBar({ actual }: { actual: number }) {
           <li
             key={nombre}
             aria-current={ahora ? 'step' : undefined}
-            className={`flex flex-col gap-2 text-xs font-semibold ${ahora ? 'text-ink' : 'text-muted'}`}
+            className={`flex flex-col gap-2 text-sm font-semibold ${ahora ? 'text-ink' : 'text-muted'}`}
           >
             <span className={`block h-1 rounded-sm transition-colors duration-500 ${hecho ? 'bg-ok' : ahora ? 'bg-accent' : 'bg-line'}`} />
             {i + 1} {nombre}

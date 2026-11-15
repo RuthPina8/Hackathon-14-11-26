@@ -8,6 +8,7 @@ import { useSession } from '../store/useSession'
 import { api, apiEnabled, BASE } from '../lib/api'
 import { astroNumero } from '../lib/adapters'
 import type { ServerIndicator } from '../lib/back1'
+import { C } from '../lib/paleta'
 
 // Indicadores con los que se calcula la calibración general (mismos pesos que motor.md §3)
 const FILAS = [
@@ -91,7 +92,7 @@ export default function Perfil() {
       <PageHeader
         kicker={`${user?.nombre ?? ''} · ${user?.cargo ?? ''}`}
         title="Perfil y calibración"
-        right={<div className="flex items-baseline gap-2.5"><p className="big" style={{ fontSize: 40, color: '#5CC8F5' }}>{status.calibracion}%</p><span className="text-[13px] text-[#A3AEC4]">calibración general</span></div>}
+        right={<div className="flex items-baseline gap-2.5"><p className="big" style={{ fontSize: 40, color: C.accent }}>{status.calibracion}%</p><span className="text-[13px] text-muted">calibración general</span></div>}
       />
 
       <section className="card flex flex-col gap-[18px]" aria-labelledby="fases">
@@ -104,17 +105,17 @@ export default function Perfil() {
               <li key={f.t} className="flex flex-col gap-2.5" style={{ opacity: estado === 'next' ? 0.6 : 1 }}>
                 <span className="flex items-center gap-2.5">
                   {estado === 'done'
-                    ? <span className="w-7 h-7 rounded-full bg-[#3DDC97] text-[#04121C] grid place-items-center shrink-0"><Check size={15} strokeWidth={3} /></span>
-                    : <span className="w-7 h-7 rounded-full bg-[#0B2636] border-2 border-[#5CC8F5] grid place-items-center shrink-0">{estado === 'now' && <span className="w-2 h-2 rounded-full bg-[#5CC8F5]" />}</span>}
-                  <span className="flex-1 h-[3px] rounded bg-[#1C2740]">
-                    <motion.span className="block h-full rounded" style={{ background: estado === 'done' ? '#3DDC97' : '#5CC8F5' }} initial={{ width: 0 }} animate={{ width: `${avance}%` }} transition={{ delay: i * 0.2 }} />
+                    ? <span className="w-7 h-7 rounded-full bg-ok text-on-accent grid place-items-center shrink-0"><Check size={15} strokeWidth={3} /></span>
+                    : <span className="w-7 h-7 rounded-full bg-accent-bg border-2 border-accent grid place-items-center shrink-0">{estado === 'now' && <span className="w-2 h-2 rounded-full bg-accent" />}</span>}
+                  <span className="flex-1 h-[3px] rounded bg-line">
+                    <motion.span className="block h-full rounded" style={{ background: estado === 'done' ? C.ok : C.accent }} initial={{ width: 0 }} animate={{ width: `${avance}%` }} transition={{ delay: i * 0.2 }} />
                   </span>
                 </span>
-                <span className="k" style={{ color: estado === 'done' ? '#8FF0C4' : '#8AD9F8' }}>
+                <span className="k" style={{ color: estado === 'done' ? C.okSoft : C.accentSoft }}>
                   {estado === 'done' ? 'Completa' : estado === 'now' ? (f.id === 'adaptacion' ? `En curso · día ${status.diaMision} de 14` : 'En curso') : 'Siguiente'}
                 </span>
                 <strong className="text-[15px]">{f.t}</strong>
-                <span className="text-[13px] text-[#A3AEC4] leading-relaxed">{f.d}</span>
+                <span className="text-[13px] text-muted leading-relaxed">{f.d}</span>
               </li>
             )
           })}
@@ -137,23 +138,23 @@ export default function Perfil() {
                   <span className="num">{datos}</span>
                   <span className="num">{w.toFixed(2)}</span>
                   <span className="flex items-center gap-2">
-                    <span className="h-2 flex-1 rounded bg-[#1C2740]"><motion.span className="block h-full rounded" style={{ background: r.capa === 'real' ? '#5CC8F5' : '#B7A4FF' }} initial={{ width: 0 }} animate={{ width: `${w * 100}%` }} transition={{ delay: 0.1 + i * 0.08 }} /></span>
-                    {ind?.linea_base.congelada && <span className="tag" title="Congelada mientras hay una alerta abierta" style={{ background: '#241D0D', color: '#F5B544' }}>Congelada</span>}
+                    <span className="h-2 flex-1 rounded bg-line"><motion.span className="block h-full rounded" style={{ background: r.capa === 'real' ? C.accent : C.self }} initial={{ width: 0 }} animate={{ width: `${w * 100}%` }} transition={{ delay: 0.1 + i * 0.08 }} /></span>
+                    {ind?.linea_base.congelada && <span className="tag" title="Congelada mientras hay una alerta abierta" style={{ background: C.warnBg, color: C.warn }}>Congelada</span>}
                   </span>
                 </div>
               )
             })}
             <div className="trow" style={cols}>
               <span>Lectura de ánimo por cámara</span>
-              <span><span className="tag" style={{ background: '#15233B', color: '#C5CEDF' }}>Estimado</span></span>
+              <span><span className="tag" style={{ background: C.sel, color: C.subtle }}>Estimado</span></span>
               <span className="num">{ac?.n ?? 0}</span>
               <span className="num">—</span>
-              <span className="text-[13px] text-[#A3AEC4]">
+              <span className="text-[13px] text-muted">
                 {!ac || ac.estado === 'aprendiendo' ? `Aprendiendo (${ac?.n ?? 0} días con cámara y ánimo)` : `Acierta ${Math.round(ac.acierto_pct ?? 0)}%`}
               </span>
             </div>
           </div></div>
-          <p className="m-0 px-[18px] py-3 text-xs text-[#93A0B8] leading-relaxed">
+          <p className="m-0 px-[18px] py-3 text-sm text-faint leading-relaxed">
             La lectura de ánimo por cámara no lee emociones: aprende cómo cambian tus señales cuando tú reportas sentirte mal. Se muestra como "estimado" y nunca alimenta tu línea base ni las alertas.
           </p>
         </section>
@@ -161,16 +162,16 @@ export default function Perfil() {
         <div className="flex flex-col gap-4" style={{ flex: '2 1 320px', minWidth: 0 }}>
           <section className="card flex flex-col gap-3.5" aria-labelledby="formula">
             <h2 id="formula" className="h2">Cómo se calcula</h2>
-            <p className="num m-0 p-3.5 rounded-xl bg-[#080C16] border border-[#1C2740] text-[17px] font-bold text-center">peso = n / (n + 7)</p>
-            <label className="flex flex-col gap-1.5 text-[13px] text-[#A3AEC4]">
-              <span>Prueba con <strong className="num text-[#E8ECF4]">{n}</strong> datos</span>
+            <p className="num m-0 p-3.5 rounded-xl bg-input border border-line text-[17px] font-bold text-center">peso = n / (n + 7)</p>
+            <label className="flex flex-col gap-1.5 text-[13px] text-muted">
+              <span>Prueba con <strong className="num text-text">{n}</strong> datos</span>
               <input type="range" min={0} max={60} value={n} onChange={(e) => setN(Number(e.target.value))} />
             </label>
-            <div role="img" aria-label={`Con ${n} datos, ${pers}% tu normal y ${100 - pers}% rango clínico`} className="flex h-[30px] rounded-lg overflow-hidden text-[11px] font-bold">
-              <motion.span animate={{ width: `${100 - pers}%` }} className="bg-[#22314F] text-[#C5CEDF] flex items-center pl-2 whitespace-nowrap overflow-hidden">Clínico {100 - pers}%</motion.span>
-              <motion.span animate={{ width: `${pers}%` }} className="bg-[#5CC8F5] text-[#04121C] flex items-center justify-end pr-2 whitespace-nowrap overflow-hidden">Tú {pers}%</motion.span>
+            <div role="img" aria-label={`Con ${n} datos, ${pers}% tu normal y ${100 - pers}% rango clínico`} className="flex h-[30px] rounded-lg overflow-hidden text-[13px] font-bold">
+              <motion.span animate={{ width: `${100 - pers}%` }} className="bg-track text-subtle flex items-center pl-2 whitespace-nowrap overflow-hidden">Clínico {100 - pers}%</motion.span>
+              <motion.span animate={{ width: `${pers}%` }} className="bg-accent text-on-accent flex items-center justify-end pr-2 whitespace-nowrap overflow-hidden">Tú {pers}%</motion.span>
             </div>
-            <p className="m-0 text-[13px] text-[#A3AEC4] leading-relaxed">Con pocos datos manda el rango clínico, con muchos manda tu propio normal</p>
+            <p className="m-0 text-[13px] text-muted leading-relaxed">Con pocos datos manda el rango clínico, con muchos manda tu propio normal</p>
           </section>
 
           <section className="card flex flex-col gap-1" aria-labelledby="fuentes">
@@ -184,19 +185,19 @@ export default function Perfil() {
               <Link to="/record" className="text-[13px] font-semibold">Abrir ficha</Link>
             </div>
             <div className="flex justify-between items-center gap-3 min-h-[44px] text-sm">
-              <span>Apple Watch <span className="text-[#93A0B8]">(Health Auto Export)</span></span>
+              <span>Apple Watch <span className="text-faint">(Health Auto Export)</span></span>
               <input ref={archivo} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void subir(f) }} />
               <button type="button" className="btn sec sm" disabled={!apiEnabled || subiendo} onClick={() => archivo.current?.click()}>
                 <Upload size={15} />{subiendo ? 'Subiendo…' : 'Subir JSON'}
               </button>
             </div>
             {ingesta && (
-              <p role="status" className="mt-1.5 mb-0 text-xs text-[#8FF0C4] leading-relaxed">
+              <p role="status" className="mt-1.5 mb-0 text-sm text-ok-soft leading-relaxed">
                 {ingesta.guardadas} lecturas nuevas ({Object.entries(ingesta.por_tipo).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguna'}){ingesta.duplicadas ? `, ${ingesta.duplicadas} ya estaban` : ''}{ingesta.ignoradas ? `, ${ingesta.ignoradas} métricas que no usamos` : ''}
               </p>
             )}
-            {errorWatch && <p role="alert" className="mt-1.5 mb-0 text-xs text-[#F5B544]">{errorWatch}</p>}
-            <p className="mt-1.5 mb-0 text-xs text-[#93A0B8] leading-relaxed">
+            {errorWatch && <p role="alert" className="mt-1.5 mb-0 text-sm text-warn">{errorWatch}</p>}
+            <p className="mt-1.5 mb-0 text-sm text-faint leading-relaxed">
               Del reloj se toman ritmo en reposo, VFC (SDNN) y sueño, con confianza 0.95. No da presión arterial.
             </p>
           </section>

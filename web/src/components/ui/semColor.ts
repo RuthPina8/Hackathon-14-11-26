@@ -1,8 +1,9 @@
 import type { Semaforo } from '../../store/mockData'
+import { C } from '../../lib/paleta'
 
 export const semColor: Record<Semaforo, string> = {
-  ok: '#3DDC97',
-  warn: '#F5B544',
-  crit: '#FF6B7A',
+  ok: C.ok,
+  warn: C.warn,
+  crit: C.crit,
   none: 'transparent',
 }

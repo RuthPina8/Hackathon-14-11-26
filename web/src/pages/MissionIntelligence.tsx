@@ -8,13 +8,14 @@ import { useWsEvent } from '../lib/useWsEvent'
 import AmbientePanel from '../features/ambiente/AmbientePanel'
 import { ambienteApi, type ContextoMision, type Observacion } from '../features/ambiente/ambienteApi'
 import { idNumerico, NOMBRE_EJERCICIO } from '../features/movimiento/movimientoApi'
+import { C } from '../lib/paleta'
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
 
 function Funcional({ ctx }: { ctx: ContextoMision | null }) {
   const s = ctx?.funcional
   const est = s?.comparacion.estado
-  const color = est === 'bajo' || est === 'baja_calidad' ? '#F5B544' : est === 'estable' ? '#3DDC97' : '#5CC8F5'
+  const color = est === 'bajo' || est === 'baja_calidad' ? C.warn : est === 'estable' ? C.ok : C.accent
   const pct = s?.comparacion.cambio_pct
   return (
     <section className="card flex flex-col gap-4" aria-labelledby="fun" style={{ borderWidth: 2, borderColor: s ? color : undefined }}>
@@ -26,7 +27,7 @@ function Funcional({ ctx }: { ctx: ContextoMision | null }) {
         <>
           <div className="flex flex-wrap items-baseline gap-4">
             <p className="num m-0 text-[64px] font-bold leading-none" style={{ color }}>{s.repeticiones}</p>
-            <p className="m-0 text-lg text-[#A3AEC4]">repeticiones · {NOMBRE_EJERCICIO[s.ejercicio]}</p>
+            <p className="m-0 text-lg text-muted">repeticiones · {NOMBRE_EJERCICIO[s.ejercicio]}</p>
           </div>
           <p className="m-0 text-xl font-semibold" style={{ color }}>{s.comparacion.texto}</p>
           <div className="grid grid-cols-3 gap-3">
@@ -36,7 +37,7 @@ function Funcional({ ctx }: { ctx: ContextoMision | null }) {
           </div>
         </>
       ) : (
-        <p className="m-0 text-lg text-[#A3AEC4]">Todavía no hay evaluaciones de movimiento.</p>
+        <p className="m-0 text-lg text-muted">Todavía no hay evaluaciones de movimiento.</p>
       )}
       <Link to="/movement" className="btn pri">{s ? 'Nueva evaluación ASTRA-MOVE' : 'Hacer evaluación ASTRA-MOVE'}</Link>
     </section>
@@ -46,15 +47,15 @@ function Funcional({ ctx }: { ctx: ContextoMision | null }) {
 function Hallazgo({ o }: { o: Observacion }) {
   return (
     <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-      className="card flex flex-col gap-5" style={{ borderWidth: 2, borderColor: '#5CC8F5' }} aria-labelledby={`obs-${o.id}`}>
+      className="card flex flex-col gap-5" style={{ borderWidth: 2, borderColor: C.accent }} aria-labelledby={`obs-${o.id}`}>
       <div className="flex flex-wrap items-center gap-3">
-        <Info size={30} color="#5CC8F5" />
+        <Info size={30} color={C.accent} />
         <h2 id={`obs-${o.id}`} className="m-0 font-[family-name:var(--font-display)] text-[24px] font-bold">Observación contextual</h2>
         <span className="tag real">INFORMATIVA · NO ES DIAGNÓSTICO</span>
-        <span className="ml-auto text-base text-[#A3AEC4]">{hora(o.desde)}–{hora(o.hasta)}</span>
+        <span className="ml-auto text-base text-muted">{hora(o.desde)}–{hora(o.hasta)}</span>
       </div>
       <p className="m-0 text-xl leading-relaxed">{o.texto}</p>
-      <p className="m-0 rounded-xl border-2 border-dashed border-[#3A4C72] px-5 py-4 text-lg font-semibold text-[#C5CEDF]">{o.causalidad}</p>
+      <p className="m-0 rounded-xl border-2 border-dashed border-[#3A4C72] px-5 py-4 text-lg font-semibold text-subtle">{o.causalidad}</p>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
@@ -69,9 +70,9 @@ function Hallazgo({ o }: { o: Observacion }) {
         </div>
         <div className="flex flex-col gap-2">
           <p className="k">Qué datos se usaron</p>
-          {o.datos_usados.map((d) => <p key={d} className="m-0 text-base text-[#C5CEDF]">• {d}</p>)}
+          {o.datos_usados.map((d) => <p key={d} className="m-0 text-base text-subtle">• {d}</p>)}
           <p className="k mt-3">Qué tan confiables son</p>
-          {o.confiabilidad.map((d) => <p key={d} className="m-0 text-base text-[#C5CEDF]">• {d}</p>)}
+          {o.confiabilidad.map((d) => <p key={d} className="m-0 text-base text-subtle">• {d}</p>)}
         </div>
       </div>
 
@@ -106,10 +107,10 @@ export default function MissionIntelligence() {
       <PageHeader
         kicker={`Día ${ctx?.dia_mision ?? 1} de misión · ${ctx?.entorno ?? ''} · ${user?.nombre ?? ''}`}
         title="Inteligencia de misión" />
-      {cargado && !ctx && <p role="alert" className="m-0 rounded-xl border border-[#5C4A1C] bg-[#2A2312] px-5 py-4 text-base text-[#F5D79A]">No hay conexión con la API: arráncala para ver el contexto de la misión</p>}
+      {cargado && !ctx && <p role="alert" className="m-0 rounded-xl border border-warn-line bg-warn-bg px-5 py-4 text-base text-warn-soft">No hay conexión con la API: arráncala para ver el contexto de la misión</p>}
 
-      <section className="card flex flex-wrap items-center gap-4" style={{ borderWidth: 2, borderColor: obs.length ? '#5CC8F5' : fueraAhora ? '#F5B544' : '#1E5A43' }}>
-        {obs.length ? <Info size={40} color="#5CC8F5" /> : fueraAhora ? <AlertTriangle size={40} color="#F5B544" /> : <CheckCircle2 size={40} color="#3DDC97" />}
+      <section className="card flex flex-wrap items-center gap-4" style={{ borderWidth: 2, borderColor: obs.length ? C.accent : fueraAhora ? C.warn : C.okLine }}>
+        {obs.length ? <Info size={40} color={C.accent} /> : fueraAhora ? <AlertTriangle size={40} color={C.warn} /> : <CheckCircle2 size={40} color={C.ok} />}
         <p className="m-0 flex-1 font-[family-name:var(--font-display)] text-[26px] font-semibold leading-snug">
           {obs.length
             ? 'Hay cambios que coinciden en el tiempo y merecen una revisión preventiva'
@@ -129,7 +130,7 @@ export default function MissionIntelligence() {
       {obs.length > 1 && (
         <section className="card flex flex-col gap-2">
           <h2 className="h2">Observaciones anteriores</h2>
-          {obs.slice(1).map((o) => <p key={o.id} className="m-0 text-base text-[#C5CEDF]">{hora(o.creada)} · {o.que_cambio_funcional}</p>)}
+          {obs.slice(1).map((o) => <p key={o.id} className="m-0 text-base text-subtle">{hora(o.creada)} · {o.que_cambio_funcional}</p>)}
         </section>
       )}
     </div>
