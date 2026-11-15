@@ -12,7 +12,10 @@ from app.triage import baseline as congelamiento
 router = APIRouter(prefix="/indicators", tags=["indicadores"])
 
 # Nombres cortos que usa el front en sus rutas
-ALIAS = {"hr": "hr_reposo", "bp": "presion_sis", "rt": "reaccion_ms", "sleep": "sueno_horas", "mood": "animo"}
+ALIAS = {
+    "hr": "hr_reposo", "bp": "presion_sis", "rt": "reaccion_ms", "sleep": "sueno_horas", "mood": "animo",
+    "hrv": "hrv_rmssd", "resp": "resp_rpm", "expr": "expresividad",
+}
 
 
 @router.get("/{tipo}", response_model=IndicatorOut)
