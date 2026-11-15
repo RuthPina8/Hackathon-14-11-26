@@ -4,13 +4,11 @@ import AppShell from './components/layout/AppShell'
 import Inicio from './pages/Inicio'
 import Detalle from './pages/Detalle'
 import Alertas from './pages/Alertas'
-import Perfil from './pages/Perfil'
 import Simulacion from './pages/Simulacion'
-import Tierra from './pages/Tierra'
 import Tripulacion from './pages/Tripulacion'
 import Evolucion from './pages/Evolucion'
-import Ficha from './pages/Ficha'
-import Confiabilidad from './pages/Confiabilidad'
+import MissionIntelligence from './pages/MissionIntelligence'
+import MovimientoFlow from './features/movimiento/MovimientoFlow'
 import { useWebSocket } from './lib/ws'
 import { useMissionClock } from './lib/useMissionClock'
 import DemoBar from './components/layout/DemoBar'
@@ -58,13 +56,11 @@ export default function App() {
         <Route path="/indicators" element={<Navigate to="/indicators/hr" replace />} />
         <Route path="/indicators/:tipo" element={<Detalle />} />
         <Route path="/alerts" element={<Alertas />} />
-        <Route path="/profile" element={<Perfil />} />
         <Route path="/simulation" element={<Simulacion />} />
-        <Route path="/earth" element={<Tierra />} />
         <Route path="/crew" element={<Tripulacion />} />
         <Route path="/progress" element={<Evolucion />} />
-        <Route path="/record" element={<Ficha />} />
-        <Route path="/reliability" element={<Confiabilidad />} />
+        <Route path="/mission-intelligence" element={<MissionIntelligence />} />
+        <Route path="/movement" element={<MovimientoFlow />} />
 
         {/* Chequeo diario (Front 1): los 5 pasos viven en /camera?paso=N; las rutas viejas redirigen */}
         <Route path="/camera" element={<ChequeoRoute />} />

@@ -34,6 +34,8 @@ export function useWebSocket() {
         try {
           const parsed = JSON.parse(ev.data) as { event: string; data: unknown }
           applyServerEvent(parsed.event, parsed.data)
+          // Otras pantallas (ASTRA-MOVE, ambiente, Mission Intelligence) escuchan con useWsEvent
+          window.dispatchEvent(new CustomEvent('astro-ws', { detail: parsed }))
         } catch (err) {
           console.warn('[ws] mensaje no reconocido', err)
         }

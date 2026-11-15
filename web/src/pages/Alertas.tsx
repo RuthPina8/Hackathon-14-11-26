@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Lock } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
@@ -125,7 +125,7 @@ export default function Alertas() {
             ) : (
               <div className="flex flex-wrap gap-2.5">
                 {escalated[cur.id] || cur.escalada
-                  ? <Link className="btn sec" to="/earth">Ver en la cola a Tierra</Link>
+                  ? <span className="btn sec" aria-disabled="true">Enviada a Tierra</span>
                   : <button type="button" className="btn sec" onClick={() => { escalateAlert(cur.id); setEscalated((e) => ({ ...e, [cur.id]: true })) }}>Escalar a Tierra</button>}
                 <button type="button" className="btn pri" onClick={() => resolveAlert(cur.id)}>Marcar como atendida</button>
               </div>

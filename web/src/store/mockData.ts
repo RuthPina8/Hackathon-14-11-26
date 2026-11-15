@@ -181,9 +181,6 @@ export const indicators: Record<string, IndicatorDef> = {
   hr: { tipo: 'hr_reposo', label: 'Ritmo cardiaco', name: 'Ritmo cardiaco en reposo', sys: 'Cardiovascular', unit: 'lpm', base: 68, sd: 4, lo: 56, hi: 84, dec: 0, clin: '60 a 100', drift: 10, noise: 1.6, src: 'Cámara, rPPG', capa: 'real', warn: true,
     head: 'Tu ritmo en reposo lleva 6 días subiendo y ya salió de tu rango normal',
     explain: 'Ningún valor es grave por sí solo, pero la tendencia lenta de 6 días es lo que dispara la alerta amarilla' },
-  perclos: { tipo: 'perclos', label: 'PERCLOS', name: 'Fatiga visual (PERCLOS)', sys: 'Sueño y fatiga', unit: '', base: 0.09, sd: 0.03, lo: 0, hi: 0.25, dec: 2, clin: '< 0.15', drift: 0.1, noise: 0.012, src: 'Cámara, face mesh', capa: 'real', warn: true,
-    head: 'Tus ojos pasan cerrados el doble de tiempo que en tu normal desde hace 3 sesiones',
-    explain: 'PERCLOS arriba de 0.15 se asocia con somnolencia, coincide con menos horas de sueño reportadas' },
   bp: { tipo: 'presion_sis', label: 'Presión arterial', name: 'Presión sistólica', sys: 'Cardiovascular', unit: 'mmHg', base: 118, sd: 6, lo: 100, hi: 140, dec: 0, clin: '90 a 130', drift: 0, noise: 3, src: 'Autorreportado', capa: 'self', warn: false,
     head: 'Tu presión se mantiene estable dentro de tu rango normal',
     explain: 'Sin cambios relevantes, sigue registrándola una vez al día para mantener la calibración' },
@@ -256,7 +253,7 @@ export const systemDetails: Record<string, SystemDetail> = {
     riesgo: 'Falta de sueño y desajuste del ritmo circadiano',
     hacer: 'Descansa 20 minutos de pantallas y evita tareas de precisión por 2 horas',
     capa: 'real',
-    link: { to: '/indicators/perclos', label: 'Ver fatiga visual' },
+    link: { to: '/indicators/sleep', label: 'Ver sueño' },
     metricas: [
       { label: 'PERCLOS', value: '0.19', base: '0.09', estado: 'warn', serie: [0.09, 0.08, 0.1, 0.11, 0.14, 0.17, 0.19] },
       { label: 'Horas de sueño', value: '5.1 h', base: '7.0 h', estado: 'warn', serie: [7.1, 6.9, 7.0, 6.4, 5.8, 5.3, 5.1] },

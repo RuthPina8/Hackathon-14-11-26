@@ -73,7 +73,7 @@ export default function Tripulacion() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
-                  <tr>{['Astronauta', 'Estado', 'Ritmo en reposo', 'PERCLOS', 'Presión', 'Ánimo', 'Dato recibido'].map((h) => <th key={h} className="k text-left px-3.5 py-3.5 border-b border-[#1C2740]">{h}</th>)}</tr>
+                  <tr>{['Astronauta', 'Estado', 'Ritmo en reposo', 'Presión', 'Ánimo', 'Dato recibido'].map((h) => <th key={h} className="k text-left px-3.5 py-3.5 border-b border-[#1C2740]">{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {crew.map((c) => {
@@ -83,7 +83,6 @@ export default function Tripulacion() {
                         <td className="px-3.5 py-3.5 border-b border-[#1C2740] font-semibold">{c.id}</td>
                         <td className="px-3.5 py-3.5 border-b border-[#1C2740]"><span className="inline-flex items-center gap-2"><SemaphoreDot estado={c.estado} size={8} />{earthTxt[c.estado]}</span></td>
                         <td className="num px-3.5 py-3.5 border-b border-[#1C2740]" style={{ color: warn ? '#F5B544' : undefined }}>{c.ritmo}</td>
-                        <td className="num px-3.5 py-3.5 border-b border-[#1C2740]" style={{ color: warn ? '#F5B544' : undefined }}>{c.perclos}</td>
                         <td className="num px-3.5 py-3.5 border-b border-[#1C2740]">{c.presion}</td>
                         <td className="num px-3.5 py-3.5 border-b border-[#1C2740]">{c.animo}</td>
                         <td className="num px-3.5 py-3.5 border-b border-[#1C2740] text-[#A3AEC4]">{c.estado === 'none' ? c.ultimo : `${c.ultimo} + ${retrasoTxt} de viaje`}</td>

@@ -13,8 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.ws import manager
 from app.models import persistencia
+from app.mision import telemetria as telemetria_engine
 from app.routers import (
-    alerts, clinico, crew, demo, environment, indicators, ingest, measurements, queue, rppg, simulation, status,
+    alerts, clinico, crew, demo, environment, indicators, ingest, measurements, mission, movement, queue, rppg,
+    simulation, status, telemetry,
 )
 from app.triage import demo as demo_engine
 from app.triage import queue as queue_engine
@@ -29,6 +31,8 @@ async def lifespan(_: FastAPI):
         asyncio.create_task(queue_engine.run_forever()),
         asyncio.create_task(demo_engine.run_forever()),
         asyncio.create_task(persistencia.correr_fotos()),
+        # Telemetría ambiental simulada (Environmental Intelligence)
+        asyncio.create_task(telemetria_engine.run_forever()),
     ]
     yield
     for t in tasks:
@@ -66,6 +70,11 @@ app.include_router(indicators.router)
 app.include_router(rppg.router)
 app.include_router(ingest.router)
 app.include_router(clinico.router)
+
+# ASTRA-MOVE + Environmental Intelligence + inteligencia contextual
+app.include_router(movement.router)
+app.include_router(telemetry.router)
+app.include_router(mission.router)
 
 
 @app.get("/health", tags=["sistema"])

@@ -175,7 +175,7 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
             )}
           </button>
           {fase === 'inicio' && (
-            <button type="button" onClick={empezar} className="min-h-12 rounded-xl bg-accent text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
+            <button type="button" onClick={empezar} className="min-h-16 rounded-xl bg-accent text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
               Empezar prueba
             </button>
           )}
@@ -205,12 +205,12 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
             )}
           </section>
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={onAtras} disabled={enCurso} className="min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">Atrás</button>
+            <button type="button" onClick={onAtras} disabled={enCurso} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">Atrás</button>
             {fase === 'completo' && (
-              <button type="button" onClick={() => { setFase('inicio'); setResultado(null) }} className="min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Repetir</button>
+              <button type="button" onClick={() => { setFase('inicio'); setResultado(null) }} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Repetir</button>
             )}
             <button type="button" onClick={onSiguiente} disabled={enCurso}
-              className={`min-h-11 rounded-xl px-5 text-sm font-semibold disabled:opacity-50 ${fase === 'completo' ? 'bg-accent text-[#04121C] hover:bg-[#8AD9F8]' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel'}`}>
+              className={`min-h-14 rounded-xl px-5 text-base font-semibold disabled:opacity-50 ${fase === 'completo' ? 'bg-accent text-[#04121C] hover:bg-[#8AD9F8]' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel'}`}>
               {fase === 'completo' ? 'Siguiente: presión' : 'Saltar este paso'}
             </button>
           </div>

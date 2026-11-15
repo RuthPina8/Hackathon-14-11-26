@@ -47,7 +47,6 @@ function mensajeError(e: unknown): string {
 }
 
 type Ajustes = MediaTrackCapabilities & { exposureMode?: string[]; whiteBalanceMode?: string[] }
-type Valores = MediaTrackSettings & { exposureMode?: string; whiteBalanceMode?: string; exposureTime?: number; colorTemperature?: number }
 
 export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloquearAjustes = false, mostrarRois = true, ovalo = 'normal', children }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -161,22 +160,19 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
     }
   }, [camaraId])
 
-  // 2b. Fijar exposición y balance de blancos mientras se mide (si la cámara lo soporta).
-  // Con los valores actuales: la imagen no cambia, solo deja de reajustarse sola.
+  // 2b. Exposición y balance de blancos SIEMPRE en automático.
+  // Antes se fijaban en manual mientras medía (bloquearAjustes), pero en Windows el exposureTime
+  // que reporta getSettings() viene en otra escala para muchas webcams: al aplicarlo en manual la
+  // imagen se iba a negro, y el driver guardaba el modo manual para la siguiente vez. Por eso al
+  // abrir la cámara se regresa a 'continuous', aunque haya quedado en manual de una sesión anterior.
   useEffect(() => {
     const track = trackRef.current
     if (!track || !camaraLista || typeof track.getCapabilities !== 'function') return
     const caps = track.getCapabilities() as Ajustes
-    const actual = track.getSettings() as Valores
-    const fijar: Record<string, unknown> = {}
-    if (bloquearAjustes) {
-      if (caps.exposureMode?.includes('manual') && actual.exposureTime) Object.assign(fijar, { exposureMode: 'manual', exposureTime: actual.exposureTime })
-      if (caps.whiteBalanceMode?.includes('manual') && actual.colorTemperature) Object.assign(fijar, { whiteBalanceMode: 'manual', colorTemperature: actual.colorTemperature })
-    } else {
-      if (caps.exposureMode?.includes('continuous') && actual.exposureMode === 'manual') fijar.exposureMode = 'continuous'
-      if (caps.whiteBalanceMode?.includes('continuous') && actual.whiteBalanceMode === 'manual') fijar.whiteBalanceMode = 'continuous'
-    }
-    if (Object.keys(fijar).length) track.applyConstraints({ advanced: [fijar as MediaTrackConstraintSet] }).catch(() => { /* la cámara no lo permite */ })
+    const auto: Record<string, unknown> = {}
+    if (caps.exposureMode?.includes('continuous')) auto.exposureMode = 'continuous'
+    if (caps.whiteBalanceMode?.includes('continuous')) auto.whiteBalanceMode = 'continuous'
+    if (Object.keys(auto).length) track.applyConstraints({ advanced: [auto as MediaTrackConstraintSet] }).catch(() => { /* la cámara no lo permite */ })
   }, [bloquearAjustes, camaraLista])
 
   // 3. Detectar la cara en cada cuadro, dibujar puntos y zonas
@@ -346,7 +342,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
           <div role="alert" className="absolute left-1/2 top-1/2 flex w-[min(360px,86%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl border border-line-strong bg-nav/95 px-4 py-4 text-center text-sm font-semibold">
             <span>{aviso}</span>
             {(errorCamara || estado === 'error') && (
-              <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="min-h-10 rounded-xl bg-accent px-4 text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
+              <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="min-h-14 rounded-xl bg-accent px-4 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
                 Reintentar
               </button>
             )}
@@ -365,7 +361,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
               setErrorCamara(null)
               setCamaraId(e.target.value)
             }}
-            className="min-h-11 flex-1 rounded-xl border border-line-strong bg-panel px-3 text-ink"
+            className="min-h-14 flex-1 rounded-xl border border-line-strong bg-panel px-3 text-ink"
           >
             {camaras.map((c) => (
               <option key={c.id} value={c.id}>

@@ -70,7 +70,7 @@ export const SEM: Record<SemaforoBack, Semaforo> = { verde: 'ok', amarillo: 'war
 // Sistemas del back -> ids de las pantallas
 const SISTEMAS: { id: string; back: string; nombre: string; href: string }[] = [
   { id: 'cardio', back: 'cardiovascular', nombre: 'Cardiovascular', href: '/indicators/hr' },
-  { id: 'sueno', back: 'sueno', nombre: 'Sueño y fatiga', href: '/indicators/perclos' },
+  { id: 'sueno', back: 'sueno', nombre: 'Sueño', href: '/indicators/sleep' },
   { id: 'mental', back: 'mental', nombre: 'Mental y cognitivo', href: '/indicators/rt' },
   { id: 'inmune', back: 'inmune', nombre: 'Inmune', href: '/camera?paso=4' },
 ]
@@ -89,7 +89,6 @@ export const METRICAS_SISTEMA: Record<string, { tipo: string; label: string; fmt
     { tipo: 'presion_sis', label: 'Presión sistólica', fmt: (v) => `${Math.round(v)} mmHg` },
   ],
   sueno: [
-    { tipo: 'perclos', label: 'PERCLOS', fmt: (v) => v.toFixed(2) },
     { tipo: 'sueno_horas', label: 'Horas de sueño', fmt: (v) => `${v.toFixed(1)} h` },
   ],
   mental: [

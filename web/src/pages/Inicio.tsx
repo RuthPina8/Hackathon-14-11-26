@@ -122,7 +122,6 @@ export default function Inicio() {
           <div className="flex items-baseline gap-2.5"><p className="big" style={{ color: '#5CC8F5' }}>{status.calibracion}%</p><span className="text-[13px] text-[#A3AEC4]">{status.calibracion >= 80 ? 'tu normal ya está calibrado' : 'aprendiendo tu normal'}</span></div>
           <CalibrationStrip day={status.diaBase} total={status.diasBase} />
           <p className="m-0 text-[13px] text-[#A3AEC4] leading-relaxed">{status.fase === 'tierra' ? 'Línea base en Tierra, antes del lanzamiento' : status.fase === 'personal' ? 'Fase personal: las alertas comparan contra tu propio normal' : `Día ${status.diaBase} de ${status.diasBase} de adaptación`}. Cada chequeo hace que las alertas dependan más de tu propio normal</p>
-          <Link to="/profile" className="mt-auto text-[13px] font-semibold">Ver detalle de calibración</Link>
         </section>
       </div>
     </>

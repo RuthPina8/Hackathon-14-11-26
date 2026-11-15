@@ -52,7 +52,7 @@ function Lista({ valor, onChange, ej }: { valor: string[]; onChange: (v: string[
       </div>
       <div className="flex gap-2">
         <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }} placeholder={`Ej. ${ej}`}
-          className="min-h-10 flex-1 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 text-sm text-[#E8ECF4] outline-none focus:border-[#5CC8F5]" />
+          className="min-h-14 flex-1 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 text-base text-[#E8ECF4] outline-none focus:border-[#5CC8F5]" />
         <button type="button" className="btn sec sm" onClick={agregar}>Agregar</button>
       </div>
     </div>

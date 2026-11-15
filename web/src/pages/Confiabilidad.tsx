@@ -131,11 +131,11 @@ export default function Confiabilidad() {
               {camara ? ` Tu última lectura de cámara fue hace ${minutos} min (${camara.bpm ?? '--'} lpm).` : ' Aún no haces el chequeo con cámara hoy.'}
             </p>
             <div className="flex flex-wrap gap-2">
-              <select value={fuente} onChange={(e) => setFuente(e.target.value)} className="min-h-11 flex-1 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 text-sm text-[#E8ECF4]">
+              <select value={fuente} onChange={(e) => setFuente(e.target.value)} className="min-h-14 flex-1 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 text-base text-[#E8ECF4]">
                 {FUENTES.map((f) => <option key={f.v} value={f.v}>{f.t}</option>)}
               </select>
               <input inputMode="numeric" placeholder="lpm" value={hr} onChange={(e) => setHr(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                className="min-h-11 w-24 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 font-mono text-[#E8ECF4]" />
+                className="min-h-14 w-24 rounded-xl border border-[#2F3F60] bg-[#080C16] px-3 font-mono text-[#E8ECF4]" />
               <button type="button" className="btn pri sm" onClick={() => void registrar()}>Guardar par</button>
             </div>
             {msg && <p role="status" className="m-0 text-[13px]" style={{ color: msg.ok ? '#8FF0C4' : '#F5B544' }}>{msg.t}</p>}
