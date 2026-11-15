@@ -32,7 +32,9 @@ export default function Perfil() {
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
+      {statusReal
+        ? <SimBanner tag="EN PARTE DE EJEMPLO">La calibración general sale de tus mediciones guardadas; la tabla por señal todavía es de ejemplo</SimBanner>
+        : <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
       <PageHeader
         kicker={`${user?.nombre ?? ''} · ${user?.cargo ?? ''}`}
         title="Perfil y calibración"
