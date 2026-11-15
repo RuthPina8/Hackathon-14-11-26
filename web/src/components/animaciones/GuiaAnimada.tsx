@@ -78,7 +78,7 @@ export default function GuiaAnimada({ titulo, pasos, alTerminar, escena3D }: { t
           ))}
         </div>
         <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label="Next step" onClick={() => ir(i + 1)}><ChevronRight size={24} /></button>
-        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label={play ? 'Pausar' : 'Play'} onClick={() => { setPlay((x) => !x); setInicio(performance.now()) }}>
+        <button type="button" className="btn sec" style={{ width: 60, padding: 0 }} aria-label={play ? 'Pause' : 'Play'} onClick={() => { setPlay((x) => !x); setInicio(performance.now()) }}>
           {play ? <Pause size={22} /> : <Play size={22} />}
         </button>
       </div>

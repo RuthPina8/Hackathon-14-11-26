@@ -344,7 +344,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
             <span>{aviso}</span>
             {(errorCamara || estado === 'error') && (
               <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="btn pri">
-                Reintentar
+                Retry
               </button>
             )}
           </div>

@@ -38,10 +38,12 @@ log = logging.getLogger("astrohealth.persistencia")
 
 TRIPULACION = [
     (1, "Astronaut 1", "Mission specialist"),
-    (2, "Astronaut 2", "Ingeniería"),
-    (3, "Astronaut 3", "Ciencia"),
-    (4, "Astronaut 4", "Comandante"),
+    (2, "Astronaut 2", "Engineering"),
+    (3, "Astronaut 3", "Science"),
+    (4, "Astronaut 4", "Commander"),
 ]
+# Bases creadas antes de traducir la app: nombres y roles por defecto que se pasan a inglés
+_ROLES_VIEJOS = {"Especialista de misión", "Ingeniería", "Ciencia", "Comandante"}
 SEGUNDOS_FOTO = 5.0
 
 _engine: Engine | None = None
@@ -107,8 +109,14 @@ def detener() -> None:
 def _sembrar() -> None:
     with _sesion() as s:
         for i, nombre, rol in TRIPULACION:
-            if s.get(Astronauta, i) is None:
+            fila = s.get(Astronauta, i)
+            if fila is None:
                 s.add(Astronauta(id=i, nombre=nombre, rol=rol, entorno=settings.entorno_inicial))
+            else:
+                if fila.nombre == f"Astronauta {i}":
+                    fila.nombre = nombre
+                if fila.rol in _ROLES_VIEJOS:
+                    fila.rol = rol
         for pid, perfil in perfiles.cargar_perfiles().items():
             fila = s.get(EntornoDB, pid)
             datos = perfil.model_dump(mode="json")

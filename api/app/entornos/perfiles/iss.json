@@ -1,16 +1,16 @@
 {
   "id": "iss",
-  "nombre": "Estación Espacial Internacional",
-  "descripcion": "Órbita baja terrestre, microgravedad, contacto casi continuo con Tierra",
+  "nombre": "International Space Station",
+  "descripcion": "Low Earth orbit, microgravity, almost continuous contact with Earth",
   "gravedad_g": 0.0,
   "radiacion_msv_dia": 0.5,
   "retraso_s": 0.5,
   "retraso_demo_s": 1.0,
   "ancho_banda_kbps": 600,
   "perdida_osea_pct_mes": 1.2,
-  "evacuacion": "Horas (cápsula de regreso acoplada)",
+  "evacuacion": "Hours (return capsule docked)",
   "fuentes": [
-    "Radiación ISS ~0.3 a 0.8 mSv/día (NASA HRP). Valor provisional, ajustable",
-    "Pérdida ósea 1 a 1.5 %/mes en huesos de carga (NASA HRP). Ajustable"
+    "ISS radiation ~0.3 to 0.8 mSv/day (NASA HRP). Provisional, adjustable value",
+    "Bone loss 1 to 1.5 %/month in weight-bearing bones (NASA HRP). Adjustable"
   ]
 }

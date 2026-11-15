@@ -193,7 +193,7 @@ export default function Perfil() {
             </div>
             {ingesta && (
               <p role="status" className="mt-1.5 mb-0 text-sm text-ok-soft leading-relaxed">
-                {ingesta.guardadas} new readings ({Object.entries(ingesta.por_tipo).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguna'}){ingesta.duplicadas ? `, ${ingesta.duplicadas} were already there` : ''}{ingesta.ignoradas ? `, ${ingesta.ignoradas} metrics we don’t use` : ''}
+                {ingesta.guardadas} new readings ({Object.entries(ingesta.por_tipo).map(([k, v]) => `${v} ${k}`).join(', ') || 'none'}){ingesta.duplicadas ? `, ${ingesta.duplicadas} were already there` : ''}{ingesta.ignoradas ? `, ${ingesta.ignoradas} metrics we don’t use` : ''}
               </p>
             )}
             {errorWatch && <p role="alert" className="mt-1.5 mb-0 text-sm text-warn">{errorWatch}</p>}

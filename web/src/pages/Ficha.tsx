@@ -31,8 +31,8 @@ const BASALES: { k: keyof Basales; label: string; unidad: string; min: number; m
 ]
 
 const LISTAS: { k: 'alergias' | 'medicamentos' | 'condiciones' | 'cirugias' | 'vacunas'; label: string; ej: string }[] = [
-  { k: 'alergias', label: 'Allergies', ej: 'penicilina' },
-  { k: 'medicamentos', label: 'Current medications', ej: 'melatonina 3 mg' },
+  { k: 'alergias', label: 'Allergies', ej: 'penicillin' },
+  { k: 'medicamentos', label: 'Current medications', ej: 'melatonin 3 mg' },
   { k: 'condiciones', label: 'History and conditions', ej: 'mild childhood asthma' },
   { k: 'cirugias', label: 'Surgeries', ej: 'appendectomy 2018' },
   { k: 'vacunas', label: 'Vaccines', ej: 'influenza 2026' },

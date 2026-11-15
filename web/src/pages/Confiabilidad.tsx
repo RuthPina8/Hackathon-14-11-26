@@ -12,7 +12,7 @@ import { C } from '../lib/paleta'
 
 const ESTADO = {
   sin_validar: ['Not validated', C.faint],
-  validando: ['Validando', C.warn],
+  validando: ['Validating', C.warn],
   verificado: ['Verified', C.ok],
 } as const
 

@@ -94,7 +94,7 @@ export default function Sidebar() {
         </button>
         <p className="k">Data layers</p>
         <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-accent" />Real, measured live</span>
-        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-self" />Autorreportado</span>
+        <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] bg-self" />Self-reported</span>
         <span className="flex items-center gap-2.5 text-sm text-muted"><span className="w-2.5 h-2.5 rounded-[3px] border-[1.5px] border-dashed border-faint" />Simulated</span>
         <div className="pt-2"><ConnectionStatus /></div>
       </div>

@@ -416,7 +416,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                     </BotonConfirmar>
                     <button type="button" onClick={() => setFase('pausa')}
                       className="btn sec">
-                      Pausar
+                      Pause
                     </button>
                   </>
                 )}

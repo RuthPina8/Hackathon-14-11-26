@@ -38,7 +38,7 @@ export default function DemoBar() {
             <>
               <span className="num text-sm text-muted min-w-[96px]">Mission day {sd?.dia ?? 0}</span>
               <button type="button" className="btn sec sm" onClick={sd?.corriendo ? demoStop : demoStart}>
-                {sd?.corriendo ? <><Pause size={15} />Pausar</> : <><Play size={15} />Run</>}
+                {sd?.corriendo ? <><Pause size={15} />Pause</> : <><Play size={15} />Run</>}
               </button>
               <button type="button" className="btn sec sm" onClick={() => demoAdvance(1)}><SkipForward size={15} />+1 day</button>
             </>

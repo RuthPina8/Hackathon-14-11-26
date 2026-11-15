@@ -25,11 +25,11 @@ NOTA = ("SIMULATED data for the demo: not from a physical sensor. "
 # variable -> (nombre, unidad, mínimo, máximo); None = sin límite de ese lado
 RANGOS: dict[str, tuple[str, str, float | None, float | None]] = {
     "co2_ppm": ("CO₂", "ppm", None, 2500.0),
-    "o2_pct": ("Oxígeno", "%", 19.5, 23.5),
-    "temp_c": ("Temperatura", "°C", 18.0, 27.0),
-    "humedad_pct": ("Humedad", "%", 25.0, 75.0),
+    "o2_pct": ("Oxygen", "%", 19.5, 23.5),
+    "temp_c": ("Temperature", "°C", 18.0, 27.0),
+    "humedad_pct": ("Humidity", "%", 25.0, 75.0),
     # La radiación se compara contra el perfil del entorno activo (ver fuera_de_rango)
-    "radiacion_msv_dia": ("Radiación", "mSv/día", None, None),
+    "radiacion_msv_dia": ("Radiation", "mSv/day", None, None),
 }
 # Radiación fuera de rango si pasa este múltiplo de la del perfil del entorno (evento solar)
 FACTOR_RADIACION = 2.0

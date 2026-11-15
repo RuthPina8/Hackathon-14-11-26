@@ -1,16 +1,16 @@
 {
   "id": "luna",
-  "nombre": "Superficie lunar",
-  "descripcion": "Gravedad de 1/6, sin campo magnético, retraso de poco más de un segundo",
+  "nombre": "Lunar surface",
+  "descripcion": "1/6 gravity, no magnetic field, a little over one second of delay",
   "gravedad_g": 0.166,
   "radiacion_msv_dia": 1.37,
   "retraso_s": 1.28,
   "retraso_demo_s": 3.0,
   "ancho_banda_kbps": 200,
   "perdida_osea_pct_mes": 0.8,
-  "evacuacion": "Unos 3 días de regreso a Tierra",
+  "evacuacion": "About 3 days back to Earth",
   "fuentes": [
-    "Radiación en superficie ~1.37 mSv/día (Chang'e 4, Zhang et al. 2020)",
-    "Pérdida ósea en 1/6 g: estimación del equipo, no hay datos de misiones largas. Ajustable"
+    "Surface radiation ~1.37 mSv/day (Chang'e 4, Zhang et al. 2020)",
+    "Bone loss at 1/6 g: team estimate, no long-mission data exists. Adjustable"
   ]
 }

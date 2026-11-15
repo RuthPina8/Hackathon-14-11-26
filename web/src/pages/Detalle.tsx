@@ -168,7 +168,7 @@ export default function Detalle() {
           <section className="card grid grid-cols-2 gap-x-3.5 gap-y-4" aria-labelledby="resumen">
             <h2 id="resumen" className="h2 col-span-2">Summary</h2>
             <div><p className="k">Latest</p><p className="big" style={{ marginTop: 4, fontSize: 28, color: v.out ? C.warn : C.text }}>{sinDatos ? '--' : f(v.today)}</p></div>
-            <div><p className="k">Your normal</p><p className="big" style={{ marginTop: 4, fontSize: 22 }}>{sinDatos || v.n < 3 ? 'aprendiendo' : `${f(v.base)} ± ${f(v.sd)}`}</p></div>
+            <div><p className="k">Your normal</p><p className="big" style={{ marginTop: 4, fontSize: 22 }}>{sinDatos || v.n < 3 ? 'learning' : `${f(v.base)} ± ${f(v.sd)}`}</p></div>
             <div><p className="k">z-score</p><p className="big" style={{ marginTop: 4, fontSize: 22 }}>{sinDatos || v.n < 3 ? '—' : z}</p></div>
             <div><p className="k">Clinical range</p><p className="big" style={{ marginTop: 4, fontSize: 18 }}>{clin}</p></div>
           </section>

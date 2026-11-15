@@ -1,16 +1,16 @@
 {
   "id": "marte",
-  "nombre": "Superficie de Marte",
-  "descripcion": "Gravedad de 0.38 g, atmósfera delgada, retraso de minutos con Tierra",
+  "nombre": "Mars surface",
+  "descripcion": "0.38 g gravity, thin atmosphere, minutes of delay with Earth",
   "gravedad_g": 0.38,
   "radiacion_msv_dia": 0.67,
   "retraso_s": 750,
   "retraso_demo_s": 8.0,
   "ancho_banda_kbps": 64,
   "perdida_osea_pct_mes": 0.6,
-  "evacuacion": "Imposible: ventana de regreso cada ~26 meses",
+  "evacuacion": "Impossible: return window every ~26 months",
   "fuentes": [
-    "Radiación en superficie ~0.67 mSv/día (Curiosity RAD, Hassler et al. 2014)",
-    "Pérdida ósea en 0.38 g: estimación del equipo. Ajustable"
+    "Surface radiation ~0.67 mSv/day (Curiosity RAD, Hassler et al. 2014)",
+    "Bone loss at 0.38 g: team estimate. Adjustable"
   ]
 }
