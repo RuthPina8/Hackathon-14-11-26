@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 
 // Herramientas compartidas por las animaciones 3D con el astronauta del Inicio (mismo modelo con esqueleto).
 
@@ -61,17 +62,48 @@ export function marcarZonas(malla: THREE.SkinnedMesh) {
   geo.setAttribute('zona', new THREE.BufferAttribute(zona, 1))
 }
 
-function telaTraje() {
-  const tela = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.78, metalness: 0.02 })
-  const u = { uNaranja: { value: new THREE.Color(TRAJE.naranja) }, uBlanco: { value: new THREE.Color(TRAJE.blanco) }, uCostura: { value: new THREE.Color('#3A4252') } }
+// Relieve de tela: pliegues horizontales y costuras, dibujado en un canvas y usado como mapa de relieve
+let relieveTela: THREE.CanvasTexture | null = null
+function texturaTela() {
+  if (relieveTela) return relieveTela
+  const T = 512
+  const c = document.createElement('canvas')
+  c.width = c.height = T
+  const g = c.getContext('2d')!
+  g.fillStyle = '#808080'; g.fillRect(0, 0, T, T)
+  // pliegues anchos y suaves
+  for (let i = 0; i < 26; i++) {
+    const y = (i * 197) % T, alto = 10 + ((i * 53) % 22)
+    const grad = g.createLinearGradient(0, y, 0, y + alto)
+    grad.addColorStop(0, 'rgba(255,255,255,0)'); grad.addColorStop(0.5, 'rgba(255,255,255,.28)'); grad.addColorStop(1, 'rgba(0,0,0,.22)')
+    g.fillStyle = grad
+    g.beginPath(); g.ellipse((i * 131) % T, y + alto / 2, 90 + ((i * 71) % 160), alto / 2, ((i % 5) - 2) * 0.05, 0, 7); g.fill()
+  }
+  // trama fina del tejido
+  for (let y = 0; y < T; y += 4) { g.fillStyle = y % 8 ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.035)'; g.fillRect(0, y, T, 2) }
+  relieveTela = new THREE.CanvasTexture(c)
+  relieveTela.wrapS = relieveTela.wrapT = THREE.RepeatWrapping
+  relieveTela.repeat.set(6, 6)
+  return relieveTela
+}
+
+// Tela del traje. Dos trucos de sombreador:
+//  - el color (naranja o blanco) se decide por píxel con la zona del vértice: costura nítida;
+//  - cada vértice se desplaza hacia afuera sobre su normal: el maniquí delgado se vuelve un traje acolchado,
+//    más grueso en guantes y botas. Se hace ANTES del esqueleto, así que no afecta a las animaciones.
+function telaTraje(grosor: number) {
+  const tela = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.82, metalness: 0, bumpMap: texturaTela(), bumpScale: 1.4 })
+  const u = { uNaranja: { value: new THREE.Color(TRAJE.naranja) }, uBlanco: { value: new THREE.Color(TRAJE.blanco) }, uCostura: { value: new THREE.Color('#3A4252') }, uGrosor: { value: grosor } }
   tela.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u)
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>
 attribute float zona;
-varying float vZona;`)
+varying float vZona;
+uniform float uGrosor;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-vZona = zona;`)
+vZona = zona;
+transformed += normalize(objectNormal) * uGrosor * (1.0 - 0.4 * zona);`)
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform vec3 uNaranja;
@@ -84,90 +116,125 @@ varying float vZona;`)
         float costura = 1.0 - smoothstep(anchoZ * 1.2, anchoZ * 2.4, abs(vZona - 0.5));
         diffuseColor.rgb = mix(mix(uNaranja, uBlanco, z), uCostura, costura * 0.85);`)
   }
-  tela.customProgramCacheKey = () => 'traje-astronauta'
+  tela.customProgramCacheKey = () => 'traje-astronauta-2'
   return tela
 }
 
-// Viste el modelo: tela naranja y blanca, anillos de las articulaciones en blanco metálico y visor oscuro en el casco
+// Material inflado sencillo (para los fuelles de las articulaciones)
+function inflado(mat: THREE.MeshStandardMaterial, grosor: number, clave: string) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uGrosor = { value: grosor }
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', `#include <common>
+uniform float uGrosor;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+transformed += normalize(objectNormal) * uGrosor;`)
+  }
+  mat.customProgramCacheKey = () => clave
+  return mat
+}
+
+// Viste el modelo como un astronauta: traje acolchado naranja con blanco, casco con visor, aro del cuello,
+// unidad de pecho, mochila de soporte vital y mangueras. Todo va pegado a los huesos y se mueve con el cuerpo.
 export function vestir(modelo: THREE.Object3D, acento: string, mats: THREE.Material[], sombras: boolean, geos: THREE.BufferGeometry[] = [], opciones: { mochila?: boolean } = {}) {
-  const tela = telaTraje()
-  // las articulaciones son fuelles de tela blanca, no metal: así el modelo deja de verse como un robot
-  const anillos = new THREE.MeshStandardMaterial({ color: TRAJE.blanco, roughness: 0.6, metalness: 0.05 })
-  mats.push(tela, anillos)
+  const h = buscarHueso(modelo)
+  const cabeza = h('Head'), tope = h('HeadTop_End'), punta = h('LeftToeBase'), pie = h('LeftFoot')
+  const cuello = h('Neck'), pecho = h('Spine2'), hombroI = h('LeftArm'), hombroD = h('RightArm')
+  modelo.updateMatrixWorld(true)
+  const escala = modelo.getWorldScale(v()).x || 1
+  const GROSOR = 0.024 // metros de acolchado
+  const tela = telaTraje(GROSOR / escala)
+  const fuelles = inflado(new THREE.MeshStandardMaterial({ color: TRAJE.blanco, roughness: 0.7, metalness: 0, bumpMap: texturaTela(), bumpScale: 1.2 }), (GROSOR * 1.15) / escala, 'fuelles-traje')
+  mats.push(tela, fuelles)
   modelo.traverse((o) => {
     const m = o as THREE.SkinnedMesh
     if (!m.isMesh) return
     const esJunta = m.name.includes('001') || m.name.toLowerCase().includes('joint')
     if (!esJunta && m.isSkinnedMesh) marcarZonas(m)
-    m.material = esJunta ? anillos : tela
+    m.material = esJunta ? fuelles : tela
     m.castShadow = sombras
     m.frustumCulled = false
   })
+  if (!cabeza || !tope || !cuello || !pecho || !hombroI || !hombroD) return
 
-  // Visor: una media esfera oscura y brillante pegada al hueso de la cabeza
-  const h = buscarHueso(modelo)
-  const cabeza = h('Head'), tope = h('HeadTop_End'), punta = h('LeftToeBase'), pie = h('LeftFoot')
-  if (!cabeza || !tope) return
-  modelo.updateMatrixWorld(true)
   const a = cabeza.getWorldPosition(v()), b = tope.getWorldPosition(v())
   const alto = a.distanceTo(b)
   const frente = punta && pie ? Math.sign(punta.getWorldPosition(v()).z - pie.getWorldPosition(v()).z) || 1 : 1
-  const visorMat = new THREE.MeshPhysicalMaterial({ color: TRAJE.visor, roughness: 0.08, metalness: 0.9, clearcoat: 1, clearcoatRoughness: 0.05, emissive: '#1B4B6B', emissiveIntensity: 0.25 })
-  const visorGeo = new THREE.SphereGeometry(1, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.5)
-  mats.push(visorMat); geos.push(visorGeo)
-  const visor = new THREE.Mesh(visorGeo, visorMat)
-  visor.name = 'visor'
-  visor.scale.set(alto * 0.43, alto * 0.3, alto * 0.45)
-  visor.position.copy(a).lerp(b, 0.52).add(new THREE.Vector3(0, 0, alto * 0.4 * frente))
-  visor.rotation.x = (frente * Math.PI) / 2 // la cúpula mira al frente
-  visor.castShadow = false
-  escalaMundo(modelo, visor)
-  cabeza.attach(visor)
+  const pCuello = cuello.getWorldPosition(v()), pPecho = pecho.getWorldPosition(v())
+  const U = hombroI.getWorldPosition(v()).distanceTo(hombroD.getWorldPosition(v())) // ancho de hombros: unidad de medida
+  const F = new THREE.Vector3(0, 0, frente)
 
-  // --- Detalles del traje, pegados a los huesos para que se muevan con el cuerpo ---
-  const pieza = (g: THREE.BufferGeometry, m: THREE.Material, hueso: THREE.Object3D, pos: THREE.Vector3, rot?: THREE.Euler) => {
+  const pieza = <G extends THREE.BufferGeometry>(g: G, m: THREE.Material, hueso: THREE.Object3D, pos: THREE.Vector3, rot?: THREE.Euler, sombra = sombras) => {
     geos.push(g)
     const o = new THREE.Mesh(g, m)
     o.position.copy(pos)
     if (rot) o.rotation.copy(rot)
-    o.castShadow = sombras
+    o.castShadow = sombra
     escalaMundo(modelo, o)
     hueso.attach(o)
     return o
   }
-  const blanco = new THREE.MeshStandardMaterial({ color: TRAJE.blanco, roughness: 0.5, metalness: 0.05 })
-  const metal = new THREE.MeshStandardMaterial({ color: TRAJE.gris, roughness: 0.28, metalness: 0.85 })
-  const oscuro = new THREE.MeshStandardMaterial({ color: '#1B2636', roughness: 0.5, metalness: 0.3 })
+  const blanco = new THREE.MeshStandardMaterial({ color: TRAJE.blanco, roughness: 0.45, metalness: 0.05 })
+  const metal = new THREE.MeshStandardMaterial({ color: '#D5DCE6', roughness: 0.22, metalness: 0.95 })
+  const oscuro = new THREE.MeshStandardMaterial({ color: '#141C29', roughness: 0.4, metalness: 0.4 })
+  const goma = new THREE.MeshStandardMaterial({ color: '#2A3442', roughness: 0.85 })
   const luz = new THREE.MeshBasicMaterial({ color: acento })
-  const naranja = new THREE.MeshStandardMaterial({ color: TRAJE.naranja, roughness: 0.6 })
-  mats.push(blanco, metal, oscuro, luz, naranja)
-  const cuello = h('Neck'), pecho = h('Spine2'), hombroI = h('LeftArm'), hombroD = h('RightArm')
-  if (!cuello || !pecho || !hombroI || !hombroD) return
-  const pCuello = cuello.getWorldPosition(v()), pPecho = pecho.getWorldPosition(v())
-  const anchoH = hombroI.getWorldPosition(v()).distanceTo(hombroD.getWorldPosition(v()))
-  const F = new THREE.Vector3(0, 0, frente)
+  const naranja = new THREE.MeshStandardMaterial({ color: TRAJE.naranja, roughness: 0.55 })
+  const visorMat = new THREE.MeshPhysicalMaterial({ color: '#1A1206', roughness: 0.06, metalness: 1, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, emissive: '#3A2606', emissiveIntensity: 0.35 })
+  mats.push(blanco, metal, oscuro, goma, luz, naranja, visorMat)
 
-  // aro metálico donde el casco se une al traje
-  pieza(new THREE.TorusGeometry(alto * 0.36, alto * 0.06, 12, 40), metal, cuello, pCuello.clone().add(new THREE.Vector3(0, alto * 0.12, alto * 0.05 * frente)), new THREE.Euler(Math.PI / 2, 0, 0))
+  // --- Casco: esfera blanca con visor dorado al frente y aro metálico en el cuello ---
+  const R = alto * 0.86
+  const centroCasco = a.clone().lerp(b, 0.5).addScaledVector(F, alto * 0.08)
+  pieza(new THREE.SphereGeometry(R, 48, 32), blanco, cabeza, centroCasco)
+  // visor: casquete de esfera un poco más grande, mirando al frente y ligeramente hacia abajo
+  const APERTURA = Math.PI * 0.36
+  pieza(new THREE.SphereGeometry(R * 1.015, 48, 24, 0, Math.PI * 2, 0, APERTURA), visorMat, cabeza, centroCasco, new THREE.Euler((frente * Math.PI) / 2 + frente * 0.12, 0, 0), false)
+  const marco = pieza(new THREE.TorusGeometry(R * 1.015 * Math.sin(APERTURA), R * 0.035, 10, 64), metal, cabeza, centroCasco.clone().addScaledVector(F, R * 1.015 * Math.cos(APERTURA)).add(new THREE.Vector3(0, -R * 0.12, 0)))
+  marco.rotateX(frente * 0.12)
+  // luces laterales del casco
+  for (const k of [-1, 1]) {
+    pieza(new THREE.CylinderGeometry(R * 0.1, R * 0.1, R * 0.12, 16), oscuro, cabeza, centroCasco.clone().add(new THREE.Vector3(k * R * 0.98, R * 0.1, 0)), new THREE.Euler(0, 0, Math.PI / 2))
+    pieza(new THREE.SphereGeometry(R * 0.05, 10, 8), luz, cabeza, centroCasco.clone().add(new THREE.Vector3(k * R * 1.06, R * 0.1, 0)))
+  }
+  // aro del cuello
+  pieza(new THREE.TorusGeometry(R * 0.8, R * 0.13, 16, 56), metal, cuello, new THREE.Vector3(centroCasco.x, a.y - alto * 0.1, centroCasco.z - alto * 0.04 * frente), new THREE.Euler(Math.PI / 2, 0, 0))
 
-  // unidad de control en el pecho: caja, pantalla y tres luces
-  const yPecho = THREE.MathUtils.lerp(pPecho.y, pCuello.y, 0.25)
-  const zPecho = pPecho.z + anchoH * 0.36 * frente
-  const base = new THREE.Vector3(pPecho.x, yPecho, zPecho)
-  pieza(new THREE.BoxGeometry(anchoH * 0.5, anchoH * 0.3, anchoH * 0.1), blanco, pecho, base)
-  pieza(new THREE.BoxGeometry(anchoH * 0.26, anchoH * 0.13, 0.004), oscuro, pecho, base.clone().add(new THREE.Vector3(-anchoH * 0.08, anchoH * 0.04, 0)).addScaledVector(F, anchoH * 0.052))
-  for (let k = 0; k < 3; k++) pieza(new THREE.SphereGeometry(anchoH * 0.018, 10, 8), luz, pecho, base.clone().add(new THREE.Vector3(anchoH * (0.12 + k * 0.055) - anchoH * 0.02, -anchoH * 0.09, 0)).addScaledVector(F, anchoH * 0.052))
-  // franja naranja con el parche de misión
-  pieza(new THREE.BoxGeometry(anchoH * 0.12, anchoH * 0.12, 0.004), naranja, pecho, base.clone().add(new THREE.Vector3(anchoH * 0.15, anchoH * 0.05, 0)).addScaledVector(F, anchoH * 0.052))
+  // --- Unidad de control en el pecho ---
+  const yPecho = THREE.MathUtils.lerp(pPecho.y, pCuello.y, 0.15)
+  const base = new THREE.Vector3(pPecho.x, yPecho, pPecho.z + (U * 0.36 + GROSOR) * frente)
+  pieza(new RoundedBoxGeometry(U * 0.56, U * 0.34, U * 0.13, 4, U * 0.035), blanco, pecho, base)
+  const cara = (x: number, y: number) => base.clone().add(new THREE.Vector3(x * U, y * U, 0)).addScaledVector(F, U * 0.066)
+  pieza(new RoundedBoxGeometry(U * 0.26, U * 0.14, 0.006, 2, 0.003), oscuro, pecho, cara(-0.1, 0.05))
+  pieza(new THREE.BoxGeometry(U * 0.18, U * 0.012, 0.008), luz, pecho, cara(-0.1, 0.07))
+  pieza(new THREE.BoxGeometry(U * 0.12, U * 0.012, 0.008), luz, pecho, cara(-0.13, 0.03))
+  for (let k = 0; k < 3; k++) pieza(new THREE.CylinderGeometry(U * 0.022, U * 0.022, 0.012, 14), k === 0 ? naranja : metal, pecho, cara(-0.18 + k * 0.075, -0.09), new THREE.Euler(Math.PI / 2, 0, 0))
+  pieza(new RoundedBoxGeometry(U * 0.13, U * 0.13, 0.006, 2, 0.003), naranja, pecho, cara(0.15, 0.04))
+  pieza(new THREE.CylinderGeometry(U * 0.035, U * 0.035, 0.014, 18), metal, pecho, cara(0.15, -0.09), new THREE.Euler(Math.PI / 2, 0, 0))
 
-  // mochila de soporte vital (se omite cuando el astronauta se sienta contra un respaldo)
+  // --- Mochila de soporte vital con tanque, correas y mangueras al pecho ---
   if (opciones.mochila !== false) {
-    const atras = new THREE.Vector3(pPecho.x, THREE.MathUtils.lerp(pPecho.y, pCuello.y, 0.1), pPecho.z - anchoH * 0.5 * frente)
-    pieza(new THREE.BoxGeometry(anchoH * 0.82, anchoH * 1.05, anchoH * 0.34), blanco, pecho, atras)
-    pieza(new THREE.BoxGeometry(anchoH * 0.6, anchoH * 0.1, anchoH * 0.36), metal, pecho, atras.clone().add(new THREE.Vector3(0, anchoH * 0.3, 0)))
-    pieza(new THREE.BoxGeometry(anchoH * 0.6, anchoH * 0.1, anchoH * 0.36), metal, pecho, atras.clone().add(new THREE.Vector3(0, -anchoH * 0.3, 0)))
-    pieza(new THREE.CylinderGeometry(anchoH * 0.09, anchoH * 0.09, anchoH * 0.7, 20), naranja, pecho, atras.clone().add(new THREE.Vector3(0, anchoH * 0.6, 0)), new THREE.Euler(0, 0, Math.PI / 2))
-    pieza(new THREE.BoxGeometry(anchoH * 0.3, anchoH * 0.03, 0.004), luz, pecho, atras.clone().addScaledVector(F, -anchoH * 0.172))
+    const atras = new THREE.Vector3(pPecho.x, THREE.MathUtils.lerp(pPecho.y, pCuello.y, 0.05), pPecho.z - (U * 0.52 + GROSOR) * frente)
+    pieza(new RoundedBoxGeometry(U * 0.86, U * 1.1, U * 0.4, 5, U * 0.09), blanco, pecho, atras)
+    pieza(new RoundedBoxGeometry(U * 0.62, U * 0.5, U * 0.06, 3, U * 0.025), oscuro, pecho, atras.clone().addScaledVector(F, -U * 0.2).add(new THREE.Vector3(0, -U * 0.12, 0)))
+    pieza(new THREE.BoxGeometry(U * 0.3, U * 0.025, 0.006), luz, pecho, atras.clone().addScaledVector(F, -U * 0.232).add(new THREE.Vector3(0, U * 0.02, 0)))
+    pieza(new THREE.CapsuleGeometry(U * 0.1, U * 0.5, 8, 20), naranja, pecho, atras.clone().add(new THREE.Vector3(0, U * 0.6, 0)), new THREE.Euler(0, 0, Math.PI / 2))
+    for (const k of [-1, 1]) {
+      const correa = new THREE.CatmullRomCurve3([
+        atras.clone().add(new THREE.Vector3(k * U * 0.3, U * 0.5, 0)).addScaledVector(F, U * 0.18),
+        new THREE.Vector3(pPecho.x + k * U * 0.3, pCuello.y + U * 0.02, pPecho.z),
+        base.clone().add(new THREE.Vector3(k * U * 0.24, U * 0.2, 0)),
+      ])
+      pieza(new THREE.TubeGeometry(correa, 24, U * 0.032, 10), goma, pecho, new THREE.Vector3())
+      // manguera de la mochila a la unidad del pecho, por el costado
+      const manguera = new THREE.CatmullRomCurve3([
+        atras.clone().add(new THREE.Vector3(k * U * 0.44, -U * 0.3, 0)),
+        new THREE.Vector3(pPecho.x + k * (U * 0.62 + GROSOR), yPecho - U * 0.3, pPecho.z),
+        base.clone().add(new THREE.Vector3(k * U * 0.34, -U * 0.14, 0)),
+      ])
+      pieza(new THREE.TubeGeometry(manguera, 28, U * 0.028, 10), k < 0 ? naranja : oscuro, pecho, new THREE.Vector3())
+      pieza(new THREE.CylinderGeometry(U * 0.04, U * 0.04, U * 0.05, 14), metal, pecho, base.clone().add(new THREE.Vector3(k * U * 0.3, -U * 0.14, 0)), new THREE.Euler(0, 0, Math.PI / 2))
+    }
   }
 }
 

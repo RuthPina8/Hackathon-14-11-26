@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { C } from '../../lib/paleta'
 
 // Módulo de estación espacial para las animaciones 3D: paredes de paneles, costillas con tiras de luz,
@@ -7,6 +8,7 @@ import { C } from '../../lib/paleta'
 // finos (anillos, marcos, tiras de luz) son geometría, no líneas de 1 píxel.
 
 const RADIO = 6.5
+export const ENTORNO = 0.55 // intensidad de los reflejos de entorno
 const ALTO = 3.6
 
 export interface Recursos { geos: THREE.BufferGeometry[]; mats: THREE.Material[]; texturas: THREE.Texture[] }
@@ -128,8 +130,19 @@ export function crearEstacion(escena: THREE.Scene, renderer: THREE.WebGLRenderer
 
   escena.fog = new THREE.Fog('#070D18', 9, 22)
 
+  // Reflejos de entorno: los metales, el visor y el piso reflejan un cuarto iluminado (viene con three.js).
+  // Es lo que hace que los materiales se vean reales y no como plastilina plana.
+  const pmrem = new THREE.PMREMGenerator(renderer)
+  const cuarto = new RoomEnvironment()
+  const entorno = pmrem.fromScene(cuarto, 0.04).texture
+  cuarto.dispose()
+  pmrem.dispose()
+  rec.texturas.push(entorno)
+  escena.environment = entorno
+  escena.environmentIntensity = ENTORNO
+
   // --- Luces: cenital blanca (con sombra), relleno frío y contorno azul que entra por la ventana ---
-  const hemi = new THREE.HemisphereLight('#E6F0FF', '#1A2233', 1.25)
+  const hemi = new THREE.HemisphereLight('#E6F0FF', '#1A2233', 0.75)
   escena.add(hemi)
   const clave = new THREE.DirectionalLight('#FFFFFF', 2.2)
   clave.position.set(2.2, 5, 3)

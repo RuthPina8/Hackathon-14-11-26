@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
-import { crearEstacion } from './estacion'
+import { crearEstacion, ENTORNO } from './estacion'
 import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esqueleto'
 
 // Cómo acomodar la cámara antes de un ejercicio, en 3D y dentro de la estación (misma familia que Demo3D).
@@ -15,6 +16,7 @@ import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esquele
 // lo que se encuadra en cada momento. Sin WebGL se muestra la animación 2D del paso (`fallback`).
 
 const FPS = 30
+const redonda = (w: number, h: number, d: number) => new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.3)
 const Z_LAPTOP = 1.25 // dónde está la mesa, frente al astronauta
 const MESA = 0.72
 const CAM_BAJA = MESA + 0.225 // altura de la webcam con la laptop directo en la mesa
@@ -137,9 +139,9 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       const mueble = new THREE.MeshStandardMaterial({ color: '#2A3A52', roughness: 0.6, metalness: 0.35 })
       const metal = new THREE.MeshStandardMaterial({ color: '#8EA3BF', roughness: 0.3, metalness: 0.8 })
       mats.push(mueble, metal)
-      const tabla = malla(new THREE.BoxGeometry(0.9, 0.035, 0.6), mueble)
+      const tabla = malla(redonda(0.9, 0.035, 0.6), mueble)
       tabla.position.set(0, MESA - 0.0175, zL + 0.2 * frente)
-      const geoPata = new THREE.BoxGeometry(0.035, MESA - 0.035, 0.035)
+      const geoPata = new THREE.CylinderGeometry(0.018, 0.018, MESA - 0.035, 16)
       geos.push(geoPata)
       for (const dx of [-0.41, 0.41]) for (const dz of [-0.26, 0.26]) {
         const pata = new THREE.Mesh(geoPata, metal)
@@ -149,7 +151,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       }
       const GROSOR = 0.09
       const libros = [TRAJE_LIBROS[0], TRAJE_LIBROS[1], TRAJE_LIBROS[2], TRAJE_LIBROS[3]].map((color, n) => {
-        const l = malla(new THREE.BoxGeometry(0.3 - n * 0.012, GROSOR - 0.008, 0.22 - n * 0.008), new THREE.MeshStandardMaterial({ color, roughness: 0.8 }))
+        const l = malla(redonda(0.3 - n * 0.012, GROSOR - 0.008, 0.22 - n * 0.008), new THREE.MeshStandardMaterial({ color, roughness: 0.8 }))
         l.position.set((n % 2 ? 0.012 : -0.01), MESA + GROSOR * (n + 0.5), zL + 0.12 * frente)
         l.rotation.y = (n % 2 ? 1 : -1) * 0.06
         return l
@@ -158,10 +160,10 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       const cuerpoLap = new THREE.MeshStandardMaterial({ color: '#C9D1DC', roughness: 0.35, metalness: 0.75 })
       const pantallaMat = new THREE.MeshBasicMaterial({ color: '#0B2A3A' })
       mats.push(cuerpoLap, pantallaMat)
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.016, 0.23), cuerpoLap)
+      const base = new THREE.Mesh(redonda(0.34, 0.016, 0.23), cuerpoLap)
       base.position.y = 0.008
       const tapa = new THREE.Group()
-      const tapaM = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.01), cuerpoLap)
+      const tapaM = new THREE.Mesh(redonda(0.34, 0.22, 0.01), cuerpoLap)
       tapaM.position.y = 0.11
       const vidrio = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.19), pantallaMat)
       vidrio.position.set(0, 0.11, -0.006 * frente)
@@ -191,7 +193,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
       // --- Lámpara del paso de luz: panel sobre un poste con una luz puntual ---
       const lampara = new THREE.Group()
       const panelMat = new THREE.MeshBasicMaterial({ color: '#FFF4DC' })
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.03), panelMat)
+      const panel = new THREE.Mesh(redonda(0.5, 0.36, 0.03), panelMat)
       panel.position.y = 1.75
       const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.6, 10), metal)
       poste.position.y = 0.8
@@ -270,6 +272,7 @@ export default function Preparar3D({ ejercicio, paso, ms, play, fallback }: { ej
         // --- luces ---
         const oscuro = p === 2 ? 1 : 0
         hemi.intensity = base0.hemi * (1 - 0.8 * oscuro)
+        escena.environmentIntensity = ENTORNO * (1 - 0.85 * oscuro)
         clave.intensity = base0.clave * (1 - 0.92 * oscuro)
         contorno.intensity = base0.contorno * (1 - 0.7 * oscuro)
         ventana.intensity = base0.ventana * (1 - 0.7 * oscuro)

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { clone as clonarEsqueleto } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { C } from '../../lib/paleta'
 import { movimientoReducido } from '../../lib/efectos'
 import { crearEstacion } from './estacion'
@@ -15,10 +16,11 @@ import { ALTURA, apuntar, buscarHueso, cargarModelo, v, vestir } from './esquele
 // Si no hay WebGL se muestra la animación 2D del mismo paso (`fallback`).
 
 const FPS = 30
+const redonda = (w: number, h: number, d: number) => new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.3)
 const ANCHO_BRAZALETE = 0.14 // m, un brazalete de adulto
-const R_BRAZO = 0.047 // radio aproximado del brazo del modelo a 1.8 m
-const R_AJUSTADO = 0.064
-const R_FLOJO = 0.082
+const R_BRAZO = 0.07 // radio aproximado del brazo del modelo a 1.8 m
+const R_AJUSTADO = 0.086
+const R_FLOJO = 0.104
 const DESDE_CODO = 0.025 + ANCHO_BRAZALETE / 2 // centro del brazalete: borde 2.5 cm arriba del pliegue
 
 const tramo = (f: number, a: number, b: number) => THREE.MathUtils.clamp((f - a) / (b - a), 0, 1)
@@ -170,7 +172,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       const metal = new THREE.MeshStandardMaterial({ color: '#8EA3BF', roughness: 0.3, metalness: 0.8 })
       mats.push(mueble, metal)
       const caja3 = (w: number, hh: number, d: number, m: THREE.Material, x: number, y: number, z: number) => {
-        const o = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), m)
+        const o = new THREE.Mesh(redonda(w, hh, d), m)
         geos.push(o.geometry)
         o.position.set(x, y, z)
         o.castShadow = true
@@ -209,7 +211,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
         tex.needsUpdate = true
       }
       const monitor = new THREE.Group()
-      const cuerpoMon = malla(new THREE.BoxGeometry(0.16, 0.05, 0.11), new THREE.MeshStandardMaterial({ color: '#DDE4EE', roughness: 0.45 }))
+      const cuerpoMon = malla(redonda(0.16, 0.05, 0.11), new THREE.MeshStandardMaterial({ color: '#DDE4EE', roughness: 0.45 }))
       cuerpoMon.position.y = 0.025
       const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.075), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }))
       geos.push(pantalla.geometry); mats.push(pantalla.material as THREE.Material)
