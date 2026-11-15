@@ -95,6 +95,18 @@ La idea que lo hace innovador y defendible: **la cámara no lee tu ánimo; apren
 - **Factores de cada alerta:** `|z_i| / Σ|z|` en porcentaje.
 - Cada `Anomaly` lleva: `senal`, `detector`, `valor`, `referencia`, `z`, `desde`, `direccion`, `factores`.
 
+### Qué tipos pasan por los detectores estadísticos (ajustable)
+
+z-score, EWMA y CUSUM corren sobre todos los `tipo` numéricos continuos u ordinales. Quedan fuera:
+
+| tipo | Por qué | A dónde va |
+|---|---|---|
+| `sueno_medicamento` | Es 0 o 1; una media y una desviación no significan nada | Solo contexto en el motivo de sueño y de readiness |
+| `sintomas` | El conteo no distingue qué síntoma es | Reglas de `immune.py` (sección 5) |
+| `animo_estimado` | Es `fuente="modelo"` | Nunca entra al motor ni a la línea base |
+
+Cualquier dato con `fuente="simulador"` sí pasa por los detectores, sea del `tipo` que sea.
+
 ### `/status`
 
 - **Readiness:** `100 − Σ penalizaciones`, cada una con `{senal, delta_pct, texto}` y ordenadas. Si falta un registro del día, −1.
@@ -160,6 +172,7 @@ Basado en la incidencia de síntomas en la ISS (Crucian et al. 2016, NASA): erup
 ### Cálculo
 
 - **Puntaje diario** = Σ peso × intensidad. **Puntaje inmune** = suma de los últimos 7 días.
+- El puntaje es informativo: va en `inmune.puntaje` de `/status` y sirve para ordenar y redactar el motivo. **El color sale solo de las reglas de abajo**, no del puntaje.
 - **Amarillo** si se cumple cualquiera:
   - (a) un síntoma inmune 3 días seguidos o más
   - (b) 2 categorías inmunes el mismo día
@@ -190,7 +203,7 @@ Basado en la incidencia de síntomas en la ISS (Crucian et al. 2016, NASA): erup
   - "State of Mind" (si existe) → `animo` con `fuente="apple_watch"`
 - **Verificar los nombres exactos** de las métricas en el wiki de Health Auto Export ("API Export – JSON Format") antes de escribir el parser.
 - Las automatizaciones REST requieren la versión Premium o su prueba gratis.
-- **Idempotente:** si se recibe dos veces el mismo dato, no se duplica.
+- **Idempotente:** si se recibe dos veces el mismo dato, no se duplica. Se logra con un índice único parcial en `measurements` sobre (`astronauta_id`, `tipo`, `fecha`) donde `fuente = 'apple_watch'`, e insertando con `ON CONFLICT DO NOTHING`. Es parcial para no bloquear dos mediciones de cámara o manuales con la misma hora.
 
 ---
 
@@ -205,8 +218,13 @@ Basado en la incidencia de síntomas en la ISS (Crucian et al. 2016, NASA): erup
 | 15 | Empieza la fase personal |
 | 18–22 | A1 duerme menos de 6 h → sube PERCLOS y la reacción → regla de sueño + CUSUM en el ritmo |
 | 23 | Alerta. A1 descansa y la alerta se resuelve sola en los días siguientes (el cierre del ciclo "actuar") |
-| 25–29 | A3 con congestión y luego fuego labial → inmune amarillo → rojo → escalar a Tierra |
+| 25–29 | A3: congestión desde el día 25; el 27 se suma fuego labial → inmune amarillo; fiebre los días 28 y 29 → rojo el 29 → escalar a Tierra |
 | 30 | El modelo de ánimo ya está activo con su `acierto_pct` |
+
+Dos condiciones para que el guion dispare lo que promete:
+
+- **CUSUM (días 18–22):** con `k = 0.5σ` y `h = 5σ`, un cambio de δ desviaciones tarda cerca de `5 / (δ − 0.5)` días en detectarse. El simulador debe subir `hr_reposo` unas **2σ** en esos días para que la detección caiga alrededor del día 21. Con 1σ tardaría 10 días y no saldría en la demo.
+- **Inmune (días 25–29):** la congestión y el fuego labial siguen hasta el 29. Amarillo el 27 (3 días seguidos de congestión y 2 categorías el mismo día); rojo el 29 (fiebre 2 días seguidos con otro síntoma inmune). Sin la fiebre, 5 días de síntomas nunca llegan a rojo.
 
 - `/demo/advance` (Back 2) pide el siguiente día y lo manda por el mismo pipeline de `/measurements`.
 
