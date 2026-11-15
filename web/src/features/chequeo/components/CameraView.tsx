@@ -47,7 +47,6 @@ function mensajeError(e: unknown): string {
 }
 
 type Ajustes = MediaTrackCapabilities & { exposureMode?: string[]; whiteBalanceMode?: string[] }
-type Valores = MediaTrackSettings & { exposureMode?: string; whiteBalanceMode?: string; exposureTime?: number; colorTemperature?: number }
 
 export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloquearAjustes = false, mostrarRois = true, ovalo = 'normal', children }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -161,22 +160,19 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
     }
   }, [camaraId])
 
-  // 2b. Fijar exposición y balance de blancos mientras se mide (si la cámara lo soporta).
-  // Con los valores actuales: la imagen no cambia, solo deja de reajustarse sola.
+  // 2b. Exposición y balance de blancos SIEMPRE en automático.
+  // Antes se fijaban en manual mientras medía (bloquearAjustes), pero en Windows el exposureTime
+  // que reporta getSettings() viene en otra escala para muchas webcams: al aplicarlo en manual la
+  // imagen se iba a negro, y el driver guardaba el modo manual para la siguiente vez. Por eso al
+  // abrir la cámara se regresa a 'continuous', aunque haya quedado en manual de una sesión anterior.
   useEffect(() => {
     const track = trackRef.current
     if (!track || !camaraLista || typeof track.getCapabilities !== 'function') return
     const caps = track.getCapabilities() as Ajustes
-    const actual = track.getSettings() as Valores
-    const fijar: Record<string, unknown> = {}
-    if (bloquearAjustes) {
-      if (caps.exposureMode?.includes('manual') && actual.exposureTime) Object.assign(fijar, { exposureMode: 'manual', exposureTime: actual.exposureTime })
-      if (caps.whiteBalanceMode?.includes('manual') && actual.colorTemperature) Object.assign(fijar, { whiteBalanceMode: 'manual', colorTemperature: actual.colorTemperature })
-    } else {
-      if (caps.exposureMode?.includes('continuous') && actual.exposureMode === 'manual') fijar.exposureMode = 'continuous'
-      if (caps.whiteBalanceMode?.includes('continuous') && actual.whiteBalanceMode === 'manual') fijar.whiteBalanceMode = 'continuous'
-    }
-    if (Object.keys(fijar).length) track.applyConstraints({ advanced: [fijar as MediaTrackConstraintSet] }).catch(() => { /* la cámara no lo permite */ })
+    const auto: Record<string, unknown> = {}
+    if (caps.exposureMode?.includes('continuous')) auto.exposureMode = 'continuous'
+    if (caps.whiteBalanceMode?.includes('continuous')) auto.whiteBalanceMode = 'continuous'
+    if (Object.keys(auto).length) track.applyConstraints({ advanced: [auto as MediaTrackConstraintSet] }).catch(() => { /* la cámara no lo permite */ })
   }, [bloquearAjustes, camaraLista])
 
   // 3. Detectar la cara en cada cuadro, dibujar puntos y zonas
