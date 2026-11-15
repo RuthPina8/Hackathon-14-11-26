@@ -12,13 +12,17 @@ DIRECCION: dict[str, str] = {
     "hrv_rmssd": "baja", "hrv_sdnn": "baja",
     "perclos": "sube", "parpadeo_min": "ambas", "sueno_horas": "baja", "sueno_eficiencia_pct": "baja",
     "sueno_calidad": "baja", "reaccion_ms": "sube", "lapsos": "sube",
-    "animo": "baja", "estres": "sube", "sintomas": "sube",
+    "animo": "baja", "estres": "sube", "sintomas": "sube", "expresividad": "ambas",
 }
+
+# Señales experimentales de la cámara: se guardan y entran a tu normal, pero todavía no
+# levantan alertas ni bajan la disponibilidad (la VFC y la respiración por cámara son ruidosas)
+EXPERIMENTALES = {"hrv_rmssd", "resp_rpm"}
 
 SISTEMAS: dict[str, list[str]] = {
     "cardiovascular": ["hr_reposo", "presion_sis", "presion_dia", "hrv_rmssd", "hrv_sdnn", "resp_rpm"],
     "sueno": ["perclos", "parpadeo_min", "sueno_horas", "sueno_eficiencia_pct", "sueno_calidad"],
-    "mental": ["reaccion_ms", "lapsos", "animo", "estres"],
+    "mental": ["reaccion_ms", "lapsos", "animo", "estres", "expresividad"],
     "inmune": ["sintomas"],
 }
 
@@ -27,6 +31,7 @@ NOMBRES = {
     "perclos": "Fatiga visual (PERCLOS)", "parpadeo_min": "Parpadeos por minuto", "sueno_horas": "Horas de sueño",
     "sueno_eficiencia_pct": "Eficiencia del sueño", "sueno_calidad": "Calidad del sueño", "reaccion_ms": "Tiempo de reacción",
     "lapsos": "Lapsos de atención", "animo": "Ánimo", "estres": "Estrés", "sintomas": "Síntomas",
+    "hrv_rmssd": "Variabilidad del ritmo (VFC)", "resp_rpm": "Respiración", "expresividad": "Expresividad facial",
 }
 
 PENALIZACION = {"amarillo": 8, "rojo": 20}
@@ -107,7 +112,7 @@ class Estado:
 
 def calcular_estado(ultimos: dict[str, float], lineas: dict[str, LineaBase]) -> Estado:
     """ultimos: tipo -> último valor. lineas: tipo -> línea base ANTES de ese valor."""
-    senales = [evaluar_senal(t, v, lineas.get(t)) for t, v in ultimos.items() if t in DIRECCION]
+    senales = [evaluar_senal(t, v, lineas.get(t)) for t, v in ultimos.items() if t in DIRECCION and t not in EXPERIMENTALES]
     por_tipo = {s.tipo: s for s in senales}
 
     sistemas: dict[str, dict] = {}
@@ -128,6 +133,6 @@ def calcular_estado(ultimos: dict[str, float], lineas: dict[str, LineaBase]) -> 
     ]
     readiness = max(20, 100 - total)
 
-    con_dato = [lineas[t].peso_personal for t in ultimos if t in lineas and t in DIRECCION]
+    con_dato = [lineas[t].peso_personal for t in ultimos if t in lineas and t in DIRECCION and t not in EXPERIMENTALES]
     calibracion = round(100 * sum(con_dato) / len(con_dato)) if con_dato else 0
     return Estado(readiness=readiness, factores=factores, sistemas=sistemas, calibracion=calibracion, senales=senales)

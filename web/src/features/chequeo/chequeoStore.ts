@@ -8,8 +8,22 @@ import { persist } from 'zustand/middleware'
 export type ResultadoCamara = {
   bpm: number | null
   confianza: number
+  // De dónde salió el ritmo: la cámara, o capturado a mano cuando la cámara no pudo
+  fuenteBpm: 'camara' | 'apple_watch' | 'manual'
+  zona: string | null // zona de la cara que dio la señal más limpia
+  fuenteResp: string | null
   perclos: number | null
   parpadeosMin: number | null
+  // Experimentales: null si la señal no alcanzó
+  rmssd: number | null
+  confianzaVfc: number
+  respRpm: number | null
+  confianzaResp: number
+  // Expresividad vs tu normal (0 a 1), sin etiquetar emociones
+  expresividad: number | null
+  sonrisa: number | null
+  ceno: number | null
+  movimientoCabeza: number | null
   fecha: string
 }
 
@@ -59,6 +73,10 @@ export type Sesion = {
   suenoHoras: number | null
   sintomas: number
   cognitivoContado: boolean
+  // Opcionales: las sesiones guardadas antes no los tienen
+  rmssd?: number | null
+  respRpm?: number | null
+  expresividad?: number | null
 }
 
 type EstadoChequeo = {

@@ -48,9 +48,27 @@ export default function Resumen({ onAtras, onIndicadores, onInicio }: Props) {
   // Mediciones de hoy con su capa, fuente y confianza (regla de honestidad de datos)
   const mediciones = useMemo<MedicionApi[]>(() => {
     const m: MedicionApi[] = []
-    if (camara?.bpm != null) m.push({ tipo: 'hr_reposo', valor: camara.bpm, unidad: 'lpm', capa: 'real', fuente: 'camara', confianza: camara.confianza })
+    if (camara?.bpm != null) {
+      // Apple Watch cuenta como medición real; tomado a mano en la muñeca es autorreporte
+      const f = camara.fuenteBpm
+      m.push({
+        tipo: 'hr_reposo', valor: camara.bpm, unidad: 'lpm',
+        capa: f === 'manual' ? 'auto' : 'real', fuente: f,
+        confianza: f === 'camara' ? camara.confianza : f === 'apple_watch' ? 0.9 : 0.7,
+        detalle: f === 'camara' ? { zona: camara.zona } : undefined,
+      })
+    }
     if (camara?.perclos != null) m.push({ tipo: 'perclos', valor: camara.perclos, unidad: 'fraccion', capa: 'real', fuente: 'camara', confianza: 0.8 })
     if (camara?.parpadeosMin != null) m.push({ tipo: 'parpadeo_min', valor: camara.parpadeosMin, unidad: '/min', capa: 'real', fuente: 'camara', confianza: 0.8 })
+    // Experimentales: van con su confianza real y marcados, el back no levanta alertas con ellas
+    if (camara?.rmssd != null) m.push({ tipo: 'hrv_rmssd', valor: camara.rmssd, unidad: 'ms', capa: 'real', fuente: 'camara', confianza: camara.confianzaVfc, detalle: { experimental: true } })
+    if (camara?.respRpm != null) m.push({ tipo: 'resp_rpm', valor: camara.respRpm, unidad: 'resp/min', capa: 'real', fuente: 'camara', confianza: camara.confianzaResp, detalle: { experimental: true, metodo: camara.fuenteResp } })
+    if (camara?.expresividad != null) {
+      m.push({ tipo: 'expresividad', valor: camara.expresividad, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
+      if (camara.sonrisa != null) m.push({ tipo: 'sonrisa_media', valor: camara.sonrisa, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
+      if (camara.ceno != null) m.push({ tipo: 'ceno_medio', valor: camara.ceno, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
+      if (camara.movimientoCabeza != null) m.push({ tipo: 'movimiento_cabeza', valor: camara.movimientoCabeza, unidad: '0-1', capa: 'real', fuente: 'camara', confianza: 0.7 })
+    }
     if (cognitivo?.reaccionMs != null)
       m.push({
         tipo: 'reaccion_ms', valor: cognitivo.reaccionMs, unidad: 'ms', capa: 'real', fuente: 'prueba',
@@ -93,6 +111,9 @@ export default function Resumen({ onAtras, onIndicadores, onInicio }: Props) {
       suenoHoras: sueno ? Number(sueno.horas.toFixed(2)) : null,
       sintomas: registro?.sintomas.length ?? 0,
       cognitivoContado: Boolean(cognitivo && !cognitivo.practica),
+      rmssd: camara?.rmssd ?? null,
+      respRpm: camara?.respRpm ?? null,
+      expresividad: camara?.expresividad ?? null,
     })
     if (!mediciones.length) {
       setEnvio('sin_back')
@@ -116,8 +137,11 @@ export default function Resumen({ onAtras, onIndicadores, onInicio }: Props) {
   }
 
   const filas: Fila[] = [
-    fila('Ritmo cardiaco en reposo', camara?.bpm, 'bpm', (v) => `${Math.round(v)} lpm`, 'real', [60, 100]),
+    fila('Ritmo cardiaco en reposo', camara?.bpm, 'bpm', (v) => `${Math.round(v)} lpm`, camara?.fuenteBpm === 'manual' ? 'self' : 'real', [60, 100]),
     fila('Fatiga visual (PERCLOS)', camara?.perclos, 'perclos', (v) => v.toFixed(2), 'real', [0, 0.15]),
+    fila('VFC, RMSSD (experimental)', camara?.rmssd, 'rmssd', (v) => `${Math.round(v)} ms`, 'real'),
+    fila('Respiración (experimental)', camara?.respRpm, 'respRpm', (v) => `${Math.round(v)} resp/min`, 'real', [12, 20]),
+    fila('Expresividad', camara?.expresividad, 'expresividad', (v) => `${Math.round(v * 100)} de 100`, 'real'),
     fila('Tiempo de reacción', cognitivo?.reaccionMs, 'reaccionMs', (v) => `${Math.round(v)} ms`, 'real'),
     fila('Memoria corta', cognitivo?.memoria, 'memoria', (v) => `${Math.round(v)} casillas`, 'real'),
     fila('Presión sistólica', registro?.presionSis, 'presionSis', (v) => `${Math.round(v)} mmHg`, 'self', [90, 140]),

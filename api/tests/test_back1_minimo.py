@@ -56,3 +56,23 @@ def test_linea_base_congelada_no_cambia(client):
 def test_practica_no_cuenta(client):
     client.post("/measurements", json={"tipo": "reaccion_ms", "valor": 300, "capa": "real", "fuente": "prueba", "detalle": {"practica": True}})
     assert client.get("/indicators/rt").json()["linea_base"]["n"] == 0
+
+
+def test_experimentales_no_levantan_alertas(client):
+    # Una VFC muy baja y respiración rara por cámara se guardan, pero no generan alerta
+    r = client.post("/measurements", json=[
+        {"tipo": "hrv_rmssd", "valor": 4, "unidad": "ms", "capa": "real", "fuente": "camara", "confianza": 0.3},
+        {"tipo": "resp_rpm", "valor": 40, "unidad": "resp/min", "capa": "real", "fuente": "camara", "confianza": 0.4},
+    ])
+    assert r.status_code == 201
+    assert r.json()["guardadas"] == 2
+    assert r.json()["alerta_id"] is None
+    estado = client.get("/status").json()
+    assert estado["readiness"] == 100
+
+
+def test_expresividad_cuenta_en_mental(client):
+    r = client.post("/measurements", json={"tipo": "expresividad", "valor": 0.3, "unidad": "0-1", "capa": "real", "fuente": "camara", "confianza": 0.7})
+    assert r.status_code == 201
+    estado = client.get("/status").json()
+    assert estado["sistemas"]["mental"]["estado"] == "verde"

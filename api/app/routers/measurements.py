@@ -9,7 +9,7 @@ from fastapi.encoders import jsonable_encoder
 
 from app.core import umbrales
 from app.core.ws import broadcast
-from app.intelligence.readiness import DIRECCION, evaluar_senal
+from app.intelligence.readiness import DIRECCION, EXPERIMENTALES, evaluar_senal
 from app.models.memoria import almacen
 from app.routers.status import construir_estado
 from app.schemas.anomaly import Anomaly
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/measurements", tags=["mediciones"])
 
 
 def _anomalia(m, previa) -> Anomaly | None:
-    if m.capa == "sim" or m.fuente == "modelo" or m.tipo not in DIRECCION:
+    if m.capa == "sim" or m.fuente == "modelo" or m.tipo not in DIRECCION or m.tipo in EXPERIMENTALES:
         return None
     ev = evaluar_senal(m.tipo, m.valor, previa)
     if ev.estado == "verde":
