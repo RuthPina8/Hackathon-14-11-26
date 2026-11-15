@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* asegura que Tailwind lea también las pantallas de Front 1 */
+@source "./features";
 
 /* Paleta del rediseño v2 (mismos valores que el canvas "AstroHealth, pantallas v2") */
 @theme {
@@ -15,6 +17,18 @@
   --color-warn: #F5B544;
   --color-crit: #FF6B7A;
   --color-self: #B7A4FF;
+  /* nombres que usa Front 1 (features/chequeo) */
+  --color-ink: #E8ECF4;
+  --color-soft: #A3AEC4;
+  --color-nav: #0A0F1B;
+  --color-line-strong: #2F3F60;
+
+  --animate-scan: scan 3.6s ease-in-out infinite;
+  --animate-beat: beat 0.83s infinite;
+  --animate-blink: blink 1.2s infinite;
+  @keyframes scan { 0%, 100% { top: 14%; } 50% { top: 82%; } }
+  @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.18); } 30% { transform: scale(1); } }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
   --font-sans: Inter, system-ui, sans-serif;
   --font-display: "Space Grotesk", Inter, sans-serif;

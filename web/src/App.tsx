@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import Inicio from './pages/Inicio'
 import Detalle from './pages/Detalle'
@@ -13,11 +14,29 @@ import { useMissionClock } from './lib/useMissionClock'
 import DemoBar from './components/layout/DemoBar'
 import Login from './pages/Login'
 import { useSession } from './store/useSession'
+import { useAppStore } from './store/useAppStore'
+import ChequeoFlow from './features/chequeo/ChequeoFlow'
+import { useChequeoStore } from './features/chequeo/chequeoStore'
+
+// Front 1: flujo del chequeo diario (features/chequeo). Al salir vuelve a Inicio.
+function ChequeoRoute() {
+  const navigate = useNavigate()
+  return <ChequeoFlow onSalir={() => navigate('/')} />
+}
+
+// Cuando Front 1 guarda un resultado real de la cámara, se refleja en el dashboard de Front 2.
+function useCameraToDashboard() {
+  const camara = useChequeoStore((s) => s.camara)
+  useEffect(() => {
+    if (camara) useAppStore.getState().applyCameraResult(camara)
+  }, [camara])
+}
 
 export default function App() {
   // Se conecta una vez; si el back no está, la app sigue con datos de ejemplo.
   useWebSocket()
   useMissionClock()
+  useCameraToDashboard()
   const user = useSession((s) => s.user)
 
   // Sin sesión: solo la pantalla de inicio con la cara
@@ -37,8 +56,8 @@ export default function App() {
         <Route path="/earth" element={<Tierra />} />
         <Route path="/crew" element={<Tripulacion />} />
 
-        {/* Front 1: reemplazar el placeholder por su pantalla */}
-        <Route path="/camera" element={<Front1Placeholder titulo="Chequeo con cámara" paso="paso 1 de 5" />} />
+        {/* Front 1: /camera ya conectado (features/chequeo); los demás pasos siguen en construcción */}
+        <Route path="/camera" element={<ChequeoRoute />} />
         <Route path="/cognitive" element={<Front1Placeholder titulo="Prueba cognitiva" paso="paso 2 de 5" />} />
         <Route path="/manual" element={<Front1Placeholder titulo="Presión, ánimo y síntomas" paso="pasos 3 y 4 de 5" />} />
         <Route path="/summary" element={<Front1Placeholder titulo="Resumen de hoy" paso="paso 5 de 5" />} />

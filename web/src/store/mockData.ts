@@ -15,6 +15,7 @@ export interface SystemStatus {
   valor: string
   href: string
   sim?: boolean
+  real?: Record<string, string> // valores medidos hoy por la cámara, por nombre de métrica
   nota?: string // texto que reemplaza el "por qué" (lo usa la alerta roja del modo demo)
 }
 

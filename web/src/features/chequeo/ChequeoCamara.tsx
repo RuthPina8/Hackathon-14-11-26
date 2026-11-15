@@ -152,6 +152,18 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
     setFase('midiendo')
   }
 
+  // Reinicia la prueba desde cero: borra la señal, el PERCLOS y el reloj, y vuelve a medir
+  const reiniciarPrueba = () => {
+    reiniciarRppg()
+    reiniciarPerclos()
+    setFinal(null)
+    cuadrosDeteccion.current = 0
+    narizAnterior.current = null
+    movimientoProm.current = 0
+    setSeg(0)
+    setFase('midiendo')
+  }
+
   const midiendo = fase === 'midiendo'
   // Al terminar se muestra el cálculo final, mientras mide se muestra el de en vivo
   const bpm = fase === 'completo' && final ? final.bpm : bpmVivo
@@ -257,6 +269,17 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 >
                   {tarjeta[fase][2]}
                 </button>
+                {fase === 'pausa' && (
+                  <button
+                    type="button"
+                    onClick={reiniciarPrueba}
+                    disabled={!camaraLista}
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+                    Reiniciar prueba
+                  </button>
+                )}
                 {fase === 'completo' && (
                   <button type="button" onClick={descargarSenal} className="text-xs font-semibold text-accent underline-offset-2 hover:underline">
                     Descargar señal (diagnóstico)
@@ -268,6 +291,17 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-b from-transparent to-[rgba(4,7,14,0.92)] px-[22px] pb-5 pt-[18px]">
               <div className="flex items-center gap-3.5">
                 <p aria-live="polite" className="m-0 flex-1 text-[15px] text-[#C5CEDF]">{pista}</p>
+                {midiendo && (
+                  <button
+                    type="button"
+                    onClick={reiniciarPrueba}
+                    title="Empezar la medición otra vez desde 00:00"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+                    Reiniciar
+                  </button>
+                )}
                 {midiendo && (
                   <button
                     type="button"

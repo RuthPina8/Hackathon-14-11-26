@@ -6,8 +6,9 @@ import { FaceLandmarker, FilesetResolver, type NormalizedLandmark } from '@media
 //   const r = fl.detectForVideo(video, performance.now())
 // Se carga una sola vez; el modelo y el wasm vienen del CDN de MediaPipe.
 
-const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm'
-const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+// Archivos locales en web/public (los mismos que usa Front 1), así funciona sin internet
+const WASM = '/mediapipe-wasm'
+const MODEL = '/models/face_landmarker.task'
 
 let instance: Promise<FaceLandmarker> | null = null
 
@@ -126,16 +127,15 @@ export function descriptorDistance(a: number[], b: number[]): number {
 }
 
 // ---------- reto de vida aleatorio ----------
-// Después de reconocerte se piden 2 gestos al azar; un video grabado no puede saber cuáles ni en qué orden.
+// Después de reconocerte se pide 1 gesto al azar; un video grabado no puede saber cuáles ni en qué orden.
 type Blend = { categories: { categoryName: string; score: number }[] } | undefined
 const bs = (b: Blend, n: string) => b?.categories.find((c) => c.categoryName === n)?.score ?? 0
 
-export type ChallengeId = 'blink' | 'smile' | 'mouth' | 'brows' | 'left' | 'right'
+export type ChallengeId = 'blink' | 'smile' | 'brows' | 'left' | 'right'
 
 export const CHALLENGES: Record<ChallengeId, { label: string; check: (lm: NormalizedLandmark[], b: Blend) => boolean }> = {
   blink: { label: 'Parpadea', check: (_l, b) => (bs(b, 'eyeBlinkLeft') + bs(b, 'eyeBlinkRight')) / 2 > 0.55 },
   smile: { label: 'Sonríe', check: (_l, b) => (bs(b, 'mouthSmileLeft') + bs(b, 'mouthSmileRight')) / 2 > 0.55 },
-  mouth: { label: 'Abre la boca', check: (_l, b) => bs(b, 'jawOpen') > 0.45 },
   brows: { label: 'Levanta las cejas', check: (_l, b) => Math.max(bs(b, 'browInnerUp'), (bs(b, 'browOuterUpLeft') + bs(b, 'browOuterUpRight')) / 2) > 0.5 },
   // la imagen de la cámara no está en espejo: girar a TU izquierda mueve la nariz hacia la derecha del cuadro
   left: { label: 'Gira la cabeza a tu izquierda', check: (lm) => headYaw(lm) > 0.22 },

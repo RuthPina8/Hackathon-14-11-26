@@ -255,7 +255,8 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             <div className="flex flex-col gap-2">
               {det.metricas.map((m) => {
                 const mst = st === 'crit' && m.label === 'Presión' ? 'crit' : m.estado
-                const val = st === 'crit' && m.label === 'Presión' ? sel.valor : m.value
+                const real = sel.real?.[m.label]
+                const val = st === 'crit' && m.label === 'Presión' ? sel.valor : real ?? m.value
                 return (
                   <div key={m.label} className="flex items-center gap-3 py-2 border-b border-[#1C2740] last:border-b-0">
                     <div className="flex-1 min-w-0">
@@ -263,6 +264,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                       <p className="m-0 mt-0.5 flex items-baseline gap-2">
                         <strong className="num text-lg" style={{ color: mst === 'ok' ? '#E8ECF4' : C[mst] }}>{val}</strong>
                         <span className="num text-xs text-[#93A0B8]">tu normal {m.base}</span>
+                        {real && <span className="tag real">Medido hoy</span>}
                       </p>
                     </div>
                     <Spark serie={m.serie} color={C[mst]} />

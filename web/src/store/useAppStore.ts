@@ -62,6 +62,7 @@ interface AppState {
   setDemoSpeed: (s: DemoSpeed) => void
   simulateRedAlert: () => void
   resetDemo: () => void
+  applyCameraResult: (r: { bpm: number | null; confianza: number; perclos: number | null }) => void
   applyServerEvent: (event: string, data: unknown) => void
 }
 
@@ -150,6 +151,27 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       }
     }),
+
+  // Resultado REAL del chequeo con cámara (Front 1, features/chequeo) -> estado por sistema.
+  // TODO Back 1: además mandar POST /measurements y dejar que el back recalcule /status.
+  applyCameraResult: (r) =>
+    set((s) => ({
+      status: {
+        ...s.status,
+        sistemas: s.status.sistemas.map((x) => {
+          if (x.id === 'cardio' && r.bpm !== null) {
+            const bpm = Math.round(r.bpm)
+            const estado = x.estado === 'crit' ? 'crit' : Math.abs(bpm - 68) > 8 ? 'warn' : 'ok'
+            return { ...x, estado, valor: `${bpm} lpm`, real: { 'Ritmo en reposo': `${bpm} lpm` }, nota: `Medido hoy con la cámara (confianza ${r.confianza.toFixed(2)}). ${estado === 'ok' ? 'Dentro de tu rango normal' : 'Fuera de tu rango normal de 68 ± 4 lpm'}` }
+          }
+          if (x.id === 'sueno' && r.perclos !== null) {
+            const estado = r.perclos > 0.15 ? 'warn' : 'ok'
+            return { ...x, estado, valor: r.perclos.toFixed(2), real: { PERCLOS: r.perclos.toFixed(2) }, nota: `PERCLOS medido hoy con la cámara: ${r.perclos.toFixed(2)}. ${estado === 'ok' ? 'Sin fatiga visual' : 'Por arriba del umbral de fatiga 0.15'}` }
+          }
+          return x
+        }),
+      },
+    })),
 
   resetDemo: () => set({ status: mockStatus, alerts: mockAlerts, queue: mockQueue, queueT: 0, redCount: 0, watch: 'idle' }),
 

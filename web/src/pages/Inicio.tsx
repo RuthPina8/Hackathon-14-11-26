@@ -8,10 +8,11 @@ import CalibrationStrip from '../components/ui/CalibrationBar'
 import AlertLink from '../components/ui/AlertCard'
 import { PageHeader } from '../components/ui/Page'
 import { useSession } from '../store/useSession'
+import { useChequeoStore } from '../features/chequeo/chequeoStore'
 
-const rutina = [
-  { label: 'Chequeo con cámara', capa: 'real', done: true, to: '/camera' },
-  { label: 'Prueba cognitiva', capa: 'real', done: true, to: '/cognitive' },
+const rutinaBase = [
+  { label: 'Chequeo con cámara', capa: 'real', done: false, to: '/camera' },
+  { label: 'Prueba cognitiva', capa: 'real', done: false, to: '/cognitive' },
   { label: 'Presión arterial', capa: 'self', done: false, to: '/manual' },
   { label: 'Ánimo y síntomas', capa: 'self', done: false, to: '/manual' },
 ] as const
@@ -19,6 +20,8 @@ const rutina = [
 export default function Inicio() {
   const status = useAppStore((s) => s.status)
   const user = useSession((s) => s.user)
+  const camara = useChequeoStore((s) => s.camara)
+  const rutina = rutinaBase.map((r) => (r.to === '/camera' ? { ...r, done: !!camara } : r))
   const alerts = useAppStore((s) => s.alerts)
   const active = alerts.filter((a) => a.estado === 'activa')
   const hechos = rutina.filter((r) => r.done).length

@@ -18,7 +18,7 @@ const MATCH_MARGIN = 0.06 // el mejor candidato debe ganarle al segundo por al m
 const IDENT_SAMPLES = 4
 const ENROLL_SAMPLES = 10
 const SAMPLE_EVERY_MS = 220
-const CHALLENGE_STEPS = 2
+const CHALLENGE_STEPS = 1
 const CHALLENGE_MS = 5000 // tiempo para cada gesto
 const HOLD_FRAMES = 3 // cuadros seguidos que debe sostenerse el gesto
 
@@ -243,7 +243,7 @@ export default function Login() {
           <p className="m-0 text-[15px] text-[#A3AEC4] leading-relaxed">Entra solo con tu cara. La misma cámara que te identifica es la que te mide, así tus datos nunca se mezclan con los de otro tripulante.</p>
           <ul className="m-0 p-0 list-none flex flex-col gap-3 text-sm text-[#C5CEDF]">
             <li className="flex items-center gap-3"><ScanFace size={18} color="#5CC8F5" />Te reconoce sin usuario ni contraseña</li>
-            <li className="flex items-center gap-3"><Eye size={18} color="#5CC8F5" />Un reto de gestos al azar confirma que eres tú, no una foto ni un video</li>
+            <li className="flex items-center gap-3"><Eye size={18} color="#5CC8F5" />Un gesto al azar confirma que eres tú, no una foto ni un video</li>
             <li className="flex items-center gap-3"><Lock size={18} color="#5CC8F5" />Tu firma facial se queda a bordo, nunca viaja a Tierra</li>
           </ul>
         </div>
@@ -323,7 +323,7 @@ export default function Login() {
               </p>
               <p className="m-0 text-sm text-[#A3AEC4]">
                 {phase === 'welcome' && 'Abriendo tu sesión…'}
-                {phase === 'challenge' && `${person?.nombre}, gesto ${chal.idx + 1} de ${chal.list.length}: comprobamos que eres tú y no una foto o un video`}
+                {phase === 'challenge' && `${person?.nombre}, comprobamos que eres tú y no una foto o un video`}
                 {(phase === 'search' || phase === 'align') && failMsg && <span style={{ color: '#FFB8BF' }}>{failMsg}, intenta otra vez</span>}
                 {phase === 'identify' && 'Mantente quieto un momento'}
                 {phase === 'unknown' && 'Puede ser la luz o el ángulo. Si es tu primera vez aquí, registra tu cara'}
