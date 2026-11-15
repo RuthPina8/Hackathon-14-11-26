@@ -59,6 +59,7 @@ interface AppState {
   demoSpeed: DemoSpeed
   redCount: number
   server: boolean // true cuando alertas y cola vienen del back
+  statusReal: boolean // true cuando el estado, la línea base y los indicadores vienen del motor de Back 1 (hoy son ejemplos)
   link: { retraso_s: number; ancho_banda_kbps: number } | null // enlace con Tierra del entorno activo
   serverDemo: ServerDemo | null // reloj de misión del back (día, si corre)
 
@@ -97,6 +98,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   demoSpeed: 10,
   redCount: 0,
   server: false,
+  statusReal: false,
   link: null,
   serverDemo: null,
 
@@ -226,26 +228,30 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
   },
 
-  // Resultado REAL del chequeo con cámara (Front 1, features/chequeo) -> estado por sistema.
-  // TODO Back 1: además mandar POST /measurements y dejar que el back recalcule /status.
+  // Resultado REAL del chequeo con cámara (Front 1, features/chequeo) -> valor medido por sistema.
+  // Todavía no hay línea base personal calculada por el motor, así que NO se compara contra un
+  // "tu normal" inventado y no se pinta amarillo: el sistema queda como "aprendiendo tu normal".
+  // TODO Back 1: mandar POST /measurements y dejar que el back calcule /status con la línea base real.
   applyCameraResult: (r) =>
-    set((s) => ({
-      status: {
-        ...s.status,
-        sistemas: s.status.sistemas.map((x) => {
-          if (x.id === 'cardio' && r.bpm !== null) {
-            const bpm = Math.round(r.bpm)
-            const estado = x.estado === 'crit' ? 'crit' : Math.abs(bpm - 68) > 8 ? 'warn' : 'ok'
-            return { ...x, estado, valor: `${bpm} lpm`, real: { 'Ritmo en reposo': `${bpm} lpm` }, nota: `Medido hoy con la cámara (confianza ${r.confianza.toFixed(2)}). ${estado === 'ok' ? 'Dentro de tu rango normal' : 'Fuera de tu rango normal de 68 ± 4 lpm'}` }
-          }
-          if (x.id === 'sueno' && r.perclos !== null) {
-            const estado = r.perclos > 0.15 ? 'warn' : 'ok'
-            return { ...x, estado, valor: r.perclos.toFixed(2), real: { PERCLOS: r.perclos.toFixed(2) }, nota: `PERCLOS medido hoy con la cámara: ${r.perclos.toFixed(2)}. ${estado === 'ok' ? 'Sin fatiga visual' : 'Por arriba del umbral de fatiga 0.15'}` }
-          }
-          return x
-        }),
-      },
-    })),
+    set((s) => {
+      const aprende = `Aún estamos aprendiendo tu normal (día ${s.status.diaBase} de ${s.status.diasBase}), por eso todavía no se compara`
+      return {
+        status: {
+          ...s.status,
+          sistemas: s.status.sistemas.map((x) => {
+            const estado = x.estado === 'crit' ? 'crit' : 'none'
+            if (x.id === 'cardio' && r.bpm !== null) {
+              const bpm = Math.round(r.bpm)
+              return { ...x, estado, valor: `${bpm} lpm`, real: { 'Ritmo en reposo': `${bpm} lpm` }, nota: `Medido hoy con la cámara (confianza ${r.confianza.toFixed(2)}). ${aprende}` }
+            }
+            if (x.id === 'sueno' && r.perclos !== null) {
+              return { ...x, estado, valor: r.perclos.toFixed(2), real: { PERCLOS: r.perclos.toFixed(2) }, nota: `PERCLOS medido hoy con la cámara: ${r.perclos.toFixed(2)}. ${aprende}` }
+            }
+            return x
+          }),
+        },
+      }
+    }),
 
   resetDemo: () => {
     if (get().server) {

@@ -127,7 +127,7 @@ def test_resolver_encuentra_la_alerta_por_una_senal_secundaria():
     assert r is not None and r.id == a.id and r.estado == "resuelta"
 
 
-# --- Guion de la demo alineado con docs/motor.md (secciones 5 y 8) ----------------------
+# --- Demo alineada con docs/motor.md (secciones 5 y 8): corre con el simulador de Back 1 si existe, si no con el guion de respaldo
 
 def test_guion_inmune_a3_amarillo_el_27_y_rojo_el_29_por_fiebre(client):
     from app.triage import guion

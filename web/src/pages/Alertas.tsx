@@ -4,13 +4,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Lock } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useMyAlerts } from '../store/selectors'
-import { PageHeader } from '../components/ui/Page'
+import { PageHeader, SimBanner } from '../components/ui/Page'
 
 const capaColor = { real: '#F5B544', self: '#B7A4FF', sim: '#93A0B8' }
 
 export default function Alertas() {
   const alerts = useMyAlerts()
   const resolveAlert = useAppStore((s) => s.resolveAlert)
+  const server = useAppStore((s) => s.server)
   const escalateAlert = useAppStore((s) => s.escalateAlert)
   const [params] = useSearchParams()
   const paramId = params.get('id')
@@ -38,6 +39,7 @@ export default function Alertas() {
 
   return (
     <>
+      {!server && <SimBanner tag="DATOS DE EJEMPLO">Estas alertas son de ejemplo, las reales llegan cuando el sistema de triage está conectado</SimBanner>}
       <PageHeader
         kicker={`${open} activas · ${alerts.length - open} resueltas`}
         title="Alertas y triage"
