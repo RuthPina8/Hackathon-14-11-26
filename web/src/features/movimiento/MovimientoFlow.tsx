@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, ArrowUpFromLine, PersonStanding } from 'lucide-react'
+import { Activity } from 'lucide-react'
 import { PageHeader, SimBanner } from '../../components/ui/Page'
 import { useSession } from '../../store/useSession'
 import MovimientoCamara from './MovimientoCamara'
+import GuiaAnimada from '../../components/animaciones/GuiaAnimada'
+import { DemoEjercicio, pasosMovimiento } from '../../components/animaciones/Ejercicios'
 import { idNumerico, movimientoApi, NOMBRE_EJERCICIO, type Sesion, type SesionIn } from './movimientoApi'
 import type { Ejercicio } from './pose/calcularAngulos'
 import { C } from '../../lib/paleta'
 import { useEntrenamiento } from '../entrenamiento/entrenamientoStore'
 import { enEntrenamiento } from '../chequeo/chequeoStore'
 
-type Paso = 'elegir' | 'camara' | 'resultado'
+type Paso = 'elegir' | 'preparar' | 'camara' | 'resultado'
 
 const COLOR = { estable: C.ok, bajo: C.warn, sin_referencia: C.accent, baja_calidad: C.warn }
 
@@ -58,10 +60,10 @@ export default function MovimientoFlow() {
         <>
           <div className="grid gap-5 sm:grid-cols-2">
             {(['brazos', 'sentadilla'] as Ejercicio[]).map((e) => (
-              <button key={e} type="button" data-tour={e === 'brazos' ? 'movimiento-brazos' : undefined} onClick={() => { setEjercicio(e); setPaso('camara') }}
+              <button key={e} type="button" data-tour={e === 'brazos' ? 'movimiento-brazos' : undefined} onClick={() => { setEjercicio(e); setPaso('preparar') }}
                 className="card flex min-h-[220px] cursor-pointer flex-col items-start justify-between gap-4 text-left transition-colors hover:border-accent active:translate-y-[2px]"
                 style={{ borderWidth: 2 }}>
-                {e === 'brazos' ? <ArrowUpFromLine size={52} color={C.accent} /> : <PersonStanding size={52} color={C.accent} />}
+                <span className="block h-[150px] w-full overflow-hidden rounded-xl border border-holo-line bg-holo-bg"><DemoEjercicio ejercicio={e} mini /></span>
                 <span>
                   <span className="block font-[family-name:var(--font-display)] text-[28px] font-bold">{NOMBRE_EJERCICIO[e]}</span>
                   <span className="mt-1 block text-base text-muted">
@@ -94,6 +96,16 @@ export default function MovimientoFlow() {
             </section>
           )}
         </>
+      )}
+
+      {paso === 'preparar' && (
+        <GuiaAnimada key={ejercicio} titulo={`Antes de empezar · ${NOMBRE_EJERCICIO[ejercicio]}`} pasos={pasosMovimiento(ejercicio)}
+          alTerminar={
+            <div className="flex flex-wrap gap-3">
+              <button type="button" className="btn pri flex-1" style={{ minHeight: 72, fontSize: 20 }} onClick={() => setPaso('camara')}>Ya estoy listo, abrir cámara</button>
+              <button type="button" className="btn sec" style={{ minHeight: 72 }} onClick={() => setPaso('elegir')}>Otro ejercicio</button>
+            </div>
+          } />
       )}
 
       {paso === 'camara' && (

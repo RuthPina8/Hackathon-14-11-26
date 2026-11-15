@@ -4,6 +4,8 @@ import { useChequeoStore } from './chequeoStore'
 import { medicionesPresion } from './envio'
 import { baseMedicion, enviarPaso } from './enviar'
 import { api } from '../../lib/api'
+import GuiaAnimada from '../../components/animaciones/GuiaAnimada'
+import { PASOS_BRAZALETE } from '../../components/animaciones/Brazalete'
 
 // Paso 3: presión con el brazalete del kit médico (la cámara NO mide presión).
 // Es opcional: sin brazalete se salta y en la demo la presión viene del simulador.
@@ -47,7 +49,7 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
     onSiguiente()
   }
 
-  const campo = 'min-h-12 w-full rounded-xl border border-line-strong bg-input px-4 font-mono text-2xl font-bold text-ink outline-none focus:border-accent'
+  const campo = 'min-h-[60px] w-full rounded-xl border border-line-strong bg-input px-4 font-mono text-2xl font-bold text-ink outline-none focus:border-accent'
   const aviso = !validar() && (s >= 140 || d >= 90) ? 'Valor alto: repite la medición en 5 minutos, sentado y en el otro brazo' : null
 
   return (
@@ -60,10 +62,12 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
         <StepBar actual={2} />
       </header>
       <div className="flex flex-wrap gap-5">
-        <section className="flex min-w-0 flex-[3_1_420px] flex-col gap-5 rounded-2xl border border-line bg-panel p-[26px]">
-          <p className="m-0 text-sm leading-relaxed text-soft">
-            Solo si tienes brazalete (kit médico). Siéntate 5 minutos antes, con el brazo a la altura del corazón. La cámara no mide presión.
-          </p>
+        <div className="min-w-0 flex-[3_1_460px]">
+          <GuiaAnimada titulo="Cómo medir con el brazalete" pasos={PASOS_BRAZALETE} />
+        </div>
+        <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-4">
+        <section className="flex flex-col gap-5 rounded-2xl border border-line bg-panel p-[26px]">
+          <p className="m-0 text-[15px] leading-relaxed text-soft">Solo si tienes brazalete del kit médico. La cámara no mide presión.</p>
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Sistólica (alta)
               <input inputMode="numeric" className={campo} value={sis} onChange={(e) => setSis(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="118" aria-describedby="err-presion" />
@@ -72,17 +76,18 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
               <input inputMode="numeric" className={campo} value={dia} onChange={(e) => setDia(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="76" aria-describedby="err-presion" />
             </label>
           </div>
-          <label className="flex max-w-[260px] flex-col gap-1.5 text-[13px] font-semibold text-soft">Pulso del brazalete (opcional, valida a la cámara)
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-soft">Pulso del brazalete (opcional, valida a la cámara)
             <input inputMode="numeric" className={campo} value={pulso} onChange={(e) => setPulso(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="64" />
           </label>
           <p id="err-presion" role="alert" className="m-0 min-h-5 text-sm text-warn">{error ?? aviso ?? ''}</p>
           <span className="w-fit rounded-md bg-[#1E1838] px-2 py-1 text-[13px] font-semibold text-[#C9BDFF]">Autorreportado · capa auto</span>
           {envio && <p className="m-0 text-sm text-muted">Última presión de hoy: {envio === 'enviado' ? 'guardada' : 'pendiente de enviar'}</p>}
         </section>
-        <div className="flex min-w-0 flex-[2_1_260px] flex-col justify-end gap-2.5">
+        <div className="flex flex-col gap-2.5">
           <button type="button" data-tour="presion-guardar" onClick={enviar} className="btn pri">Guardar y seguir</button>
           <button type="button" onClick={omitir} className="btn sec">No tengo brazalete, saltar</button>
           <button type="button" onClick={onAtras} className="btn sec">Atrás</button>
+        </div>
         </div>
       </div>
     </div>

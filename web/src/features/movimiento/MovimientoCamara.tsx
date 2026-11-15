@@ -4,6 +4,7 @@ import { usePoseLandmarker } from './pose/usePoseLandmarker'
 import { anguloHombro, anguloRodilla, cuerpoVisible, HUESOS, NECESARIOS, type Ejercicio } from './pose/calcularAngulos'
 import { actualizar, FONDO, nuevoContador, resumen, type Contador } from './pose/detectarRepeticiones'
 import type { SesionIn } from './movimientoApi'
+import { DemoEjercicio } from '../../components/animaciones/Ejercicios'
 import { C } from '../../lib/paleta'
 
 type Fase = 'preparando' | 'midiendo'
@@ -189,6 +190,10 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
         </div>
 
         <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-4">
+          <section className="card flex flex-col gap-2" style={{ padding: 12 }} aria-label="Cómo se hace">
+            <p className="k" style={{ paddingLeft: 6 }}>Así se hace</p>
+            <div className="h-[170px] overflow-hidden rounded-xl bg-holo-bg"><DemoEjercicio ejercicio={ejercicio} mini /></div>
+          </section>
           <section className="card flex flex-col items-center gap-1 text-center">
             <p className="k">Repeticiones</p>
             <p className="num m-0 text-[96px] font-bold leading-none text-accent">{contador.repeticiones}</p>
