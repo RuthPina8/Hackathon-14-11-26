@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { FaceLandmarkerResult } from '@mediapipe/tasks-vision'
 import { useFaceLandmarker } from '../camara/useFaceLandmarker'
 
 // Cámaras virtuales que suelen mandar imagen negra si su app no está abierta
@@ -6,7 +7,17 @@ const VIRTUALES = /droidcam|obs|virtual|manycam|snap camera|xsplit|iriun|epoccam
 
 type Camara = { id: string; nombre: string }
 
-export default function CameraView() {
+type Props = {
+  // Se llama en cada cuadro con lo que detectó MediaPipe, así otros hooks pueden usarlo
+  onResultado?: (resultado: FaceLandmarkerResult, tiempoMs: number) => void
+}
+
+export default function CameraView({ onResultado }: Props) {
+  const onResultadoRef = useRef(onResultado)
+  useEffect(() => {
+    onResultadoRef.current = onResultado
+  }, [onResultado])
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { landmarker, estado, error } = useFaceLandmarker()
@@ -101,7 +112,9 @@ export default function CameraView() {
     const loop = () => {
       if (video.currentTime !== ultimoTiempo) {
         ultimoTiempo = video.currentTime
-        const resultado = landmarker.detectForVideo(video, performance.now())
+        const ahora = performance.now()
+        const resultado = landmarker.detectForVideo(video, ahora)
+        onResultadoRef.current?.(resultado, ahora)
 
         if (canvas.width !== video.videoWidth) {
           canvas.width = video.videoWidth
