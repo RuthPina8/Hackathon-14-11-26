@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { useMyAlerts } from '../store/selectors'
+import { environmentProfiles } from '../store/mockData'
 import ReadinessGauge from '../components/ui/ReadinessRing'
 import SystemExplorer from '../components/ui/SystemExplorer'
 import CalibrationStrip from '../components/ui/CalibrationBar'
@@ -22,14 +24,15 @@ export default function Inicio() {
   const user = useSession((s) => s.user)
   const camara = useChequeoStore((s) => s.camara)
   const rutina = rutinaBase.map((r) => (r.to === '/camera' ? { ...r, done: !!camara } : r))
-  const alerts = useAppStore((s) => s.alerts)
+  const alerts = useMyAlerts()
+  const env = useAppStore((s) => s.environment)
   const active = alerts.filter((a) => a.estado === 'activa')
   const hechos = rutina.filter((r) => r.done).length
 
   return (
     <>
       <PageHeader
-        kicker={`Día ${status.diaMision} de misión · Estación espacial`}
+        kicker={`Día ${status.diaMision} de misión · ${environmentProfiles[env].nombre}`}
         title={`Hola, ${user?.nombre ?? ''}`}
         right={
           <div className="flex flex-wrap items-center gap-3">

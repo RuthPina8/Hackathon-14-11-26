@@ -46,6 +46,8 @@ export interface AlertItem {
   tareas: string[]
   estado: 'activa' | 'resuelta'
   icono: 'eye' | 'pulse' | 'moon' | 'heart'
+  astro?: number // astronauta dueño de la alerta (solo vienen del back)
+  escalada?: boolean // ya se mandó a la cola hacia Tierra
 }
 
 export interface QueueMessage {
@@ -57,6 +59,14 @@ export interface QueueMessage {
   arrive: number | null // minuto simulado en que llega a Tierra
   big?: boolean // espera ventana de alto ancho de banda
   boost?: boolean // el astronauta pidió enviarlo primero
+  // Solo en mensajes que vienen del back: él calcula el envío y el viaje a Tierra
+  server?: {
+    estado: 'en_cola' | 'transmitiendo' | 'en_transito' | 'entregado'
+    progreso: number // 0 a 1 del viaje
+    eta_s: number | null // segundos que faltaban al recibir el mensaje
+    recibidoMs: number // Date.now() al recibir el mensaje, para contar el tiempo que falta
+    payload: Record<string, unknown>
+  }
 }
 
 export interface CrewMember {
@@ -134,15 +144,18 @@ export const mockCrew: CrewMember[] = [
 ]
 
 // ---------- entornos (pantalla 8) ----------
-export const environments = ['estacion', 'nave', 'capsula'] as const
+// Mismos ids que los perfiles de Back 2 (api/app/entornos/perfiles/*.json)
+export const environments = ['iss', 'luna', 'nave', 'marte'] as const
 export type EnvironmentId = (typeof environments)[number]
+export const isEnvironmentId = (v: unknown): v is EnvironmentId => (environments as readonly unknown[]).includes(v)
 
 export const environmentProfiles: Record<EnvironmentId, {
-  nombre: string; rate: number; delay: string; note: string; risk: string; protocol: string; micro: boolean; g: string
+  nombre: string; corto: string; rate: number; bone: number; delay: string; note: string; risk: string; protocol: string; micro: boolean; g: string
 }> = {
-  estacion: { nombre: 'Estación espacial', rate: 0.5, delay: '< 1 s', note: 'Tierra puede responder casi en tiempo real', risk: 'Óseo, cardiovascular e inmune', protocol: 'Monitoreo crónico diario', micro: true, g: 'microgravedad estable' },
-  nave: { nombre: 'Nave rumbo a Marte', rate: 1.8, delay: '4 a 24 min', note: 'Solo de ida, según la posición de los planetas', risk: 'Radiación y aislamiento', protocol: 'Triage a bordo, Tierra confirma después', micro: true, g: 'microgravedad con fases de adaptación' },
-  capsula: { nombre: 'Cápsula de transporte', rate: 0.2, delay: '< 3 s', note: 'Misión de horas, lanzamiento o reentrada', risk: 'Cargas G e intolerancia ortostática', protocol: 'Protocolo ortostático post aterrizaje', micro: false, g: 'variable con picos de 3 a 8 g' },
+  iss: { nombre: 'Estación Espacial Internacional', corto: 'ISS', rate: 0.5, bone: 1.2, delay: '< 1 s', note: 'Tierra puede responder casi en tiempo real', risk: 'Óseo, cardiovascular e inmune', protocol: 'Monitoreo crónico diario', micro: true, g: 'microgravedad estable' },
+  luna: { nombre: 'Superficie lunar', corto: 'Luna', rate: 1.37, bone: 0.8, delay: '1.3 s', note: 'Conversación con una pequeña pausa', risk: 'Radiación, polvo lunar y 1/6 de gravedad', protocol: 'Triage a bordo con apoyo casi inmediato', micro: true, g: '0.17 g' },
+  nave: { nombre: 'Nave en tránsito a Marte', corto: 'Nave', rate: 1.8, bone: 1.2, delay: '4 a 24 min', note: 'Solo de ida, según la posición de los planetas', risk: 'Radiación y aislamiento', protocol: 'Triage a bordo, Tierra confirma después', micro: true, g: 'microgravedad con fases de adaptación' },
+  marte: { nombre: 'Superficie de Marte', corto: 'Marte', rate: 0.67, bone: 0.6, delay: '4 a 24 min', note: 'Sin evacuación posible, la ventana de regreso es cada 26 meses', risk: 'Aislamiento, polvo y radiación', protocol: 'Autonomía médica a bordo', micro: true, g: '0.38 g' },
 }
 
 // ---------- indicadores (pantalla 5) ----------

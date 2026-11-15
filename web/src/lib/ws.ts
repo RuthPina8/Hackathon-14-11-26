@@ -25,6 +25,8 @@ export function useWebSocket() {
       socket.onopen = () => {
         if (cancelled) return
         setConnection('connected')
+        // Trae el estado actual del back (alertas, cola, entorno, demo)
+        void useAppStore.getState().loadFromServer()
       }
 
       socket.onmessage = (ev) => {

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { RotateCcw, Siren, X } from 'lucide-react'
+import { Pause, Play, RotateCcw, Siren, SkipForward, X } from 'lucide-react'
 import { useAppStore, type DemoSpeed } from '../../store/useAppStore'
 
 // Barra flotante del modo demo. Solo aparece con el modo demo encendido.
@@ -12,6 +12,11 @@ export default function DemoBar() {
   const red = useAppStore((s) => s.simulateRedAlert)
   const reset = useAppStore((s) => s.resetDemo)
   const setDemo = useAppStore((s) => s.setDemo)
+  const server = useAppStore((s) => s.server)
+  const sd = useAppStore((s) => s.serverDemo)
+  const demoStart = useAppStore((s) => s.demoStart)
+  const demoStop = useAppStore((s) => s.demoStop)
+  const demoAdvance = useAppStore((s) => s.demoAdvance)
   const navigate = useNavigate()
 
   return (
@@ -27,15 +32,26 @@ export default function DemoBar() {
           style={{ boxShadow: '0 12px 40px rgba(0,0,0,.5)' }}
         >
           <span className="tag" style={{ background: '#241D0D', color: '#F5B544' }}>MODO DEMO</span>
-          <span className="num text-xs text-[#A3AEC4] min-w-[96px]">Misión T+{Math.floor(t)} min</span>
-
-          <div role="group" aria-label="Velocidad del tiempo" className="segs" style={{ padding: 3 }}>
-            {([1, 10, 60] as DemoSpeed[]).map((v) => (
-              <button key={v} type="button" className="seg" aria-pressed={speed === v} onClick={() => setSpeed(v)} style={{ minHeight: 34, padding: '0 12px' }}>
-                {v}x
+          {server ? (
+            <>
+              <span className="num text-xs text-[#A3AEC4] min-w-[96px]">Día {sd?.dia ?? 0} de misión</span>
+              <button type="button" className="btn sec sm" onClick={sd?.corriendo ? demoStop : demoStart}>
+                {sd?.corriendo ? <><Pause size={15} />Pausar</> : <><Play size={15} />Correr</>}
               </button>
-            ))}
-          </div>
+              <button type="button" className="btn sec sm" onClick={() => demoAdvance(1)}><SkipForward size={15} />+1 día</button>
+            </>
+          ) : (
+            <>
+              <span className="num text-xs text-[#A3AEC4] min-w-[96px]">Misión T+{Math.floor(t)} min</span>
+              <div role="group" aria-label="Velocidad del tiempo" className="segs" style={{ padding: 3 }}>
+                {([1, 10, 60] as DemoSpeed[]).map((v) => (
+                  <button key={v} type="button" className="seg" aria-pressed={speed === v} onClick={() => setSpeed(v)} style={{ minHeight: 34, padding: '0 12px' }}>
+                    {v}x
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           <button
             type="button"
