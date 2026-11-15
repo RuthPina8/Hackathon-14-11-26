@@ -39,7 +39,8 @@ api/
       modelos/             # .joblib/.onnx pequeños; el motor funciona sin ellos
     ingest/                # Health Auto Export → mediciones                     (Back 1)
     simulator/             # historial sintético desde el día 1                  (Back 1)
-    triage/                # reglas de alertas y cola                            (Back 2)
+    triage/                # reglas de alertas, cola, modo demo y guion de respaldo (Back 2)
+    entornos/              # perfiles JSON (iss, luna, nave, marte) y proyección de /simulation (Back 2)
   docs/motor.md            # especificación del motor
   ml/                      # notebooks; la API NO importa de aquí
   tests/
