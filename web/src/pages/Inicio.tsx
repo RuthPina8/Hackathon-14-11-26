@@ -8,7 +8,7 @@ import ReadinessGauge from '../components/ui/ReadinessRing'
 import SystemExplorer from '../components/ui/SystemExplorer'
 import CalibrationStrip from '../components/ui/CalibrationBar'
 import AlertLink from '../components/ui/AlertCard'
-import { PageHeader } from '../components/ui/Page'
+import { PageHeader, SimBanner } from '../components/ui/Page'
 import { useSession } from '../store/useSession'
 import { useChequeoStore } from '../features/chequeo/chequeoStore'
 
@@ -26,11 +26,13 @@ export default function Inicio() {
   const rutina = rutinaBase.map((r) => (r.to === '/camera' ? { ...r, done: !!camara } : r))
   const alerts = useMyAlerts()
   const env = useAppStore((s) => s.environment)
+  const statusReal = useAppStore((s) => s.statusReal)
   const active = alerts.filter((a) => a.estado === 'activa')
   const hechos = rutina.filter((r) => r.done).length
 
   return (
     <>
+      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
       <PageHeader
         kicker={`Día ${status.diaMision} de misión · ${environmentProfiles[env].nombre}`}
         title={`Hola, ${user?.nombre ?? ''}`}

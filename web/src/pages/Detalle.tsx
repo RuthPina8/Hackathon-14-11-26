@@ -4,7 +4,8 @@ import {
   ResponsiveContainer, ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceArea, ReferenceLine,
 } from 'recharts'
 import { indicators, mockSeries } from '../store/mockData'
-import { PageHeader, Segmented } from '../components/ui/Page'
+import { PageHeader, Segmented, SimBanner } from '../components/ui/Page'
+import { useAppStore } from '../store/useAppStore'
 
 type Range = 7 | 30 | 60
 const whens = ['Hoy 09:12', 'Ayer 21:40', 'Ayer 09:05', 'Hace 2 días']
@@ -15,6 +16,7 @@ export default function Detalle() {
   const key = indicators[tipo] ? tipo : 'hr'
   const d = indicators[key]
   const navigate = useNavigate()
+  const statusReal = useAppStore((s) => s.statusReal)
   const [range, setRange] = useState<Range>(30)
 
   const { data, upper, lower, today, out } = useMemo(() => {
@@ -37,6 +39,7 @@ export default function Detalle() {
 
   return (
     <>
+      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
       <PageHeader
         kicker={`Indicadores · ${d.sys}`}
         title={d.name}
@@ -78,7 +81,7 @@ export default function Detalle() {
                 <Tooltip
                   contentStyle={{ background: '#0E1422', border: '1px solid #2F3F60', borderRadius: 10, fontSize: 12 }}
                   labelStyle={{ color: '#93A0B8' }}
-                  formatter={(v: number) => [`${v.toFixed(d.dec)} ${d.unit}`, d.label]}
+                  formatter={(v) => [`${Number(v).toFixed(d.dec)} ${d.unit}`, d.label]}
                 />
                 <Area type="monotone" dataKey="v" stroke="none" fill="#E8ECF4" fillOpacity={0.04} isAnimationActive />
                 <Line

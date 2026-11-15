@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
-import { PageHeader } from '../components/ui/Page'
+import { PageHeader, SimBanner } from '../components/ui/Page'
 import { useSession } from '../store/useSession'
 
 const filas = [
@@ -21,6 +21,7 @@ const fases = [
 
 export default function Perfil() {
   const status = useAppStore((s) => s.status)
+  const statusReal = useAppStore((s) => s.statusReal)
   const user = useSession((s) => s.user)
   const watch = useAppStore((s) => s.watch)
   const connectWatch = useAppStore((s) => s.connectWatch)
@@ -31,6 +32,7 @@ export default function Perfil() {
 
   return (
     <>
+      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
       <PageHeader
         kicker={`${user?.nombre ?? ''} · ${user?.cargo ?? ''}`}
         title="Perfil y calibración"

@@ -11,6 +11,8 @@ import { systemDetails, type Semaforo, type SystemStatus } from '../../store/moc
 const C: Record<Semaforo, string> = { ok: '#3DDC97', warn: '#F5B544', crit: '#FF6B7A', none: '#A3AEC4' }
 const BG: Record<Semaforo, string> = { ok: '#0E2A20', warn: '#241D0D', crit: '#2A1218', none: '#15233B' }
 const TXT: Record<Semaforo, string> = { ok: 'Dentro de tu normal', warn: 'Atención a bordo', crit: 'Escalar a Tierra', none: 'Proyección simulada' }
+// Un sistema medido hoy pero sin línea base todavía no está "simulado", está aprendiendo tu normal
+const etiqueta = (s?: { estado: Semaforo; real?: Record<string, string> }) => (!s ? TXT.none : s.real && s.estado === 'none' ? 'Aprendiendo tu normal' : TXT[s.estado])
 const capaTag = { real: ['real', 'Real'], self: ['self', 'Autorreportado'], sim: ['simt', 'Simulado'] } as const
 
 // contorno del cuerpo (simétrico, generado a partir de la mitad derecha)
@@ -170,7 +172,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </Organ>
 
             {/* sistema inmune: ganglios y bazo */}
-            <Organ label={`Sistema inmune, ${TXT[by.inmune?.estado ?? 'none']}`} {...organProps('inmune')}>
+            <Organ label={`Sistema inmune, ${etiqueta(by.inmune)}`} {...organProps('inmune')}>
               <g stroke={col('inmune')} strokeOpacity="0.35" strokeWidth="1.2" fill="none">
                 <path d="M103 96 L74 150 M117 96 L146 150 M74 150 L88 206 M146 150 L124 238 M88 206 L96 238" />
               </g>
@@ -183,7 +185,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </Organ>
 
             {/* corazón */}
-            <Organ label={`Corazón, ${TXT[by.cardio?.estado ?? 'none']}`} {...organProps('cardio')}>
+            <Organ label={`Corazón, ${etiqueta(by.cardio)}`} {...organProps('cardio')}>
               <circle cx="122" cy="162" r="18" fill="transparent" />
               <motion.path
                 d="M122 178 C104 166 104 148 114 146 C119 145 122 149 122 153 C122 149 125 145 130 146 C140 148 140 166 122 178 Z"
@@ -195,13 +197,13 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
             </Organ>
 
             {/* cerebro */}
-            <Organ label={`Cerebro, ${TXT[by.mental?.estado ?? 'none']}`} {...organProps('mental')}>
+            <Organ label={`Cerebro, ${etiqueta(by.mental)}`} {...organProps('mental')}>
               <path d="M110 16 C96 13 87 21 88 31 C84 37 87 45 94 46 L126 46 C133 45 136 37 132 31 C133 21 124 13 110 16 Z" fill={col('mental')} fillOpacity="0.22" stroke={col('mental')} strokeWidth="1.6" />
               <path d="M110 18 L110 45 M98 25 C102 29 102 35 97 40 M122 25 C118 29 118 35 123 40" stroke={col('mental')} strokeWidth="1.3" fill="none" strokeLinecap="round" />
             </Organ>
 
             {/* ojos */}
-            <Organ label={`Ojos y sueño, ${TXT[by.sueno?.estado ?? 'none']}`} {...organProps('sueno')}>
+            <Organ label={`Ojos y sueño, ${etiqueta(by.sueno)}`} {...organProps('sueno')}>
               <rect x="88" y="48" width="44" height="16" fill="transparent" />
               <ellipse cx="99" cy="56" rx="6.5" ry="3.6" fill={col('sueno')} />
               <ellipse cx="121" cy="56" rx="6.5" ry="3.6" fill={col('sueno')} />
@@ -245,7 +247,7 @@ export default function SystemExplorer({ sistemas }: { sistemas: SystemStatus[] 
                 <h3 className="m-0 mt-1 font-[family-name:var(--font-display)] text-xl font-semibold">{sel.nombre}</h3>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="tag" style={{ background: BG[st], color: C[st] }}>{TXT[st]}</span>
+                <span className="tag" style={{ background: BG[st], color: C[st] }}>{etiqueta(sel)}</span>
                 <span className={`tag ${capaTag[det.capa][0]}`}>{capaTag[det.capa][1]}</span>
               </div>
             </div>

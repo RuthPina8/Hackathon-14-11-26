@@ -84,7 +84,7 @@ export default function Login() {
         return
       }
       let fl: FaceLandmarker
-      try { [fl] = await Promise.all([getFaceLandmarker(), getFaceApi()]) } catch { go('nocam'); setHint('No se pudieron cargar los modelos de reconocimiento, revisa la conexión a internet'); return }
+      try { [fl] = await Promise.all([getFaceLandmarker(2), getFaceApi()]) } catch { go('nocam'); setHint('No se pudieron cargar los modelos de reconocimiento'); return }
       if (!alive) return
       go(Object.keys(st.current.faces).length ? 'search' : 'noFaces')
 

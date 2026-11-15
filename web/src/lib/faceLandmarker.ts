@@ -4,24 +4,29 @@ import { FaceLandmarker, FilesetResolver, type NormalizedLandmark } from '@media
 // Lo usa el inicio de sesión y lo puede reutilizar Front 1 en el chequeo con cámara:
 //   const fl = await getFaceLandmarker()
 //   const r = fl.detectForVideo(video, performance.now())
-// Se carga una sola vez; el modelo y el wasm vienen del CDN de MediaPipe.
+// Se carga una sola vez y se comparte entre el inicio de sesión y el chequeo con cámara
+// (los dos usan performance.now() como tiempo, así que nunca se atrasa el reloj del detector).
 
 // Archivos locales en web/public (los mismos que usa Front 1), así funciona sin internet
 const WASM = '/mediapipe-wasm'
 const MODEL = '/models/face_landmarker.task'
 
 let instance: Promise<FaceLandmarker> | null = null
+let carasActuales = 1
 
-export function getFaceLandmarker(): Promise<FaceLandmarker> {
+// numFaces: el inicio de sesión pide 2 para avisar cuando hay más de una persona; el chequeo pide 1.
+// Nadie debe llamar close() sobre esta instancia, es de todos.
+export async function getFaceLandmarker(numFaces = 1): Promise<FaceLandmarker> {
   if (!instance) {
     instance = (async () => {
       const vision = await FilesetResolver.forVisionTasks(WASM)
       const opts = (delegate: 'GPU' | 'CPU') => ({
         baseOptions: { modelAssetPath: MODEL, delegate },
         runningMode: 'VIDEO' as const,
-        numFaces: 2,
+        numFaces: 1,
         outputFaceBlendshapes: true,
       })
+      carasActuales = 1
       try {
         return await FaceLandmarker.createFromOptions(vision, opts('GPU'))
       } catch {
@@ -30,7 +35,12 @@ export function getFaceLandmarker(): Promise<FaceLandmarker> {
     })()
     instance.catch(() => { instance = null })
   }
-  return instance
+  const fl = await instance
+  if (numFaces !== carasActuales) {
+    await fl.setOptions({ numFaces })
+    carasActuales = numFaces
+  }
+  return fl
 }
 
 // ---------- firma facial ----------
@@ -90,8 +100,8 @@ export function blinkScore(blendshapes: { categories: { categoryName: string; sc
 // ---------- reconocimiento facial (quién eres) ----------
 // face-api: red neuronal entrenada que convierte una cara en una huella de 128 números.
 // Dos fotos de la misma persona quedan a distancia < ~0.45; personas distintas, por encima.
-// Los modelos se descargan una vez del CDN.
-const FACEAPI_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+// Los modelos están en web/public/models/face-api, así el login funciona sin internet.
+const FACEAPI_MODELS = '/models/face-api'
 type FaceApi = typeof import('@vladmandic/face-api')
 let faceapiPromise: Promise<FaceApi> | null = null
 
