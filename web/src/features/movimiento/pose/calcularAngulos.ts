@@ -1,4 +1,4 @@
-import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
+import type { Landmark, NormalizedLandmark } from '@mediapipe/tasks-vision'
 
 // Índices de MediaPipe Pose (33 puntos)
 export const P = {
@@ -31,10 +31,23 @@ export function angulo(a: NormalizedLandmark, b: NormalizedLandmark, c: Normaliz
   return (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI
 }
 
-// Sentadilla: ángulo de rodilla (cadera → rodilla → tobillo); ~175° de pie, ~90° abajo
-export function anguloRodilla(lm: NormalizedLandmark[], aspecto: number) {
-  const izq = angulo(lm[P.caderaIzq], lm[P.rodillaIzq], lm[P.tobilloIzq], aspecto)
-  const der = angulo(lm[P.caderaDer], lm[P.rodillaDer], lm[P.tobilloDer], aspecto)
+// Mismo ángulo, pero en 3D (metros, con profundidad). Sirve desde cualquier posición frente a la cámara.
+export function angulo3D(a: Landmark, b: Landmark, c: Landmark): number {
+  const v1 = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
+  const v2 = { x: c.x - b.x, y: c.y - b.y, z: c.z - b.z }
+  const dot = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+  const cos = dot / ((Math.hypot(v1.x, v1.y, v1.z) * Math.hypot(v2.x, v2.y, v2.z)) || 1)
+  return (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI
+}
+
+// Sentadilla: ángulo de rodilla (cadera → rodilla → tobillo); ~175° de pie, ~90° abajo.
+// De frente a la cámara, la rodilla se dobla hacia la cámara y en 2D casi no cambia el ángulo (se queda
+// cerca de 170°), así que nunca se contaba una repetición. Con los puntos en 3D (`mundo`) sí se mide.
+// Sin 3D (modelo sin worldLandmarks) se usa el 2D como respaldo.
+export function anguloRodilla(lm: NormalizedLandmark[], aspecto: number, mundo?: Landmark[]) {
+  const ok = mundo && [P.caderaIzq, P.rodillaIzq, P.tobilloIzq, P.caderaDer, P.rodillaDer, P.tobilloDer].every((i) => mundo[i])
+  const izq = ok ? angulo3D(mundo[P.caderaIzq], mundo[P.rodillaIzq], mundo[P.tobilloIzq]) : angulo(lm[P.caderaIzq], lm[P.rodillaIzq], lm[P.tobilloIzq], aspecto)
+  const der = ok ? angulo3D(mundo[P.caderaDer], mundo[P.rodillaDer], mundo[P.tobilloDer]) : angulo(lm[P.caderaDer], lm[P.rodillaDer], lm[P.tobilloDer], aspecto)
   return { izq, der, prom: (izq + der) / 2 }
 }
 

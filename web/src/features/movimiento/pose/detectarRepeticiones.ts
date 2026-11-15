@@ -8,13 +8,17 @@ import type { Ejercicio } from './calcularAngulos'
 export type Fase = 'inicial' | 'bajando' | 'abajo' | 'subiendo'
 
 const UMBRALES: Record<Ejercicio, { inicio: number; fondo: number; sube: (a: number, u: number) => boolean }> = {
-  // rodilla: de pie > 160°, abajo < 105°
-  sentadilla: { inicio: 160, fondo: 105, sube: (a, u) => a < u },
+  // rodilla: de pie > 155°, abajo < 115° (más o menos el muslo por debajo de 45° respecto a la vertical)
+  sentadilla: { inicio: 155, fondo: 115, sube: (a, u) => a < u },
   // hombro: brazos abajo < 45°, arriba > 140°
   brazos: { inicio: 45, fondo: 140, sube: (a, u) => a > u },
 }
 
 const MIN_REP_MS = 600 // más rápido que esto es un rebote, no una repetición
+const MIN_RECORRIDO = 20 // grados: menos que esto es un temblor, no un intento
+
+// Umbral a superar en cada ejercicio, para decirle a la persona cuánto le faltó
+export const FONDO: Record<Ejercicio, number> = { sentadilla: UMBRALES.sentadilla.fondo, brazos: UMBRALES.brazos.fondo }
 
 export interface Contador {
   fase: Fase
@@ -22,10 +26,12 @@ export interface Contador {
   duraciones: number[] // ms de cada repetición
   extremos: number[] // ángulo más profundo (o más alto) de cada repetición
   simetrias: number[] // 0 a 1, qué tan parecidos fueron ambos lados en cada repetición
+  incompletas: number // intentos que empezaron pero no llegaron al fondo
+  ultimoIncompleto: number | null // hasta qué ángulo llegó el último intento incompleto
 }
 
 export function nuevoContador(): Contador {
-  return { fase: 'inicial', repeticiones: 0, duraciones: [], extremos: [], simetrias: [] }
+  return { fase: 'inicial', repeticiones: 0, duraciones: [], extremos: [], simetrias: [], incompletas: 0, ultimoIncompleto: null }
 }
 
 interface Interno { inicioRep: number; extremo: number; asimetria: number }
@@ -58,6 +64,10 @@ export function actualizar(c: Contador, ejercicio: Ejercicio, ang: { izq: number
       out.duraciones = [...c.duraciones, dur]
       out.extremos = [...c.extremos, i.extremo]
       out.simetrias = [...c.simetrias, Math.max(0, 1 - i.asimetria / 90)]
+    } else if (fase === 'bajando' && Math.abs(u.inicio - i.extremo) >= MIN_RECORRIDO) {
+      // Empezó a moverse pero volvió sin llegar al fondo: no cuenta, y se avisa
+      out.incompletas = c.incompletas + 1
+      out.ultimoIncompleto = Math.round(i.extremo)
     }
     fase = 'inicial' // si nunca llegó abajo, fue un intento incompleto: no cuenta
   }

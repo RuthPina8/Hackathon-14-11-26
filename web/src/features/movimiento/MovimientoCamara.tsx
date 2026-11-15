@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
 import { usePoseLandmarker } from './pose/usePoseLandmarker'
 import { anguloHombro, anguloRodilla, cuerpoVisible, HUESOS, NECESARIOS, type Ejercicio } from './pose/calcularAngulos'
-import { actualizar, nuevoContador, resumen, type Contador } from './pose/detectarRepeticiones'
+import { actualizar, FONDO, nuevoContador, resumen, type Contador } from './pose/detectarRepeticiones'
 import type { SesionIn } from './movimientoApi'
 
 type Fase = 'preparando' | 'midiendo'
@@ -13,7 +13,7 @@ const MS_ENTRE_CUADROS = 1000 / 15 - 4
 
 const GUIA: Record<Ejercicio, string> = {
   brazos: 'Siéntate o párate de frente. Que se vean tus hombros, brazos y cadera. Sube ambos brazos por los lados hasta arriba y bájalos',
-  sentadilla: 'Aléjate unos 2 metros para que se vea todo tu cuerpo, de la cabeza a los tobillos. Baja despacio y sube',
+  sentadilla: 'Aléjate unos 2 metros para que se vea todo tu cuerpo, de la cabeza a los tobillos. Puedes ir de frente o ligeramente de lado. Baja despacio doblando las rodillas y sube',
 }
 
 interface Props {
@@ -33,6 +33,8 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
   const [visible, setVisible] = useState(false)
   const [contador, setContador] = useState<Contador>(nuevoContador())
   const [seg, setSeg] = useState(0)
+  const [angulo, setAngulo] = useState<number | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
 
   const faseRef = useRef(fase)
   useEffect(() => { faseRef.current = fase }, [fase])
@@ -101,7 +103,8 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
           if (ok && lm) {
             cuadros.current.validos++
             const asp = v.videoWidth / (v.videoHeight || 1)
-            const ang = ejercicio === 'sentadilla' ? anguloRodilla(lm, asp) : anguloHombro(lm, asp)
+            const ang = ejercicio === 'sentadilla' ? anguloRodilla(lm, asp, r.worldLandmarks?.[0]) : anguloHombro(lm, asp)
+            setAngulo(Math.round(ang.prom))
             const nuevo = actualizar(contadorRef.current, ejercicio, ang, t)
             if (nuevo.repeticiones !== contadorRef.current.repeticiones || nuevo.fase !== contadorRef.current.fase) setContador(nuevo)
             contadorRef.current = nuevo
@@ -113,6 +116,17 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
     raf = requestAnimationFrame(paso)
     return () => cancelAnimationFrame(raf)
   }, [pose, camara, ejercicio, dibujar])
+
+  // Aviso cuando un intento no llegó al fondo (se borra solo a los 4 s)
+  useEffect(() => {
+    if (!contador.incompletas || contador.ultimoIncompleto === null) return
+    const meta = FONDO[ejercicio]
+    setAviso(ejercicio === 'sentadilla'
+      ? `Baja un poco más: llegaste a ${contador.ultimoIncompleto}° de rodilla y hace falta bajar de ${meta}°. Esa no se contó`
+      : `Sube más los brazos: llegaste a ${contador.ultimoIncompleto}° y hace falta pasar de ${meta}°. Esa no se contó`)
+    const id = setTimeout(() => setAviso(null), 4000)
+    return () => clearTimeout(id)
+  }, [contador.incompletas, contador.ultimoIncompleto, ejercicio])
 
   // Reloj
   useEffect(() => {
@@ -128,6 +142,7 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
     cuadros.current = { total: 0, validos: 0 }
     inicio.current = performance.now()
     setSeg(0)
+    setAviso(null)
     setFase('midiendo')
   }
 
@@ -153,6 +168,7 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
   if (estado === 'cargando') pista = 'Cargando el modelo de pose corporal…'
   else if (fallo) pista = camara === 'error' ? 'No pude usar la cámara. Permite el acceso o usa la sesión de respaldo' : 'No se pudo cargar el modelo de pose. Usa la sesión de respaldo'
   else if (!visible) pista = ejercicio === 'sentadilla' ? 'No veo todo tu cuerpo: aléjate hasta que se vean tus tobillos' : 'No veo tus brazos y cadera: aléjate un poco de la cámara'
+  else if (aviso) pista = aviso
   else if (fase === 'midiendo') pista = 'Bien, sigue a tu ritmo. Toca TERMINAR cuando acabes'
   else pista = 'Te veo completo. Toca EMPEZAR'
 
@@ -176,6 +192,7 @@ export default function MovimientoCamara({ ejercicio, astronautaId, onTerminar, 
             <p className="k">Repeticiones</p>
             <p className="num m-0 text-[96px] font-bold leading-none text-[#5CC8F5]">{contador.repeticiones}</p>
             <p className="m-0 text-base text-[#A3AEC4]">{fase === 'midiendo' ? `Fase: ${contador.fase}` : 'Se cuentan solo los ciclos completos'}</p>
+            {angulo !== null && <p className="num m-0 text-sm text-[#93A0B8]">{ejercicio === 'sentadilla' ? 'Rodilla' : 'Hombro'}: {angulo}° · meta {ejercicio === 'sentadilla' ? `< ${FONDO.sentadilla}°` : `> ${FONDO.brazos}°`}</p>}
           </section>
           <div className="grid grid-cols-2 gap-4">
             <section className="card"><p className="k">Tiempo</p><p className="big">{seg}<span className="text-lg text-[#A3AEC4]"> s</span></p></section>
