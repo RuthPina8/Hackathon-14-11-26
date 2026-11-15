@@ -38,12 +38,12 @@ export const MODULOS: Modulo[] = [
     resultado: 'This is your heart rate today. With every check-up the system learns YOUR normal; an alert fires when you drift from yourself, not from an average.',
   },
   {
-    id: 'atencion', titulo: 'Attention test', ruta: '/camera?paso=1', minutos: 3,
+    id: 'atencion', titulo: 'Attention test', ruta: '/camera?paso=1', minutos: 1,
     enciende: ['cerebro'], insignias: [],
     porQue: 'Fatigue and lack of sleep slow your reactions before you notice.',
-    dato: 'It’s the same idea as the ISS Reaction Self Test: a 3-minute vigilance test (PVT-B).',
+    dato: 'Same idea as the ISS Reaction Self Test (a vigilance test, PVT-B), with a go/no-go twist: green = react, red = hold back.',
     pistas: [
-      { selector: '[data-tour="atencion-empezar"]', texto: 'Tap "Start" and press as soon as the stimulus appears. Don’t jump the gun: false starts count.' },
+      { selector: '[data-tour="atencion-empezar"]', texto: 'Tap "Start". Tap (or press space) the instant a green meteor appears. Never tap red debris, and don’t jump the gun: false starts count.' },
     ],
     resultado: 'Your reaction time is saved as a reference. The first 3 sessions are practice and don’t count toward your normal.',
   },
@@ -65,7 +65,7 @@ export const MODULOS: Modulo[] = [
     pistas: [
       { selector: '[aria-labelledby="animo"]', texto: 'Choose how you feel and move the stress slider.' },
       { selector: '[aria-labelledby="sueno"]', texto: 'Adjust your sleep with + and −. It’s prefilled: only change what’s different.' },
-      { selector: '[aria-labelledby="sint"]', texto: 'Mark Yes only for what you have today.' },
+      { selector: '[aria-labelledby="sint"]', texto: 'Tap only what you have today. Tap again to undo.' },
       { selector: '[data-tour="registro-guardar"]', texto: 'Tap "Save and see summary".' },
     ],
     resultado: 'This is used to compute your sleep (hours and efficiency), your stress and your immune status. If you sleep less than 6 h three nights in a row, the system warns you.',
