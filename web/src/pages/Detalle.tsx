@@ -5,7 +5,6 @@ import {
 } from 'recharts'
 import { indicators, mockSeries } from '../store/mockData'
 import { PageHeader, Segmented, SimBanner } from '../components/ui/Page'
-import { useAppStore } from '../store/useAppStore'
 
 type Range = 7 | 30 | 60
 const whens = ['Hoy 09:12', 'Ayer 21:40', 'Ayer 09:05', 'Hace 2 días']
@@ -16,7 +15,6 @@ export default function Detalle() {
   const key = indicators[tipo] ? tipo : 'hr'
   const d = indicators[key]
   const navigate = useNavigate()
-  const statusReal = useAppStore((s) => s.statusReal)
   const [range, setRange] = useState<Range>(30)
 
   const { data, upper, lower, today, out } = useMemo(() => {
@@ -39,7 +37,7 @@ export default function Detalle() {
 
   return (
     <>
-      {!statusReal && <SimBanner tag="DATOS DE EJEMPLO">Tu estado, tu línea base y las gráficas son de ejemplo hasta que el motor de datos los calcule con tus mediciones</SimBanner>}
+      <SimBanner tag="DATOS DE EJEMPLO">Estas gráficas son de ejemplo, todavía no leen tus mediciones guardadas</SimBanner>
       <PageHeader
         kicker={`Indicadores · ${d.sys}`}
         title={d.name}

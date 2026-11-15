@@ -6,8 +6,8 @@ import {
 } from './mockData'
 import { api } from '../lib/api'
 import {
-  adaptAlert, adaptQueue, astroNumero, SEMAFORO_BACK, SISTEMA_BACK,
-  type ServerAlert, type ServerAlertList, type ServerDemo, type ServerEnvironment, type ServerQueueMessage, type ServerQueueState,
+  adaptAlert, adaptQueue, adaptStatus, astroNumero, SEMAFORO_BACK, SISTEMA_BACK,
+  type ServerStatus, type ServerAlert, type ServerAlertList, type ServerDemo, type ServerEnvironment, type ServerQueueMessage, type ServerQueueState,
 } from '../lib/adapters'
 import { useSession } from './useSession'
 
@@ -78,6 +78,7 @@ interface AppState {
   applyCameraResult: (r: { bpm: number | null; confianza: number; perclos: number | null }) => void
   applyServerEvent: (event: string, data: unknown) => void
   loadFromServer: () => Promise<void>
+  syncFromApi: () => Promise<void> // vuelve a leer todo del back (lo usa el resumen del chequeo después de guardar)
   demoStart: () => void
   demoStop: () => void
   demoAdvance: (dias?: number) => void
@@ -111,11 +112,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Primera carga desde Back 2: alertas, cola, entorno y reloj de la demo.
   // Si el back no contesta no se toca nada y la app sigue con los ejemplos.
   loadFromServer: async () => {
-    const [alertas, cola, entorno, demo] = await Promise.all([
+    const yo = astroNumero(useSession.getState().user?.id) ?? 1
+    const [alertas, cola, entorno, demo, estado] = await Promise.all([
       api.get<ServerAlertList>('/alerts'),
       api.get<ServerQueueState>('/queue'),
       api.get<ServerEnvironment>('/environment'),
       api.get<ServerDemo>('/demo'),
+      api.get<ServerStatus>(`/status?astronauta_id=${yo}`),
     ])
     if (!alertas && !cola) return
     set((s) => ({
@@ -125,9 +128,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       link: cola ? { retraso_s: cola.retraso_s, ancho_banda_kbps: cola.ancho_banda_kbps } : s.link,
       environment: entorno && isEnvironmentId(entorno.activo) ? entorno.activo : s.environment,
       serverDemo: demo ?? s.serverDemo,
-      status: demo && demo.dia > 0 ? { ...s.status, diaMision: demo.dia } : s.status,
+      // Con /status de Back 1 el estado general es real; si no responde se queda el de ejemplo
+      statusReal: estado ? true : s.statusReal,
+      status: estado
+        ? { ...adaptStatus(s.status, estado), ayer: s.statusReal ? s.status.readiness : estado.readiness }
+        : demo && demo.dia > 0 ? { ...s.status, diaMision: demo.dia } : s.status,
     }))
   },
+
+  syncFromApi: () => get().loadFromServer(),
 
   // Marcar como atendida: POST /alerts/{id}/ack (el back descongela la línea base).
   // Las alertas de ejemplo no tienen id numérico y solo cambian aquí.
