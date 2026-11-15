@@ -93,7 +93,7 @@ export default function Brazalete3D({ paso, ms, play, fallback }: { paso: number
       modelo.scale.setScalar(s)
       modelo.position.y = -bb.min.y * s
       escena.add(modelo)
-      vestir(modelo, C.accent, mats, true, geos)
+      vestir(modelo, C.accent, mats, true, geos, { mochila: false })
       modelo.updateMatrixWorld(true)
 
       const h = buscarHueso(modelo)

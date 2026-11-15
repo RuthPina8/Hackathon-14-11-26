@@ -52,8 +52,8 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
     const objetivo = new THREE.Vector3(0, ejercicio === 'sentadilla' ? 0.8 : 1.0, 0)
     // Los dos ejercicios se ven de tres cuartos de perfil: así se nota que los brazos van al frente
     // y la profundidad de la sentadilla (de frente, el brazo apuntaría a la cámara y no se vería)
-    if (ejercicio === 'brazos') camara.position.set(3.9, 1.4, 3.0)
-    else camara.position.set(4.1, 1.25, 2.6)
+    if (ejercicio === 'brazos') camara.position.set(3.3, 1.4, 2.6)
+    else camara.position.set(3.4, 1.2, 2.3)
     camara.lookAt(objetivo)
 
     // Entorno: módulo de estación espacial (luces, paredes, ventana, piso y plataforma)
@@ -101,7 +101,7 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
 
       const h = buscarHueso(modelo)
       const huesos = {
-        cadera: h('Hips'), col: h('Spine'),
+        cadera: h('Hips'), col: h('Spine'), cuello: h('Neck'),
         brazoI: h('LeftArm'), anteI: h('LeftForeArm'), manoI: h('LeftHand'),
         brazoD: h('RightArm'), anteD: h('RightForeArm'), manoD: h('RightHand'),
         musloI: h('LeftUpLeg'), piernaI: h('LeftLeg'), pieI: h('LeftFoot'), dedoI: h('LeftToeBase'),
@@ -125,6 +125,8 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
       const dirPieI = huesos.dedoI.getWorldPosition(v()).sub(tobilloI)
       const dirPieD = huesos.dedoD.getWorldPosition(v()).sub(tobilloD)
       const caderaMundo0 = huesos.cadera.getWorldPosition(v())
+      const piePlano = new Map<THREE.Object3D, THREE.Quaternion>([[huesos.pieI, huesos.pieI.getWorldQuaternion(new THREE.Quaternion())], [huesos.pieD, huesos.pieD.getWorldQuaternion(new THREE.Quaternion())]])
+      const articulacionCadera0 = huesos.musloI.getWorldPosition(v())
 
       const reiniciar = () => {
         reposo.forEach((qq, b) => b.quaternion.copy(qq))
@@ -145,7 +147,10 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
         const rodilla = new THREE.Vector3(cad.x + (tobillo.x - cad.x) * 0.5, cad.y + Math.sin(ang) * largoMuslo, cad.z + Math.cos(ang) * largoMuslo * frente)
         apuntar(muslo, rodillaH, rodilla.clone().sub(cad))
         apuntar(rodillaH, pie, tobillo.clone().sub(rodillaH.getWorldPosition(v())))
-        apuntar(pie, dedo, dirPie)
+        // el pie conserva exactamente su orientación de pie parado: planta completa en el piso, sin girar
+        const q0 = piePlano.get(pie)
+        if (q0) { pie.quaternion.copy(pie.parent!.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q0)); pie.updateMatrixWorld(true) }
+        else apuntar(pie, dedo, dirPie)
         // ángulo de rodilla (como lo mide la cámara: cadera -> rodilla -> tobillo)
         const r = rodillaH.getWorldPosition(v())
         return THREE.MathUtils.radToDeg(cad.clone().sub(r).angleTo(tobillo.clone().sub(r)))
@@ -170,14 +175,26 @@ export default function Demo3D({ ejercicio, mini = false }: { ejercicio: Ejercic
           apuntar(huesos.brazoD, huesos.anteD, dirD); apuntar(huesos.anteD, huesos.manoD, dirD)
           return { ang: g, ok: g > 82, texto: g > 82 ? 'Altura de hombros' : 'Hombros' }
         }
-        // Sentadilla: la cadera baja y va hacia atrás
-        const objetivoCadera = caderaMundo0.clone().add(new THREE.Vector3(0, -d * largoMuslo * 0.62, -d * largoMuslo * 0.42 * frente))
+        // Sentadilla como la hace un cuerpo humano:
+        // - abajo, el muslo queda casi paralelo al piso (15° arriba de la horizontal) y la espinilla se inclina
+        //   22° al frente: la rodilla queda sobre la punta del pie, no más adelante;
+        // - la cadera va hacia atrás y TODO el tronco se inclina desde la cadera (bisagra de cadera), con la
+        //   espalda recta; antes solo se doblaba la columna y el cuerpo se veía partido;
+        // - los pies no se mueven: talones y puntas en el piso; la cabeza sigue viendo al frente.
+        const MUSLO = THREE.MathUtils.degToRad(15), ESPINILLA = THREE.MathUtils.degToRad(22)
+        const alturaAbajo = tobilloI.y + largoPierna * Math.cos(ESPINILLA) + largoMuslo * Math.sin(MUSLO)
+        const baja = Math.max(0, articulacionCadera0.y - alturaAbajo)
+        const atras = Math.max(0, largoMuslo * Math.cos(MUSLO) - largoPierna * Math.sin(ESPINILLA) - (articulacionCadera0.z - tobilloI.z) * frente)
+        const objetivoCadera = caderaMundo0.clone().add(new THREE.Vector3(0, -d * baja, -d * atras * frente))
         huesos.cadera.position.copy(huesos.cadera.parent!.worldToLocal(objetivoCadera))
         modelo.updateMatrixWorld(true)
+        girarMundo(huesos.cadera, ejeLado, frente * THREE.MathUtils.degToRad(d * 40)) // bisagra de cadera
+        girarMundo(huesos.col, ejeLado, -frente * THREE.MathUtils.degToRad(d * 6)) // pecho arriba
+        girarMundo(huesos.cuello, ejeLado, -frente * THREE.MathUtils.degToRad(d * 26)) // mirada al frente
         const angI = pierna(huesos.musloI, huesos.piernaI, huesos.pieI, huesos.dedoI, tobilloI, dirPieI)
         pierna(huesos.musloD, huesos.piernaD, huesos.pieD, huesos.dedoD, tobilloD, dirPieD)
-        girarMundo(huesos.col, ejeLado, frente * THREE.MathUtils.degToRad(d * 32)) // espalda recta, inclinada
-        const adelante = new THREE.Vector3(0, -0.1 + d * 0.15, frente)
+        // brazos al frente como contrapeso, a la altura de los hombros
+        const adelante = new THREE.Vector3(0, -0.85 + d * 0.85, (0.12 + d * 0.88) * frente)
         apuntar(huesos.brazoI, huesos.anteI, adelante.clone().setX(lado * 0.1)); apuntar(huesos.anteI, huesos.manoI, adelante.clone().setX(lado * 0.1))
         apuntar(huesos.brazoD, huesos.anteD, adelante.clone().setX(-lado * 0.1)); apuntar(huesos.anteD, huesos.manoD, adelante.clone().setX(-lado * 0.1))
         return { ang: angI, ok: d > 0.9, texto: d > 0.9 ? 'Abajo' : 'Rodilla' }

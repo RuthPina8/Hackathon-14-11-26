@@ -129,7 +129,8 @@ export function crearEstacion(escena: THREE.Scene, renderer: THREE.WebGLRenderer
   escena.fog = new THREE.Fog('#070D18', 9, 22)
 
   // --- Luces: cenital blanca (con sombra), relleno frío y contorno azul que entra por la ventana ---
-  escena.add(new THREE.HemisphereLight('#E6F0FF', '#1A2233', 1.25))
+  const hemi = new THREE.HemisphereLight('#E6F0FF', '#1A2233', 1.25)
+  escena.add(hemi)
   const clave = new THREE.DirectionalLight('#FFFFFF', 2.2)
   clave.position.set(2.2, 5, 3)
   clave.castShadow = sombras
@@ -199,7 +200,7 @@ export function crearEstacion(escena: THREE.Scene, renderer: THREE.WebGLRenderer
 
   // --- Plataforma bajo el astronauta: anillos de geometría (nítidos a cualquier distancia) ---
   if (plataforma > 0) {
-    const base = malla(new THREE.CylinderGeometry(plataforma, plataforma + 0.04, 0.02, 96), new THREE.MeshStandardMaterial({ color: '#202C3E', roughness: 0.4, metalness: 0.7 }))
+    const base = malla(new THREE.CylinderGeometry(plataforma, plataforma + 0.04, 0.02, 96), new THREE.MeshStandardMaterial({ color: '#1A2433', roughness: 0.7, metalness: 0.25 }))
     base.position.y = 0.01
     base.receiveShadow = true
     for (const [r, grosor, color] of [[plataforma - 0.03, 0.012, C.accent], [plataforma + 0.14, 0.006, C.accentLine]] as const) {
@@ -211,6 +212,7 @@ export function crearEstacion(escena: THREE.Scene, renderer: THREE.WebGLRenderer
 
   return {
     alturaPiso: plataforma > 0 ? 0.02 : 0,
+    luces: { hemi, clave, contorno, ventana: luzVentana },
     // la Tierra gira despacio en la ventana
     animar(t: number) { vidrio.rotation.z = Math.sin(t * 0.05) * 0.08 },
   }

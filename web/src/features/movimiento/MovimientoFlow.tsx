@@ -4,6 +4,7 @@ import { Activity } from 'lucide-react'
 import { PageHeader, SimBanner } from '../../components/ui/Page'
 import { useSession } from '../../store/useSession'
 import MovimientoCamara from './MovimientoCamara'
+import Preparar3D from '../../components/animaciones/Preparar3D'
 import GuiaAnimada from '../../components/animaciones/GuiaAnimada'
 import { pasosMovimiento } from '../../components/animaciones/Ejercicios'
 import Demo3D from '../../components/animaciones/Demo3D'
@@ -100,7 +101,8 @@ export default function MovimientoFlow() {
       )}
 
       {paso === 'preparar' && (
-        <GuiaAnimada key={ejercicio} titulo={`Antes de empezar · ${NOMBRE_EJERCICIO[ejercicio]}`} pasos={pasosMovimiento(ejercicio).map((p, n, todos) => (n === todos.length - 1 ? { ...p, escena: <Demo3D ejercicio={ejercicio} /> } : p))}
+        <GuiaAnimada key={ejercicio} titulo={`Antes de empezar · ${NOMBRE_EJERCICIO[ejercicio]}`} pasos={pasosMovimiento(ejercicio)}
+          escena3D={(o) => (o.paso === 3 ? <Demo3D ejercicio={ejercicio} /> : <Preparar3D ejercicio={ejercicio} {...o} />)}
           alTerminar={
             <div className="flex flex-wrap gap-3">
               <button type="button" className="btn pri flex-1" style={{ minHeight: 72, fontSize: 20 }} onClick={() => setPaso('camara')}>Ya estoy listo, abrir cámara</button>

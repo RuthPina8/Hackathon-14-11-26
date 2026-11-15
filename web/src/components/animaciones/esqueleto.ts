@@ -89,9 +89,10 @@ varying float vZona;`)
 }
 
 // Viste el modelo: tela naranja y blanca, anillos de las articulaciones en blanco metálico y visor oscuro en el casco
-export function vestir(modelo: THREE.Object3D, _acento: string, mats: THREE.Material[], sombras: boolean, geos: THREE.BufferGeometry[] = []) {
+export function vestir(modelo: THREE.Object3D, acento: string, mats: THREE.Material[], sombras: boolean, geos: THREE.BufferGeometry[] = [], opciones: { mochila?: boolean } = {}) {
   const tela = telaTraje()
-  const anillos = new THREE.MeshStandardMaterial({ color: TRAJE.gris, roughness: 0.32, metalness: 0.65 })
+  // las articulaciones son fuelles de tela blanca, no metal: así el modelo deja de verse como un robot
+  const anillos = new THREE.MeshStandardMaterial({ color: TRAJE.blanco, roughness: 0.6, metalness: 0.05 })
   mats.push(tela, anillos)
   modelo.traverse((o) => {
     const m = o as THREE.SkinnedMesh
@@ -122,6 +123,52 @@ export function vestir(modelo: THREE.Object3D, _acento: string, mats: THREE.Mate
   visor.castShadow = false
   escalaMundo(modelo, visor)
   cabeza.attach(visor)
+
+  // --- Detalles del traje, pegados a los huesos para que se muevan con el cuerpo ---
+  const pieza = (g: THREE.BufferGeometry, m: THREE.Material, hueso: THREE.Object3D, pos: THREE.Vector3, rot?: THREE.Euler) => {
+    geos.push(g)
+    const o = new THREE.Mesh(g, m)
+    o.position.copy(pos)
+    if (rot) o.rotation.copy(rot)
+    o.castShadow = sombras
+    escalaMundo(modelo, o)
+    hueso.attach(o)
+    return o
+  }
+  const blanco = new THREE.MeshStandardMaterial({ color: TRAJE.blanco, roughness: 0.5, metalness: 0.05 })
+  const metal = new THREE.MeshStandardMaterial({ color: TRAJE.gris, roughness: 0.28, metalness: 0.85 })
+  const oscuro = new THREE.MeshStandardMaterial({ color: '#1B2636', roughness: 0.5, metalness: 0.3 })
+  const luz = new THREE.MeshBasicMaterial({ color: acento })
+  const naranja = new THREE.MeshStandardMaterial({ color: TRAJE.naranja, roughness: 0.6 })
+  mats.push(blanco, metal, oscuro, luz, naranja)
+  const cuello = h('Neck'), pecho = h('Spine2'), hombroI = h('LeftArm'), hombroD = h('RightArm')
+  if (!cuello || !pecho || !hombroI || !hombroD) return
+  const pCuello = cuello.getWorldPosition(v()), pPecho = pecho.getWorldPosition(v())
+  const anchoH = hombroI.getWorldPosition(v()).distanceTo(hombroD.getWorldPosition(v()))
+  const F = new THREE.Vector3(0, 0, frente)
+
+  // aro metálico donde el casco se une al traje
+  pieza(new THREE.TorusGeometry(alto * 0.36, alto * 0.06, 12, 40), metal, cuello, pCuello.clone().add(new THREE.Vector3(0, alto * 0.12, alto * 0.05 * frente)), new THREE.Euler(Math.PI / 2, 0, 0))
+
+  // unidad de control en el pecho: caja, pantalla y tres luces
+  const yPecho = THREE.MathUtils.lerp(pPecho.y, pCuello.y, 0.25)
+  const zPecho = pPecho.z + anchoH * 0.36 * frente
+  const base = new THREE.Vector3(pPecho.x, yPecho, zPecho)
+  pieza(new THREE.BoxGeometry(anchoH * 0.5, anchoH * 0.3, anchoH * 0.1), blanco, pecho, base)
+  pieza(new THREE.BoxGeometry(anchoH * 0.26, anchoH * 0.13, 0.004), oscuro, pecho, base.clone().add(new THREE.Vector3(-anchoH * 0.08, anchoH * 0.04, 0)).addScaledVector(F, anchoH * 0.052))
+  for (let k = 0; k < 3; k++) pieza(new THREE.SphereGeometry(anchoH * 0.018, 10, 8), luz, pecho, base.clone().add(new THREE.Vector3(anchoH * (0.12 + k * 0.055) - anchoH * 0.02, -anchoH * 0.09, 0)).addScaledVector(F, anchoH * 0.052))
+  // franja naranja con el parche de misión
+  pieza(new THREE.BoxGeometry(anchoH * 0.12, anchoH * 0.12, 0.004), naranja, pecho, base.clone().add(new THREE.Vector3(anchoH * 0.15, anchoH * 0.05, 0)).addScaledVector(F, anchoH * 0.052))
+
+  // mochila de soporte vital (se omite cuando el astronauta se sienta contra un respaldo)
+  if (opciones.mochila !== false) {
+    const atras = new THREE.Vector3(pPecho.x, THREE.MathUtils.lerp(pPecho.y, pCuello.y, 0.1), pPecho.z - anchoH * 0.5 * frente)
+    pieza(new THREE.BoxGeometry(anchoH * 0.82, anchoH * 1.05, anchoH * 0.34), blanco, pecho, atras)
+    pieza(new THREE.BoxGeometry(anchoH * 0.6, anchoH * 0.1, anchoH * 0.36), metal, pecho, atras.clone().add(new THREE.Vector3(0, anchoH * 0.3, 0)))
+    pieza(new THREE.BoxGeometry(anchoH * 0.6, anchoH * 0.1, anchoH * 0.36), metal, pecho, atras.clone().add(new THREE.Vector3(0, -anchoH * 0.3, 0)))
+    pieza(new THREE.CylinderGeometry(anchoH * 0.09, anchoH * 0.09, anchoH * 0.7, 20), naranja, pecho, atras.clone().add(new THREE.Vector3(0, anchoH * 0.6, 0)), new THREE.Euler(0, 0, Math.PI / 2))
+    pieza(new THREE.BoxGeometry(anchoH * 0.3, anchoH * 0.03, 0.004), luz, pecho, atras.clone().addScaledVector(F, -anchoH * 0.172))
+  }
 }
 
 // three.js conserva la pose de mundo al usar attach; solo hace falta que el objeto esté en la escena del modelo
