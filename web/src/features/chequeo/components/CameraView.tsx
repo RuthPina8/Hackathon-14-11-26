@@ -346,7 +346,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
           <div role="alert" className="absolute left-1/2 top-1/2 flex w-[min(360px,86%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl border border-line-strong bg-nav/95 px-4 py-4 text-center text-sm font-semibold">
             <span>{aviso}</span>
             {(errorCamara || estado === 'error') && (
-              <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="min-h-10 rounded-xl bg-accent px-4 text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
+              <button type="button" onClick={errorCamara ? reintentar : () => window.location.reload()} className="min-h-14 rounded-xl bg-accent px-4 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">
                 Reintentar
               </button>
             )}
@@ -365,7 +365,7 @@ export default function CameraView({ onResultado, onCuadro, onLuz, onListo, bloq
               setErrorCamara(null)
               setCamaraId(e.target.value)
             }}
-            className="min-h-11 flex-1 rounded-xl border border-line-strong bg-panel px-3 text-ink"
+            className="min-h-14 flex-1 rounded-xl border border-line-strong bg-panel px-3 text-ink"
           >
             {camaras.map((c) => (
               <option key={c.id} value={c.id}>

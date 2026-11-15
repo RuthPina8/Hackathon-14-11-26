@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { PageHeader, SimBanner } from '../components/ui/Page'
 import { useSession } from '../store/useSession'
 import { useAppStore } from '../store/useAppStore'
@@ -55,8 +55,7 @@ export default function Evolucion() {
     <>
       {cargado && !ev && <SimBanner tag="SIN BACK">La evolución la calcula el motor; arranca la API para verla</SimBanner>}
       {ev && datoDemo && <SimBanner tag="DATO DE DEMO">Incluye datos del simulador de la misión</SimBanner>}
-      <PageHeader kicker={`${user?.nombre ?? ''} · cómo vas en la misión`} title="Mi evolución"
-        right={<Link to="/record" className="btn sec sm">{ev?.tiene_ficha ? 'Ver ficha médica' : 'Cargar ficha médica'}<ArrowRight size={15} /></Link>} />
+      <PageHeader kicker={`${user?.nombre ?? ''} · cómo vas en la misión`} title="Mi evolución" />
 
       {ev && (
         <section className="card flex flex-wrap items-center gap-5" aria-label="Resumen de tu evolución">
@@ -74,7 +73,7 @@ export default function Evolucion() {
           </div>
           {!ev.tiene_ficha && (
             <p className="m-0 w-full text-[13px] text-[#A3AEC4]">
-              Sin ficha médica se compara contra tu primera semana y solo desde los 10 días con datos. <Link to="/record">Carga tu ficha</Link> para comparar contra tu evaluación en Tierra desde el primer día.
+              Sin ficha médica se compara contra tu primera semana y solo desde los 10 días con datos.
             </p>
           )}
         </section>

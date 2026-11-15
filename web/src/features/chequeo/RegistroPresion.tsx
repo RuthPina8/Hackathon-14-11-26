@@ -80,9 +80,9 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
           {envio && <p className="m-0 text-xs text-muted">Última presión de hoy: {envio === 'enviado' ? 'guardada' : 'pendiente de enviar'}</p>}
         </section>
         <div className="flex min-w-0 flex-[2_1_260px] flex-col justify-end gap-2.5">
-          <button type="button" onClick={enviar} className="min-h-12 rounded-xl bg-accent text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Guardar y seguir</button>
-          <button type="button" onClick={omitir} className="min-h-11 rounded-xl text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">No tengo brazalete, saltar</button>
-          <button type="button" onClick={onAtras} className="min-h-11 rounded-xl text-sm font-semibold text-soft hover:bg-panel">Atrás</button>
+          <button type="button" onClick={enviar} className="min-h-16 rounded-xl bg-accent text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Guardar y seguir</button>
+          <button type="button" onClick={omitir} className="min-h-14 rounded-xl text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">No tengo brazalete, saltar</button>
+          <button type="button" onClick={onAtras} className="min-h-14 rounded-xl text-base font-semibold text-soft hover:bg-panel">Atrás</button>
         </div>
       </div>
     </div>

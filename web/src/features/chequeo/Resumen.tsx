@@ -22,7 +22,7 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
 
   const filas: { paso: number; nombre: string; hecho: boolean; valor: string; envio?: EstadoEnvio; capa: 'real' | 'self' }[] = [
     { paso: 0, nombre: 'Cámara', hecho: !!camara, capa: 'real', envio: envios.camara,
-      valor: camara ? `${camara.bpm ?? '--'} lpm · PERCLOS ${camara.perclos?.toFixed(2) ?? '--'} · ${camara.segundosValidos} s útiles` : 'Pendiente' },
+      valor: camara ? `${camara.bpm ?? '--'} lpm · ${camara.segundosValidos} s útiles` : 'Pendiente' },
     { paso: 1, nombre: 'Prueba de atención', hecho: !!cognitivo, capa: 'real', envio: envios.cognitivo,
       valor: cognitivo ? `${Math.round(cognitivo.medianaMs)} ms · ${cognitivo.lapsos} lapsos${cognitivo.practica ? ' · práctica' : ''}` : 'Pendiente' },
     { paso: 2, nombre: 'Presión', hecho: !!presion, capa: 'self', envio: envios.presion,
@@ -53,7 +53,7 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
                 <p className="m-0 mt-0.5 font-mono text-[13px] text-soft">{f.valor}</p>
               </div>
               {f.envio && <span className={`text-xs font-semibold ${envioTxt[f.envio][1]}`}>{envioTxt[f.envio][0]}</span>}
-              <button type="button" onClick={() => onIrA(f.paso)} className="min-h-9 rounded-lg px-3 text-xs font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-nav">{f.hecho ? 'Rehacer' : 'Hacer'}</button>
+              <button type="button" onClick={() => onIrA(f.paso)} className="min-h-14 rounded-lg px-3 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-nav">{f.hecho ? 'Rehacer' : 'Hacer'}</button>
             </div>
           ))}
           {pendientes > 0 && <p className="m-0 mt-2 text-xs text-warn">{pendientes} envío(s) esperan conexión con la base; se mandan solos al reconectar.</p>}
@@ -80,8 +80,8 @@ export default function Resumen({ onIrA, onSalir }: { onIrA: (paso: number) => v
             {activas.length > nuevas.length && <Link to="/alerts" className="text-[13px] font-semibold">Ver {activas.length} alertas activas</Link>}
           </section>
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={() => onIrA(3)} className="min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Atrás</button>
-            <button type="button" onClick={onSalir} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Terminar e ir a Inicio</button>
+            <button type="button" onClick={() => onIrA(3)} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Atrás</button>
+            <button type="button" onClick={onSalir} className="min-h-14 rounded-xl bg-accent px-5 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Terminar e ir a Inicio</button>
           </div>
         </div>
       </div>

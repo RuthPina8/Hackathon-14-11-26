@@ -77,7 +77,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
             <div role="radiogroup" aria-label="Ánimo" className="grid grid-cols-5 gap-2">
               {ANIMOS.map((t, i) => (
                 <button key={t} type="button" role="radio" aria-checked={animo === i + 1} onClick={() => { setAnimo(i + 1); setError(null) }}
-                  className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-semibold ${animo === i + 1 ? 'border-accent bg-[#0B2636] text-ink' : 'border-line-strong text-soft hover:bg-nav'}`}>
+                  className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border text-sm font-semibold ${animo === i + 1 ? 'border-accent bg-[#0B2636] text-ink' : 'border-line-strong text-soft hover:bg-nav'}`}>
                   <span className="font-mono text-lg">{i + 1}</span>{t}
                 </button>
               ))}
@@ -88,7 +88,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
               <span className="flex justify-between text-[11px] text-muted"><span>Nada</span><span>Máximo</span></span>
             </label>
             <label className="flex flex-col gap-1.5 text-[13px] text-soft">Algo que quieras anotar (opcional)
-              <input value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} className="min-h-11 rounded-xl border border-line-strong bg-[#080C16] px-3 text-ink outline-none focus:border-accent" />
+              <input value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} className="min-h-14 rounded-xl border border-line-strong bg-[#080C16] px-3 text-ink outline-none focus:border-accent" />
             </label>
             <p className="m-0 text-xs leading-relaxed text-muted">La cámara aprende de tus registros; lo que cuenta es lo que tú reportas.</p>
           </section>
@@ -141,7 +141,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
                 {g.items.map((it) => {
                   const v = intensidad(it.clave)
                   return (
-                    <div key={it.clave} className="flex min-h-10 items-center gap-2 text-sm">
+                    <div key={it.clave} className="flex min-h-14 items-center gap-2 text-base">
                       <span className={`flex-1 ${v ? 'text-ink' : 'text-soft'}`}>{it.nombre}</span>
                       {[1, 2, 3].map((i) => (
                         <button key={i} type="button" aria-label={`${it.nombre}, intensidad ${i}`} aria-pressed={v === i} onClick={() => cambiar(it.clave, v === i ? 0 : i)}
@@ -155,8 +155,8 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
           </section>
           <p role="alert" className="m-0 min-h-5 text-sm text-warn">{error ?? ''}</p>
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={onAtras} className="min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Atrás</button>
-            <button type="button" onClick={enviar} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Guardar y ver resumen</button>
+            <button type="button" onClick={onAtras} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">Atrás</button>
+            <button type="button" onClick={enviar} className="min-h-14 rounded-xl bg-accent px-5 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8]">Guardar y ver resumen</button>
           </div>
         </div>
       </div>

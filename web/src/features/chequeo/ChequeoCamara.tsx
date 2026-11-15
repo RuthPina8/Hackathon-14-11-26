@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import type { FaceLandmarkerResult } from '@mediapipe/tasks-vision'
 import CameraView from './components/CameraView'
 import PulseWave from './components/PulseWave'
@@ -7,7 +6,6 @@ import StepBar from './components/StepBar'
 import { PUNTO_NARIZ } from './camara/landmarks'
 import type { Roi } from './camara/landmarks'
 import { CONFIANZA_BUENA, CONFIANZA_MINIMA, confianzaMotor, useRppg } from './camara/useRppg'
-import { usePerclos } from './camara/usePerclos'
 import { useExpresion } from './camara/useExpresion'
 import { MENSAJES, bloquea, headPitch, principal, revisarEncuadre, revisarLuz, type Luz, type Problema } from './camara/calidad'
 import { useChequeoStore, type ResultadoCamara } from './chequeoStore'
@@ -20,7 +18,6 @@ import { useAppStore } from '../../store/useAppStore'
 const TOTAL = 60 // segundos VÁLIDOS de medición (con cara, pose y sin movimientos bruscos)
 const MAXIMO_MS = 150_000 // si en 2.5 min no se juntan, se termina con lo que haya
 const MINIMO_VALIDOS = 20 // con menos no hay un tramo de 20 s para el ritmo
-const UMBRAL_PERCLOS = 0.15
 const FPS_MINIMO = 15
 // Velocidad de la cara en fracciones de la imagen por segundo. Moverse es normal en microgravedad:
 // solo se descartan los cuadros con movimientos bruscos, el resto se sigue usando
@@ -40,7 +37,6 @@ type RppgBack = { hr_lpm: number | null; confianza: number; snr_db: number | nul
 
 export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const { bpm: bpmVivo, confianza, onda, registrar: registrarColor, reiniciar: reiniciarRppg, estimarFinal, ventana } = useRppg()
-  const { perclos, parpadeosMin, parpadeoDurMs, cierresLargos, registrar: registrarOjos, reiniciar: reiniciarPerclos, muestrasValidas } = usePerclos()
   const expresion = useExpresion()
   const guardado = useChequeoStore((s) => s.camara)
   const envio = useChequeoStore((s) => s.envios.camara)
@@ -133,11 +129,9 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
       if (SIN_CUADRO_A_CUADRO && rois && caraUtil && d < MOVIMIENTO_BRUSCO) {
         if (registrarColor(video, rois, video.currentTime * 1000) === 'tapado') tapadoHasta.current = performance.now() + 500
       }
-      // Mirar hacia abajo infla el "ojo cerrado": esos cuadros no cuentan para PERCLOS
-      registrarOjos(r.faceBlendshapes[0]?.categories, t, caraUtil && !p.has('cabeza_abajo'))
       if (caraUtil) expresion.registrar(r.faceBlendshapes[0]?.categories, movimientoProm.current)
     },
-    [registrarColor, registrarOjos, expresion],
+    [registrarColor, expresion],
   )
 
   // ---------- cada cuadro de la cámara: color de la piel ----------
@@ -219,10 +213,11 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
       bpm,
       confianza: conf,
       confianzaMotor: Number(confianzaMotor(conf).toFixed(3)),
-      perclos: muestrasValidas() >= 60 ? perclos : null,
-      parpadeosMin,
-      parpadeoDurMs,
-      cierresLargos,
+      // Detector de fatiga por parpadeo quitado en este equipo: no se mide ni se envía
+      perclos: null,
+      parpadeosMin: null,
+      parpadeoDurMs: null,
+      cierresLargos: 0,
       expresion: expresion.resultado(),
       hrv,
       resp,
@@ -239,13 +234,12 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
       const ind = await api.get<ServerIndicator>(`/indicators/expresividad?astronauta_id=${baseMedicion().astronauta_id}&range=mision`)
       if (ind) setNormalExpr(ind)
     })
-  }, [estimarFinal, ventana, perclos, parpadeosMin, parpadeoDurMs, cierresLargos, expresion, fps, muestrasValidas, guardarCamara])
+  }, [estimarFinal, ventana, expresion, fps, guardarCamara])
 
   useEffect(() => { terminarRef.current = terminar }, [terminar])
 
   const reiniciarTodo = () => {
     reiniciarRppg()
-    reiniciarPerclos()
     expresion.reiniciar()
     setFinal(null)
     setNormalExpr(null)
@@ -265,7 +259,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const iniciar = () => {
     if (fase === 'pausa') {
       // Al continuar se limpia la señal de color para que la pausa no deje un hueco en la onda
-      // (PERCLOS y gestos sí siguen sumando)
+      // (los gestos sí siguen sumando)
       reiniciarRppg()
       inicioMs.current = performance.now() - validosMs.current
       setPausaAuto(false)
@@ -283,10 +277,6 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const hayRitmo = bpm !== null && confianzaMostrada >= CONFIANZA_MINIMA
   const bajaConfianza = hayRitmo && confianzaMostrada < CONFIANZA_BUENA
   const senalDebil = !hayRitmo && onda.length > 0
-  const perclosMostrado = terminado ? final.perclos : perclos
-  const parpadeosMostrados = terminado ? final.parpadeosMin : parpadeosMin
-  const durMostrada = terminado ? final.parpadeoDurMs : parpadeoDurMs
-  const fatiga = perclosMostrado !== null && perclosMostrado > UMBRAL_PERCLOS
   const barrasCalidad = onda.length > 0 || terminado ? Math.max(1, Math.round(Math.min(1, confianzaMostrada / 0.4) * 5)) : 0
   const problema = principal(problemas)
 
@@ -303,13 +293,13 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
   const pistaMala = midiendo && problema !== null && MENSAJES[problema].bloquea
 
   const tarjeta: Record<Exclude<Fase, 'midiendo'>, [string, string, string]> = {
-    inicio: ['Medición de 60 segundos', 'Mide ritmo cardiaco, fatiga visual y expresividad solo con la cámara, sin sensores. El reloj avanza solo con tu cara bien visible', 'Iniciar medición'],
+    inicio: ['Medición de 60 segundos', 'Mide tu ritmo cardiaco solo con la cámara, sin sensores. El reloj avanza solo con tu cara bien visible', 'Iniciar medición'],
     pausa: ['Medición en pausa', `Llevas ${Math.floor(seg)} de ${TOTAL} segundos útiles, vuelve a acomodarte en el óvalo`, 'Continuar'],
     analizando: ['Analizando', 'Buscando el tramo más limpio de la señal y calculando la variabilidad', ''],
     completo: [
       'Medición completa',
       hayRitmo
-        ? `Ritmo ${bpm} lpm${bajaConfianza ? ' (baja confianza)' : ''} y PERCLOS ${perclosMostrado?.toFixed(2) ?? '--'} con ${final?.segundosValidos ?? 0} s útiles`
+        ? `Ritmo ${bpm} lpm${bajaConfianza ? ' (baja confianza)' : ''} con ${final?.segundosValidos ?? 0} s útiles`
         : (final?.segundosValidos ?? 0) < MINIMO_VALIDOS
           ? 'No se juntaron suficientes segundos con tu cara bien visible. Revisa la luz y el encuadre'
           : 'No hubo un tramo con señal clara, centra tu cara y evita lámparas detrás o arriba de ti',
@@ -383,8 +373,8 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
               <div className="absolute left-1/2 top-1/2 flex w-[min(320px,88%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3.5 rounded-[20px] border border-line-strong bg-[rgba(10,15,27,0.92)] px-[26px] py-[24px] text-center">
                 {fase === 'completo' && (
                   <button type="button" onClick={() => setTarjetaCerrada(true)} aria-label="Cerrar" title="Cerrar"
-                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-soft hover:bg-panel hover:text-ink">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    className="absolute right-2 top-2 inline-flex h-12 w-12 items-center justify-center rounded-xl text-soft hover:bg-panel hover:text-ink">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
                   </button>
                 )}
                 <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={fase === 'analizando' ? 'animate-spin' : ''}>
@@ -395,13 +385,13 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 <p className="m-0 text-[13px] leading-normal text-soft">{tarjeta[fase][1]}</p>
                 {fase !== 'analizando' && (
                   <button type="button" onClick={iniciar} disabled={!camaraLista}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 text-sm font-semibold text-[#04121C] hover:bg-[#8AD9F8] disabled:opacity-50">
+                    className="inline-flex min-h-14 items-center justify-center rounded-xl bg-accent px-5 text-base font-semibold text-[#04121C] hover:bg-[#8AD9F8] disabled:opacity-50">
                     {tarjeta[fase][2]}
                   </button>
                 )}
                 {fase === 'pausa' && (
                   <button type="button" onClick={reiniciarTodo} disabled={!camaraLista}
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
+                    className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl px-5 text-base font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
                     Reiniciar desde cero
                   </button>
                 )}
@@ -414,18 +404,18 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 <p aria-live="polite" className={`m-0 flex-1 text-[15px] ${pistaMala ? 'text-[#F5D79A]' : 'text-[#C5CEDF]'}`}>{pista}</p>
                 {fase === 'completo' && tarjetaCerrada && (
                   <button type="button" onClick={iniciar} disabled={!camaraLista}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
+                    className="inline-flex min-h-14 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel disabled:opacity-50">
                     Repetir medición
                   </button>
                 )}
                 {midiendo && (
                   <>
                     <button type="button" onClick={reiniciarTodo} title="Empezar la medición otra vez desde 00:00"
-                      className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
+                      className="inline-flex min-h-14 items-center gap-2 rounded-xl bg-[rgba(10,15,27,0.8)] px-4 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
                       Reiniciar
                     </button>
                     <button type="button" onClick={() => setFase('pausa')}
-                      className="min-h-10 rounded-xl bg-[rgba(10,15,27,0.8)] px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
+                      className="min-h-14 rounded-xl bg-[rgba(10,15,27,0.8)] px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
                       Pausar
                     </button>
                   </>
@@ -464,7 +454,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                   ? final.confianzaMotor >= verif.umbral
                     ? <span className="text-[#8FF0C4]">✓ Lectura verificada: con esta confianza la cámara acierta ±{verif.tolerancia_lpm} lpm el {Math.round((verif.sobre_umbral?.exito_5 ?? 0) * 100)}% de las veces</span>
                     : <span className="text-warn">Confianza {final.confianzaMotor.toFixed(2)}, debajo del umbral verificado ({verif.umbral.toFixed(1)}): tómala con cautela</span>
-                  : <span className="text-muted">Cámara aún sin validar con aparato de referencia. <Link to="/reliability" className="text-accent">Valídala</Link></span>}
+                  : <span className="text-muted">Cámara aún sin validar con aparato de referencia.</span>}
               </p>
             )}
             <p className="m-0 text-[13px] text-soft">
@@ -490,34 +480,6 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
             </p>
           </section>
 
-          <section aria-labelledby="fatiga" className="flex flex-col gap-3 rounded-2xl border border-line bg-panel p-[22px]">
-            <div className="flex items-center justify-between">
-              <h2 id="fatiga" className="m-0 font-display text-base font-semibold">Fatiga visual</h2>
-              <span className="rounded-md bg-[#0B2636] px-2 py-1 text-[11px] font-semibold tracking-wide text-[#8AD9F8]">Real</span>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">PERCLOS</p>
-                <p className={`mt-1 font-mono text-[26px] font-bold ${fatiga ? 'text-warn' : 'text-ink'}`}>{perclosMostrado === null ? '--' : perclosMostrado.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Parpadeos/min</p>
-                <p className="mt-1 font-mono text-[26px] font-bold">{parpadeosMostrados ?? '--'}</p>
-              </div>
-              <div>
-                <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Duración</p>
-                <p className="mt-1 font-mono text-[26px] font-bold">{durMostrada ?? '--'}<span className="text-sm text-soft"> ms</span></p>
-              </div>
-            </div>
-            <div className="relative h-2 rounded bg-line">
-              <div className={`h-full rounded transition-all duration-500 ${fatiga ? 'bg-warn' : 'bg-ok'}`} style={{ width: `${perclosMostrado === null ? 0 : Math.min(100, (perclosMostrado / (UMBRAL_PERCLOS * 2)) * 100)}%` }} />
-              <div className="absolute left-1/2 top-[-5px] h-[18px] w-0.5 rounded-sm bg-ink" />
-            </div>
-            <p className="m-0 text-xs text-muted">
-              La marca blanca es el umbral de fatiga, <span className="font-mono">{UMBRAL_PERCLOS}</span>. El umbral de "ojo cerrado" se ajusta a tus ojos y no cuenta los ratos en que miras hacia abajo
-              {(terminado ? final.cierresLargos : cierresLargos) > 0 && <strong className="text-warn"> · {terminado ? final.cierresLargos : cierresLargos} cierres de más de medio segundo</strong>}
-            </p>
-          </section>
 
           {terminado && (
             <section aria-labelledby="exp" className="flex flex-col gap-3 rounded-2xl border border-dashed border-line-strong bg-panel p-[22px]">
@@ -557,11 +519,11 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
           )}
 
           <div className="flex flex-wrap justify-end gap-2.5">
-            <button type="button" onClick={onCancelar} className="min-h-11 rounded-xl px-5 text-sm font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
+            <button type="button" onClick={onCancelar} className="min-h-14 rounded-xl px-5 text-base font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel">
               Salir
             </button>
             <button type="button" onClick={onSiguiente} disabled={midiendo || fase === 'analizando'}
-              className={`min-h-11 rounded-xl px-5 text-sm font-semibold disabled:opacity-50 ${fase === 'completo' ? 'bg-accent text-[#04121C] hover:bg-[#8AD9F8]' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel'}`}>
+              className={`min-h-14 rounded-xl px-5 text-base font-semibold disabled:opacity-50 ${fase === 'completo' ? 'bg-accent text-[#04121C] hover:bg-[#8AD9F8]' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel'}`}>
               {fase === 'completo' ? 'Siguiente: prueba cognitiva' : 'Saltar este paso'}
             </button>
           </div>

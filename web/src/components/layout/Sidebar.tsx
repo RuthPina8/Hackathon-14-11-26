@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, ScanFace, LineChart, Bell, User, Orbit, RadioTower, Users, LogOut, TrendingUp, FileHeart, ShieldCheck } from 'lucide-react'
+import { Home, ScanFace, LineChart, Bell, Orbit, Users, LogOut, TrendingUp } from 'lucide-react'
 import { useSession } from '../../store/useSession'
 import { useMyAlerts } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
@@ -13,13 +13,9 @@ const main: Item[] = [
   { to: '/indicators', label: 'Indicadores', icon: LineChart },
   { to: '/alerts', label: 'Alertas', icon: Bell, badge: true },
   { to: '/progress', label: 'Mi evolución', icon: TrendingUp },
-  { to: '/record', label: 'Ficha médica', icon: FileHeart },
-  { to: '/reliability', label: 'Confiabilidad cámara', icon: ShieldCheck },
-  { to: '/profile', label: 'Perfil y calibración', icon: User },
 ]
 const sim: Item[] = [
   { to: '/simulation', label: 'Misión', icon: Orbit },
-  { to: '/earth', label: 'Comunicación con Tierra', icon: RadioTower },
   { to: '/crew', label: 'Tripulación', icon: Users },
 ]
 
@@ -27,10 +23,10 @@ function Link({ item, count, crit }: { item: Item; count: number; crit?: boolean
   const Icon = item.icon
   return (
     <NavLink to={item.to} end={item.end} className={({ isActive }) => (isActive ? 'nav active' : 'nav')}>
-      <Icon size={20} strokeWidth={1.8} className="shrink-0" />
+      <Icon size={26} strokeWidth={2} className="shrink-0" />
       <span>{item.label}</span>
       {item.badge && count > 0 && (
-        <span className="num ml-auto min-w-[22px] h-[22px] rounded-full text-xs font-bold grid place-items-center" style={{ background: crit ? '#FF6B7A' : '#F5B544', color: crit ? '#1A0508' : '#1D1503' }}>
+        <span className="num ml-auto min-w-[30px] h-[30px] px-1.5 rounded-full text-sm font-bold grid place-items-center" style={{ background: crit ? '#FF6B7A' : '#F5B544', color: crit ? '#1A0508' : '#1D1503' }}>
           {count}
         </span>
       )}
@@ -50,7 +46,7 @@ export default function Sidebar() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="shrink-0 w-[252px] h-full overflow-y-auto bg-[#0A0F1B] border-r border-[#1C2740] px-3.5 py-5 flex flex-col gap-1"
+      className="shrink-0 w-[300px] h-full overflow-y-auto bg-[#0A0F1B] border-r border-[#1C2740] px-3.5 py-5 flex flex-col gap-2"
     >
       <div className="flex items-center gap-2.5 px-2.5 pb-5">
         <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
@@ -72,8 +68,8 @@ export default function Sidebar() {
               <span className="text-sm font-semibold truncate">{user.nombre}</span>
               <span className="text-[11px] text-[#93A0B8] truncate">{user.cargo}</span>
             </span>
-            <button type="button" onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="w-9 h-9 grid place-items-center rounded-lg border-0 bg-transparent text-[#A3AEC4] hover:bg-[#111A2C] hover:text-[#E8ECF4] cursor-pointer shrink-0">
-              <LogOut size={17} />
+            <button type="button" onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="w-14 h-14 grid place-items-center rounded-xl border-2 border-[#2F3F60] bg-[#121B2E] text-[#C5CEDF] hover:bg-[#18243B] hover:text-[#E8ECF4] cursor-pointer shrink-0">
+              <LogOut size={24} />
             </button>
           </div>
         )}
@@ -82,13 +78,13 @@ export default function Sidebar() {
           role="switch"
           aria-checked={demo}
           onClick={() => setDemo(!demo)}
-          className="flex items-center gap-3 min-h-[44px] -mx-1 px-1 border-0 bg-transparent cursor-pointer text-left"
+          className="flex items-center gap-3 min-h-[60px] -mx-1 px-1 border-0 bg-transparent cursor-pointer text-left"
         >
-          <span className="relative w-10 h-6 rounded-full shrink-0 transition-colors" style={{ background: demo ? '#F5B544' : '#22314F' }}>
-            <span className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all" style={{ left: demo ? 20 : 4 }} />
+          <span className="relative w-14 h-8 rounded-full shrink-0 transition-colors" style={{ background: demo ? '#F5B544' : '#22314F' }}>
+            <span className="absolute top-1 w-6 h-6 rounded-full bg-white transition-all" style={{ left: demo ? 28 : 4 }} />
           </span>
           <span className="flex flex-col">
-            <span className="text-sm font-semibold" style={{ color: demo ? '#F5D79A' : '#E8ECF4' }}>Modo demo</span>
+            <span className="text-base font-semibold" style={{ color: demo ? '#F5D79A' : '#E8ECF4' }}>Modo demo</span>
             <span className="text-[11px] text-[#93A0B8]">{demo ? 'Controles para presentar' : 'Viendo la app real'}</span>
           </span>
         </button>
