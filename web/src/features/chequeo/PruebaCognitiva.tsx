@@ -175,7 +175,7 @@ export default function PruebaCognitiva({ onSiguiente, onAtras }: { onSiguiente:
             )}
           </button>
           {fase === 'inicio' && (
-            <button type="button" onClick={empezar} className="btn pri">
+            <button type="button" data-tour="atencion-empezar" onClick={empezar} className="btn pri">
               Empezar prueba
             </button>
           )}

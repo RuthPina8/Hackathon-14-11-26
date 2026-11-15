@@ -8,6 +8,7 @@ import { PageHeader, SimBanner } from '../components/ui/Page'
 import EstadoIcono from '../components/ui/EstadoIcono'
 import { BarraDeshacer, useDeshacer } from '../components/ui/Deshacer'
 import { C } from '../lib/paleta'
+import { useEntrenamiento } from '../features/entrenamiento/entrenamientoStore'
 
 // Barras de factores: el color dice el ORIGEN del dato (real en cian, autorreporte en morado, simulado en gris).
 // El ámbar queda solo para "atención".
@@ -115,7 +116,7 @@ export default function Alertas() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-2.5">
+          <div data-tour="alerta-que-hacer" className="flex flex-col gap-2.5">
             <p className="k">Qué hacer ahora</p>
             {cur.tareas.map((t) => (
               <label key={cur.id + t} className="task"><input type="checkbox" />{t}</label>
@@ -132,8 +133,8 @@ export default function Alertas() {
               <div className="flex flex-wrap gap-2.5">
                 {escalated[cur.id] || cur.escalada
                   ? <span className="btn sec" aria-disabled="true">Enviada a Tierra</span>
-                  : <button type="button" className="btn sec" disabled={!!pendiente}
-                      onClick={() => { const id = cur.id; programar('Escalando a Tierra…', () => { escalateAlert(id); setEscalated((e) => ({ ...e, [id]: true })) }) }}>Escalar a Tierra</button>}
+                  : <button type="button" data-tour="alerta-escalar" className="btn sec" disabled={!!pendiente}
+                      onClick={() => { const id = cur.id; programar('Escalando a Tierra…', () => { escalateAlert(id); setEscalated((e) => ({ ...e, [id]: true })); useEntrenamiento.getState().completar('alerta') }) }}>Escalar a Tierra</button>}
                 <button type="button" className="btn pri" disabled={!!pendiente}
                   onClick={() => { const id = cur.id; programar('Marcando como atendida…', () => resolveAlert(id)) }}>Marcar como atendida</button>
               </div>

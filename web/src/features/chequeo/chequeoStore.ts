@@ -61,6 +61,7 @@ type EstadoChequeo = Datos & {
   guardarRegistro: (r: ResultadoRegistro) => void
   marcarEnvio: (paso: Paso, estado: EstadoEnvio, alertaId?: number | null) => void
   reiniciar: () => void
+  limpiarPaso: (paso: Paso) => void
 }
 
 const VACIO: Datos = { camara: null, cognitivo: null, presion: null, registro: null, envios: {}, alertas: [] }
@@ -79,6 +80,13 @@ const leer = (clave: string): Datos => {
   }
 }
 
+// Modo entrenamiento: el chequeo guarda en un espacio de práctica aparte, así la práctica nunca
+// se mezcla con el chequeo real del día (y los envíos llevan detalle.practica = true, ver enviar.ts)
+let entrenamiento = false
+let usuarioActual = ''
+export const enEntrenamiento = () => entrenamiento
+const claveDe = (usuario: string) => (entrenamiento ? `astro_entrenamiento_${usuario}` : `astro_chequeo_${usuario}_${hoyLocal()}`)
+
 export const useChequeoStore = create<EstadoChequeo>()((set, get) => {
   const guardar = (parcial: Partial<Datos>) => {
     set(parcial)
@@ -89,18 +97,20 @@ export const useChequeoStore = create<EstadoChequeo>()((set, get) => {
     ...VACIO,
     clave: '',
     cargar: (usuario) => {
-      const clave = `astro_chequeo_${usuario}_${hoyLocal()}`
+      usuarioActual = usuario
+      const clave = claveDe(usuario)
       if (clave === get().clave) return
       set({ ...leer(clave), clave })
     },
+    limpiarPaso: (paso) => guardar(paso === 'camara' ? { camara: null } : paso === 'cognitivo' ? { cognitivo: null } : paso === 'presion' ? { presion: null } : { registro: null }),
     guardarCamara: (camara) => guardar({ camara }),
     guardarCognitivo: (cognitivo) => guardar({ cognitivo }),
     guardarPresion: (presion) => guardar({ presion }),
     guardarRegistro: (registro) => {
       guardar({ registro })
       // El último sueño se recuerda para precargar el registro del día siguiente
-      const usuario = get().clave.split('_')[2]
-      if (registro.sueno && usuario) {
+      const usuario = usuarioActual
+      if (registro.sueno && usuario && !entrenamiento) {
         try { localStorage.setItem(`astro_ultimo_sueno_${usuario}`, JSON.stringify(registro.sueno)) } catch { /* sin storage */ }
       }
     },
@@ -122,7 +132,7 @@ export function sumarSesionCognitiva(usuario: string) {
 
 // Último sueño registrado por este astronauta (para precargar el registro de hoy)
 export function ultimoSueno(): Sueno | null {
-  const usuario = useChequeoStore.getState().clave.split('_')[2]
+  const usuario = usuarioActual
   if (!usuario) return null
   try {
     const raw = localStorage.getItem(`astro_ultimo_sueno_${usuario}`)
@@ -130,4 +140,11 @@ export function ultimoSueno(): Sueno | null {
   } catch {
     return null
   }
+}
+
+// Entra o sale del modo entrenamiento y recarga el espacio que corresponde
+export function setModoEntrenamiento(on: boolean) {
+  if (entrenamiento === on) return
+  entrenamiento = on
+  if (usuarioActual) useChequeoStore.getState().cargar(usuarioActual)
 }

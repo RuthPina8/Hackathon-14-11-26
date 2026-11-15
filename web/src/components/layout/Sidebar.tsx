@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, ScanFace, LineChart, Bell, Orbit, Users, LogOut, TrendingUp, Radar, PersonStanding } from 'lucide-react'
+import { Home, ScanFace, LineChart, Bell, Orbit, Users, LogOut, TrendingUp, Radar, PersonStanding, GraduationCap } from 'lucide-react'
 import { useSession } from '../../store/useSession'
 import { useMyAlerts } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
@@ -16,6 +16,7 @@ const main: Item[] = [
   { to: '/indicators', label: 'Indicadores', icon: LineChart },
   { to: '/alerts', label: 'Alertas', icon: Bell, badge: true },
   { to: '/progress', label: 'Mi evolución', icon: TrendingUp },
+  { to: '/training', label: 'Entrenamiento', icon: GraduationCap },
 ]
 const sim: Item[] = [
   { to: '/simulation', label: 'Misión', icon: Orbit },

@@ -18,9 +18,16 @@ export function AlertaRoja() {
   const alertas = useMyAlerts()
   const destellar = useEfectos((s) => s.destellar)
   const vistas = useRef<Set<string> | null>(null)
+  const montada = useRef(Date.now())
   const [actual, setActual] = useState<AlertItem | null>(null)
 
   useEffect(() => {
+    // Las alertas del servidor llegan unos segundos después de abrir la app: las que aparezcan en ese
+    // margen ya existían y no deben disparar el efecto (solo las que llegan en vivo)
+    if (Date.now() - montada.current < 5000) {
+      vistas.current = new Set([...(vistas.current ?? []), ...alertas.map((a) => `${a.id}:${a.nivel}`)])
+      return
+    }
     // Se recuerda id + nivel: así dispara tanto una alerta roja nueva como una amarilla que SUBE a roja
     // (el triage no duplica: actualiza la misma alerta y le cambia el nivel)
     const clave = (a: AlertItem) => `${a.id}:${a.nivel}`

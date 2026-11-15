@@ -180,3 +180,15 @@ def test_endpoints_de_movimiento_y_telemetria(client):
     assert client.post("/telemetry", json={**ESTABLE}).json()["capa"] == "sim"
     assert len(client.get("/telemetry/history").json()) >= 1
     assert client.post("/telemetry/simulate", json={"escenario": "otro"}).status_code == 422
+
+
+def test_sesion_de_practica_no_cuenta_para_la_referencia_ni_la_correlacion():
+    ahora = datetime.now(timezone.utc)
+    sesion(12, fecha=ahora - timedelta(days=2)); sesion(12, fecha=ahora - timedelta(days=1))
+    p = movimiento.registrar(SesionIn(ejercicio="brazos", repeticiones=3, duracion_s=45, calidad=0.9, practica=True), fecha=ahora)
+    assert p.practica and p.comparacion.estado == "bajo"
+    for m in (20, 10):
+        lectura(MALO, ahora - timedelta(minutes=m))
+    assert correlacion.evaluar(p, telemetria.lecturas, lim()) is None
+    # la de práctica no ensucia la referencia de la siguiente
+    assert sesion(12).comparacion.referencia_reps == 12.0

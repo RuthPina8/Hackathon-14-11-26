@@ -7,6 +7,8 @@ import MovimientoCamara from './MovimientoCamara'
 import { idNumerico, movimientoApi, NOMBRE_EJERCICIO, type Sesion, type SesionIn } from './movimientoApi'
 import type { Ejercicio } from './pose/calcularAngulos'
 import { C } from '../../lib/paleta'
+import { useEntrenamiento } from '../entrenamiento/entrenamientoStore'
+import { enEntrenamiento } from '../chequeo/chequeoStore'
 
 type Paso = 'elegir' | 'camara' | 'resultado'
 
@@ -27,10 +29,12 @@ export default function MovimientoFlow() {
 
   const guardar = async (s: SesionIn) => {
     setGuardando(true); setError(null)
-    const r = await movimientoApi.guardar(s)
+    // En el entrenamiento la sesión va marcada como práctica (no cuenta para tu normal)
+    const r = await movimientoApi.guardar({ ...s, practica: enEntrenamiento() })
     setGuardando(false)
     if (!r) { setError('No se pudo guardar: revisa que la API esté corriendo'); return }
     setResultado(r); setPaso('resultado'); cargar()
+    useEntrenamiento.getState().completar('movimiento')
   }
 
   const demo = async (tipo: 'linea_base' | 'descenso') => {
@@ -38,6 +42,7 @@ export default function MovimientoFlow() {
     const r = await movimientoApi.demo(tipo, astro, ejercicio)
     if (!r) { setError('No se pudo cargar la sesión de demo: revisa que la API esté corriendo'); return }
     setResultado(r[r.length - 1]); setPaso('resultado'); cargar()
+    useEntrenamiento.getState().completar('movimiento')
   }
 
   return (
@@ -53,7 +58,7 @@ export default function MovimientoFlow() {
         <>
           <div className="grid gap-5 sm:grid-cols-2">
             {(['brazos', 'sentadilla'] as Ejercicio[]).map((e) => (
-              <button key={e} type="button" onClick={() => { setEjercicio(e); setPaso('camara') }}
+              <button key={e} type="button" data-tour={e === 'brazos' ? 'movimiento-brazos' : undefined} onClick={() => { setEjercicio(e); setPaso('camara') }}
                 className="card flex min-h-[220px] cursor-pointer flex-col items-start justify-between gap-4 text-left transition-colors hover:border-accent active:translate-y-[2px]"
                 style={{ borderWidth: 2 }}>
                 {e === 'brazos' ? <ArrowUpFromLine size={52} color={C.accent} /> : <PersonStanding size={52} color={C.accent} />}
@@ -67,7 +72,7 @@ export default function MovimientoFlow() {
             ))}
           </div>
 
-          <section className="card sim flex flex-col gap-4">
+          <section data-tour="movimiento-planb" className="card sim flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-3"><span className="tag simt">PLAN B · DATO DE DEMO</span><span className="text-base text-subtle">Si la cámara falla, la demo sigue con sesiones preparadas de {NOMBRE_EJERCICIO[ejercicio].toLowerCase()}</span></div>
             <div className="flex flex-wrap gap-4">
               <button type="button" className="btn sec" onClick={() => void demo('linea_base')}>Cargar línea base de demo</button>

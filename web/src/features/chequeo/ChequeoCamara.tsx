@@ -386,7 +386,7 @@ export default function ChequeoCamara({ onSiguiente, onCancelar }: Props) {
                 <p className="m-0 font-display text-lg font-semibold">{tarjeta[fase][0]}</p>
                 <p className="m-0 text-[13px] leading-normal text-soft">{tarjeta[fase][1]}</p>
                 {fase !== 'analizando' && (
-                  <button type="button" onClick={iniciar} disabled={!camaraLista}
+                  <button type="button" data-tour="chequeo-iniciar" onClick={iniciar} disabled={!camaraLista}
                     className="btn pri">
                     {tarjeta[fase][2]}
                   </button>

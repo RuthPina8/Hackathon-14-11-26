@@ -9,6 +9,8 @@ import Tripulacion from './pages/Tripulacion'
 import Evolucion from './pages/Evolucion'
 import MissionIntelligence from './pages/MissionIntelligence'
 import MovimientoFlow from './features/movimiento/MovimientoFlow'
+import Entrenamiento from './features/entrenamiento/Entrenamiento'
+import Coach from './features/entrenamiento/Coach'
 import { useWebSocket } from './lib/ws'
 import { useMissionClock } from './lib/useMissionClock'
 import DemoBar from './components/layout/DemoBar'
@@ -70,6 +72,7 @@ export default function App() {
         <Route path="/progress" element={<Evolucion />} />
         <Route path="/mission-intelligence" element={<MissionIntelligence />} />
         <Route path="/movement" element={<MovimientoFlow />} />
+        <Route path="/training" element={<Entrenamiento />} />
 
         {/* Chequeo diario (Front 1): los 5 pasos viven en /camera?paso=N; las rutas viejas redirigen */}
         <Route path="/camera" element={<ChequeoRoute />} />
@@ -83,6 +86,7 @@ export default function App() {
     {/* fuera del AppShell: la transición de página usa transform y rompería el position: fixed */}
     <DemoBar />
     <AlertaRoja />
+    <Coach />
     <Encendido />
     </>
   )

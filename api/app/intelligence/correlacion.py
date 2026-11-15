@@ -34,7 +34,7 @@ class Hallazgo:
 
 
 def evaluar(sesion: Sesion, lecturas: list[Lectura], rangos: dict[str, tuple[float | None, float | None]]) -> Hallazgo | None:
-    if sesion.comparacion.estado != "bajo":
+    if sesion.comparacion.estado != "bajo" or sesion.practica:
         return None
     desde, hasta = sesion.fecha - VENTANA, sesion.fecha + VENTANA
     en_ventana = [x for x in lecturas if desde <= x.fecha <= hasta]

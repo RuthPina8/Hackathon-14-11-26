@@ -25,6 +25,8 @@ class SesionIn(BaseModel):
     calidad: float = Field(ge=0, le=1, description="proporción de cuadros con el cuerpo bien detectado")
     fuente: Literal["webcam", "demo"] = "webcam"
     dia_mision: int | None = None
+    # Sesión del entrenamiento: se guarda, pero no cuenta para tu normal ni para la correlación
+    practica: bool = False
 
 
 class Comparacion(BaseModel):

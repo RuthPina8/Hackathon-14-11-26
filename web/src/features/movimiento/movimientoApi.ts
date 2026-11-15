@@ -20,6 +20,7 @@ export interface Sesion {
   simetria: number | null
   calidad: number
   fuente: 'webcam' | 'demo'
+  practica?: boolean
   capa: 'real' | 'sim'
   dato_demo: boolean
   fecha: string

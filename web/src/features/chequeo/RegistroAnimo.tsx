@@ -160,7 +160,7 @@ export default function RegistroAnimo({ onSiguiente, onAtras }: { onSiguiente: (
           <p role="alert" className="m-0 min-h-5 text-sm text-warn">{error ?? ''}</p>
           <div className="flex flex-wrap justify-end gap-2.5">
             <button type="button" onClick={onAtras} className="btn sec">Atrás</button>
-            <button type="button" onClick={enviar} className="btn pri">Guardar y ver resumen</button>
+            <button type="button" data-tour="registro-guardar" onClick={enviar} className="btn pri">Guardar y ver resumen</button>
           </div>
         </div>
       </div>

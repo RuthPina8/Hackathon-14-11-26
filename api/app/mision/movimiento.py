@@ -19,7 +19,7 @@ def comparar(nueva: SesionIn, previas: list[Sesion]) -> Comparacion:
             estado="baja_calidad",
             texto=f"Detección del cuerpo del {nueva.calidad:.0%}: la sesión no es confiable para comparar. Repite con el cuerpo completo a cuadro y buena luz",
         )
-    ref = [s.repeticiones for s in previas if s.ejercicio == nueva.ejercicio and s.calidad >= CALIDAD_MINIMA]
+    ref = [s.repeticiones for s in previas if s.ejercicio == nueva.ejercicio and s.calidad >= CALIDAD_MINIMA and not s.practica]
     if len(ref) < MIN_REFERENCIA:
         faltan = MIN_REFERENCIA - len(ref)
         return Comparacion(

@@ -80,7 +80,7 @@ export default function RegistroPresion({ onSiguiente, onAtras }: { onSiguiente:
           {envio && <p className="m-0 text-sm text-muted">Última presión de hoy: {envio === 'enviado' ? 'guardada' : 'pendiente de enviar'}</p>}
         </section>
         <div className="flex min-w-0 flex-[2_1_260px] flex-col justify-end gap-2.5">
-          <button type="button" onClick={enviar} className="btn pri">Guardar y seguir</button>
+          <button type="button" data-tour="presion-guardar" onClick={enviar} className="btn pri">Guardar y seguir</button>
           <button type="button" onClick={omitir} className="btn sec">No tengo brazalete, saltar</button>
           <button type="button" onClick={onAtras} className="btn sec">Atrás</button>
         </div>
